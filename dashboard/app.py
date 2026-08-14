@@ -168,12 +168,16 @@ with tab_arch:
         ┌──────────────────────────────────────────────────────┐
         │  TradingView (charts/Pine) · yfinance ES=F           │
         │  AlphaVantage · Binance.US · Serper (news)           │
-        │  IBKR historical bars → S3 futures-bars/*            │
-        │  IBKR L1 tick recorder (clientId 74, RTH)            │
-        │    → S3 futures-ticks/* + DynamoDB QUOTE#<sym>       │
+        │  S3: futures-bars/ (daily+intraday) · fmp/ ·         │
+        │     newsapi/ · crypto-tick/ · crypto-candles/ ·      │
+        │     news-archive/                                    │
+        │  DynamoDB (futures): CONTRACT# · SESSION# · QUOTE#   │
+        │  IBKR historical backfill → S3 futures-bars/*        │
         │  Contract resolver → CONTRACT#<sym> + S3 contracts/  │
         │    (full chain + rollover schedule)                  │
         │  Session calendar → SESSION#<sym> + S3 sessions/     │
+        │  L1 tick recorder (clientId 74, RTH) → S3            │
+        │    futures-ticks/* + QUOTE#<sym>  [IN PROGRESS]      │
         └──────────────────────────┬───────────────────────────┘
                                │ data / signals
                                ▼
@@ -209,11 +213,12 @@ with tab_arch:
                      │  timeout → UNKNOWN    │
                      └──────────┬───────────┘
                                 ▼
-                        ┌──────────────┐
-                        │    IBKR      │
-                        │ Gateway :4002│
-                        │ (paper MES)  │
-                        └──────┬───────┘
+               ┌──────────────────────────────┐
+               │         IBKR Gateway :4002   │
+               │           (paper MES)        │
+               │  native auto-restart + token │
+               │  re-login (IBC removed)      │
+               └───────────────┬───────────────┘
                                │
                  +─────────────+─────────────+
                  ▼                           ▼
@@ -240,10 +245,12 @@ with tab_arch:
                +──────────────+───────────────+
                               ▼
                     ┌──────────────────────┐
-                    │ OBSERVABILITY         │
-                    │  Dashboard :8501      │
-                    │  Telegram (user)      │
-                    │  heartbeats + alerts  │
+                    │ OBSERVABILITY        │
+                    │  Dashboard :8501     │
+                    │  health watchdog:    │
+                    │   GWClient + :4002   │
+                    │  Telegram (user)     │
+                    │  heartbeats + alerts │
                     └──────────────────────┘
 
      CONTROL PLANE (out-of-band, fail-closed)
@@ -260,6 +267,7 @@ with tab_arch:
 - no Execution Manager → centralize order submission (idempotency, timeout=UNKNOWN)
 - no Reconciliation → broker = source of truth for positions/orders/fills
 - risk state stateless per-run → persistent Risk Ledger
+- IBC-based gateway → native auto-restart + token re-login ✅ **[NOW DONE]**
 - control plane fail-open → fail-closed (unreadable state = HALT) ✅ **[NOW DONE]**
 - no fill verification → verify fill before writing position/stop ✅ **[NOW DONE]**
 """)
@@ -277,7 +285,7 @@ with tab_road:
 | Infra | CloudFormation IaC + SSM secrets | done |
 | Infra | DynamoDB `trading-data` + S3 `trading-datalake-920641308584` | done |
 | Infra | Hermes gateway (systemd) + webhook :8644 (laptop→VPS) | done |
-| IBKR | IBC 3.24.1 auto-login (build 10.45.1j), API :4002, daily restart + weekly 2FA | done |
+| IBKR | Native IB Gateway auto-restart + token re-login (IBC removed, 263bd24) | done |
 | IBKR | MES paper round-trip filled | done |
 | IBKR | Real-time CME/CBOT L1 → paper DUR193467 | done |
 | Bots | live.py (index MES/MNQ, 23:00 UTC) | done |
@@ -304,19 +312,23 @@ with tab_road:
 | Risk | Daily loss cap fully functional end-to-end | next phase |
 | Strategy | ES breakout backtest PF 2.73, MaxDD -7.9% | done |
 | Strategy | Walk-forward/OOS: Donchian long PF 2.08/2.16 (ES/NQ n=59/53), ADX 2.55/1.77 (thin) | done |
-| Strategy | Paper forward-testing (first signals 23:00/23:05 UTC; intraday Mon) | in progress |
-| Data | IBKR historical-bar backfill → S3 futures-bars (12 sym, daily + intraday) | done |
-| Data | Contract resolver + rollover → CONTRACT#<sym> + S3 contracts/* | done |
-| Data | Session calendar + trading hours → SESSION#<sym> + S3 sessions/* | done |
-| Data | L1 tick recorder → S3 futures-ticks + QUOTE#<sym> (systemd, RTH-gated) | done |
+| Strategy | First paper signals fired (index 23:00 + bonds 23:05 UTC — flat, no entry, expected) | done |
+| Strategy | Gate-1 validation (walk-forward, sensitivity, cost-stress, regime, correlation) + new-strategy research | in progress |
+| Data | Historical backfill (ES/NQ 2y, ZB/ZN ~16mo entitlement-capped, MES 5m/15m 60 sessions) → S3 futures-bars | done |
+| Data | S3 cold-archive (7 gaps closed) | done |
+| Data | Research ingest (FMP/NewsAPI/crypto → S3) | done |
+| Data | Data-lake build-out (contract metadata + rollover, session calendar, L1 tick recorder) | in progress |
 | Data | Broker reconciliation (startup + periodic + reconnect) | next phase |
 | Data | Data-health gate + stale-signal gate | next phase |
 | Obs | Streamlit dashboard :8501 (Live + Architecture + Roadmap) | done |
 | Obs | Telegram group (user visibility) | done |
 | Obs | Daily summary 23:45, health watchdog */30, weekly scan | done |
+| Obs | Health watchdog fixed — native GWClient + :4002 check (was checking removed IBC) | done |
 | Obs | Heartbeats, severity levels, correlation IDs, daily report | next phase |
 | Ops | Cron split (data=crontab, bots=Hermes cron) | done |
 | Ops | Verify ideas online before proposing/implementing | standing rule |
+| Ops | Research-First (verify edges before implementing) | standing rule |
+| Ops | Continuous-Documentation (docs/ + dashboard kept current) | standing rule |
 """)
 
     st.markdown("#### ❌ Tabled / blocked")
