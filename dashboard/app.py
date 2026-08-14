@@ -8,7 +8,7 @@ import datetime as dt
 
 import boto3
 import streamlit as st
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Key, Attr
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -45,6 +45,22 @@ def set_control(**fields):
     st.cache_data.clear()
 
 
+@st.cache_data(ttl=15)
+def scan_positions():
+    """All currently-open positions (POSITION#* items with pos>0)."""
+    r = table.scan(FilterExpression=Attr('pk').begins_with('POSITION#') & Attr('sk').eq('current'))
+    return [it for it in r.get('Items', []) if int(it.get('pos', 0)) > 0]
+
+
+@st.cache_data(ttl=15)
+def scan_signals(limit=30):
+    """Recent signals across all strategies (SIGNAL#* items), newest first."""
+    r = table.scan(FilterExpression=Attr('pk').begins_with('SIGNAL#'))
+    items = r.get('Items', [])
+    items.sort(key=lambda x: x.get('ts', 0), reverse=True)
+    return items[:limit]
+
+
 st.title("📈 Trading System")
 
 # --- Control state banner ---
@@ -79,18 +95,31 @@ with tab_live:
             else:
                 st.metric(sym, "—")
     with col3:
-        st.subheader("Bot — ES trend breakout")
-        sig = latest("SIGNAL#ES=F", 1)
-        pos = table.get_item(Key={"pk": "POSITION#MES", "sk": "current"}).get("Item", {})
-        if sig:
-            s = sig[0]
-            st.metric("Signal", s.get("signal", "—"))
-            st.metric("ADX", s.get("adx", "—"))
-            st.metric("Close", s.get("close", "—"))
-            st.caption(f"last: {s.get('sk', '—')}")
-        st.metric("Position (MES)", pos.get("pos", "0"))
-        if pos.get("stop"):
-            st.metric("Stop", pos.get("stop"))
+        st.subheader("Open positions")
+        positions = scan_positions()
+        if positions:
+            for p in positions:
+                tag = p['pk'].split('#', 1)[-1]
+                side = p.get('side', 'LONG')
+                arrow = '▲' if side == 'LONG' else '▼'
+                st.markdown(f"{arrow} **{tag}** — {p.get('pos','0')} {side.lower()}"
+                            f" · entry {p.get('entry','—')} · stop {p.get('stop','—')}")
+        else:
+            st.caption("No open positions")
+
+    st.divider()
+    st.subheader("🔔 Recent signals (all strategies)")
+    sigs = scan_signals(30)
+    if sigs:
+        for s in sigs:
+            tag = s['pk'].split('#', 1)[-1]
+            sig = s.get('signal', '—')
+            emoji = {'LONG': '🟢', 'SHORT': '🔴', 'EXIT': '🔵',
+                     'COVER': '🟣', 'BUY': '🟢', 'SELL': '🔴'}.get(sig, '⚪️')
+            st.markdown(f"{emoji} `{tag}` → **{sig}** · close {s.get('close','—')}"
+                        f" · pos {s.get('pos','—')} · {str(s.get('reason',''))[:90]}")
+    else:
+        st.caption("No signals yet — first bot run pending.")
 
     st.divider()
     st.subheader("📰 Market research — latest headlines")
@@ -121,7 +150,8 @@ with tab_live:
         if st.button("🛑 KILL SWITCH", type="primary", use_container_width=True):
             set_control(state="KILLED")
             st.rerun()
-    st.caption("Flatten/kill flags are read by the bot loop. They persist in DynamoDB until cleared.")
+    st.caption("Flatten/kill flags are read by ALL bots (live.py / live_bondsfx.py / live_intraday.py) "
+               "each run before any order. They persist in DynamoDB until cleared.")
 
 # ============================ ARCHITECTURE TAB ============================
 with tab_arch:
