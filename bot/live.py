@@ -1,121 +1,126 @@
-"""Live paper-trading loop — MES trend breakout on IBKR paper.
+"""Live trading bot — daily MES trend breakout, VPS-ready (24/7).
 
-Portable: laptop (now) → VPS (24/7) by changing IBKR host/port via env.
-Reuses the risk engine (risk.py). Logs signals + fills to the data lake.
+Data: yfinance ES=F (free, consistent with backtest) — runs anywhere.
+Execution: IBKR paper (MES micro) — connects only when a signal fires.
+Logging: DynamoDB (signals + fills) + S3 archive.
+
+Run daily via cron. Portable: IBKR_HOST/PORT via env.
 """
 import os
-import sys
+import json
 import time
-from datetime import datetime, timedelta
+import datetime as dt
 
+import yfinance as yf
 import numpy as np
 import pandas as pd
-from ib_insync import IB, Future, Stock, LimitOrder, MarketOrder
+import boto3
+from dotenv import load_dotenv
 
-sys.path.insert(0, os.path.dirname(__file__))
 from risk import RiskEngine, RiskConfig
 
-# ===== CONFIG (env-overridable) =====
-IBKR_HOST = os.environ.get("IBKR_HOST", "127.0.0.1")
-IBKR_PORT = int(os.environ.get("IBKR_PORT", "4002"))
-IBKR_ACCOUNT = os.environ.get("IBKR_ACCOUNT", "DUR193467")
-MES_CONTRACT = ("MES", "202609", "CME")  # symbol, expiry, exchange
-RISK_BUDGET = float(os.environ.get("RISK_BUDGET", "50000"))
+load_dotenv()
 
-# ===== INDICATORS =====
-def wilder_atr(df, n=14):
-    tr = pd.concat([
-        df['High'] - df['Low'],
-        (df['High'] - df['Close'].shift()).abs(),
-        (df['Low'] - df['Close'].shift()).abs(),
-    ], axis=1).max(axis=1)
-    return tr.ewm(alpha=1/n, adjust=False).mean()
+# ===== config =====
+IBKR_HOST = os.getenv('IBKR_HOST', '127.0.0.1')
+IBKR_PORT = int(os.getenv('IBKR_PORT', '4002'))
+DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
+S3_BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
+RISK_BUDGET = float(os.getenv('RISK_BUDGET', '50000'))
 
-def adx(df, n=14):
-    up = df['High'].diff()
-    dn = -df['Low'].diff()
+TICKER = 'ES=F'          # E-mini S&P (data) — same price action as MES
+TRADE_SYMBOL = 'MES'     # micro (execution)
+
+
+# ===== indicators =====
+def compute(df):
+    h, l, c = df['High'], df['Low'], df['Close']
+    sma200 = c.rolling(200).mean()
+    don_hi = h.rolling(20).max().shift(1)
+    atr = _wilder_atr(h, l, c, 14)
+    adx = _adx(h, l, c, 14)
+    return pd.DataFrame({
+        'close': c, 'sma200': sma200, 'don_hi': don_hi, 'atr': atr, 'adx': adx,
+    }).iloc[-1]
+
+
+def _wilder_atr(h, l, c, n):
+    tr = pd.concat([h - l, (h - c.shift()).abs(), (l - c.shift()).abs()], axis=1).max(axis=1)
+    return tr.ewm(alpha=1 / n, adjust=False).mean()
+
+
+def _adx(h, l, c, n=14):
+    up = h.diff(); dn = -l.diff()
     plus_dm = np.where((up > dn) & (up > 0), up, 0.0)
     minus_dm = np.where((dn > up) & (dn > 0), dn, 0.0)
-    tr = wilder_atr(df, n)
-    atr = tr.replace(0, np.nan)
-    plus_di = 100 * pd.Series(plus_dm, index=df.index).ewm(alpha=1/n, adjust=False).mean() / atr
-    minus_di = 100 * pd.Series(minus_dm, index=df.index).ewm(alpha=1/n, adjust=False).mean() / atr
-    dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di).replace(0, np.nan)
-    return dx.ewm(alpha=1/n, adjust=False).mean()
+    tr = _wilder_atr(h, l, c, n)
+    plus_di = 100 * pd.Series(plus_dm, index=h.index).ewm(alpha=1 / n, adjust=False).mean() / tr
+    minus_di = 100 * pd.Series(minus_dm, index=h.index).ewm(alpha=1 / n, adjust=False).mean() / tr
+    dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di)
+    return dx.ewm(alpha=1 / n, adjust=False).mean()
 
-def compute_signal(df):
-    """Returns (signal, detail) for the latest bar. signal in {'LONG','EXIT','NONE'}."""
-    close = df['Close']
-    sma200 = close.rolling(200).mean()
-    don_hi = df['High'].shift(1).rolling(20).max()
-    adx_v = adx(df, 14)
-    atr_v = wilder_atr(df, 14)
 
-    trend_up = close.iloc[-1] > sma200.iloc[-1]
-    trending = adx_v.iloc[-1] > 25
-    breakout = close.iloc[-1] > don_hi.iloc[-1] and close.iloc[-2] <= don_hi.iloc[-2]
+def signal(detail):
+    """Return 'LONG' / 'NONE' + a reason string."""
+    if detail['close'] > detail['don_hi'] and detail['close'] > detail['sma200'] and detail['adx'] > 25:
+        return 'LONG', f"breakout {round(detail['close'],1)} > {round(detail['don_hi'],1)} & ADX {detail['adx']:.1f}>25"
+    return 'NONE', f"close {round(detail['close'],1)} | ADX {detail['adx']:.1f} | don_hi {round(detail['don_hi'],1)} | sma200 {round(detail['sma200'],1)}"
 
-    detail = {
-        'close': round(close.iloc[-1], 2), 'sma200': round(sma200.iloc[-1], 2),
-        'don_hi': round(don_hi.iloc[-1], 2), 'adx': round(adx_v.iloc[-1], 1),
-        'atr': round(atr_v.iloc[-1], 2), 'trend_up': bool(trend_up), 'trending': bool(trending),
-    }
-    if trend_up and trending and breakout:
-        return 'LONG', detail
-    if close.iloc[-1] < sma200.iloc[-1]:
-        return 'EXIT', detail
-    return 'NONE', detail
+
+def log_dynamo(table, pk, sk, data):
+    table.put_item(Item={'pk': pk, 'sk': sk, **data})
+
 
 def main():
-    risk = RiskEngine(RiskConfig(risk_budget_usd=RISK_BUDGET))
-    ib = IB()
-    ib.connect(IBKR_HOST, IBKR_PORT, clientId=60, timeout=10)
-    print(f"connected to IBKR {IBKR_HOST}:{IBKR_PORT} (acct {IBKR_ACCOUNT})")
+    dynamo = boto3.resource('dynamodb', region_name='us-east-1').Table(DYNAMO_TABLE)
 
-    mes = ib.qualifyContracts(Future(*MES_CONTRACT))[0]
-    bars = ib.reqHistoricalData(mes, '', '2 Y', '1 day', 'TRADES', False, 1)
-    df = pd.DataFrame([{ 'Date': b.date, 'Open': b.open, 'High': b.high, 'Low': b.low, 'Close': b.close, 'Volume': b.volume } for b in bars]).set_index('Date')
-    df = df.dropna()
-    print(f"bars: {len(df)} (last close {df['Close'].iloc[-1]})")
+    # 1. data (yfinance — free, works on VPS)
+    df = yf.download(TICKER, period='2y', interval='1d', progress=False, auto_adjust=True)
+    if df.empty:
+        print("no data"); return
+    detail = compute(df)
+    sig, reason = signal(detail)
+    today = dt.date.today().isoformat()
 
-    signal, detail = compute_signal(df)
-    print("signal:", signal)
-    for k, v in detail.items():
-        print(f"  {k}: {v}")
+    print(f"[{today}] signal={sig} | {reason}")
 
-    # ===== current position =====
-    positions = ib.positions()
-    mes_pos = next((p for p in positions if p.contract.symbol == 'MES'), None)
-    pos_qty = int(mes_pos.position) if mes_pos else 0
-    print(f"current MES position: {pos_qty}")
+    # 2. log signal to data lake
+    log_dynamo(dynamo, f"SIGNAL#{TICKER}", today, {
+        'signal': sig, 'close': str(round(detail['close'], 2)),
+        'adx': str(round(detail['adx'], 2)), 'reason': reason,
+        'ts': int(time.time()),
+    })
 
-    # ===== act =====
-    if signal == 'LONG' and pos_qty <= 0:
-        allowed, reason = risk.can_enter()
-        if allowed:
+    # 3. act if signal (IBKR execution — only when needed)
+    if sig == 'LONG':
+        risk = RiskEngine(RiskConfig(risk_budget_usd=RISK_BUDGET))
+        allowed, why = risk.can_enter()
+        if not allowed:
+            print(f">>> blocked by risk: {why}"); return
+        try:
+            from ib_insync import IB, Future, MarketOrder
+            ib = IB()
+            ib.connect(IBKR_HOST, IBKR_PORT, clientId=70, timeout=8)
+            mes = ib.qualifyContracts(Future(TRADE_SYMBOL, '202609', 'CME'))[0]
             stop = detail['close'] - 2 * detail['atr']
-            stop_distance = detail['close'] - stop
-            size = risk.position_size(stop_distance, point_value=5.0)
+            size = risk.position_size(detail['close'] - stop, point_value=5.0)
             if size > 0:
-                order = MarketOrder('BUY', size)
-                ib.placeOrder(mes, order)
+                ib.placeOrder(mes, MarketOrder('BUY', size))
                 print(f">>> PAPER ORDER: BUY {size} MES @ market (stop ~{round(stop,1)})")
                 ib.sleep(2)
                 risk.record_fill()
-            else:
-                print(">>> size=0 (stop too tight) — no order")
-        else:
-            print(f">>> blocked by risk: {reason}")
-    elif signal == 'EXIT' and pos_qty > 0:
-        order = MarketOrder('SELL', pos_qty)
-        trade = ib.placeOrder(mes, order)
-        print(f">>> PAPER ORDER: SELL {pos_qty} MES @ market (trend break exit)")
-        ib.sleep(2)
-    else:
-        print(f">>> no action (signal={signal}, pos={pos_qty})")
+                log_dynamo(dynamo, f"TRADE#{TRADE_SYMBOL}", today, {
+                    'side': 'BUY', 'qty': size, 'entry': str(round(detail['close'], 2)),
+                    'stop': str(round(stop, 2)), 'ts': int(time.time()),
+                })
+            ib.disconnect()
+        except Exception as e:
+            print(f">>> IBKR unavailable (signal logged, no order): {e}")
+            log_dynamo(dynamo, f"TRADE#{TRADE_SYMBOL}", today, {
+                'side': 'BUY', 'status': 'SKIPPED_IBKR_DOWN', 'reason': str(e)[:80],
+                'ts': int(time.time()),
+            })
 
-    ib.disconnect()
-    print("done")
 
 if __name__ == '__main__':
     main()
