@@ -214,10 +214,8 @@ with tab_road:
 |---|---|
 | 1 | Paper-trade the live loop (watch for first signal) |
 | 2 | Walk-forward / out-of-sample backtest (confirm PF not overfit) |
-| 3 | Stocks module — Robinhood Agentic (fractional, low-risk real money) |
-| 4 | Schwab API (stocks/options) — approval pending |
-| 5 | Intraday futures (CME sub) — once capital/risk is sorted |
-| 6 | Options module — after Robinhood upgrade or Schwab |
+| 3 | Intraday futures (CME sub) — once capital/risk is sorted |
+| 4 | Options module — Robinhood Level 2 (CSP→CC wheel under evaluation) |
 """)
 
     st.markdown("#### ❌ Tabled / blocked")

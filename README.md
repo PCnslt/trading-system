@@ -5,7 +5,7 @@
 ## Architecture
 - **Data lake:** DynamoDB (hot) + S3 parquet (cold) — the compounding asset
 - **Strategy engine:** per-market Python modules + Pine Script research on TradingView
-- **Execution:** IBKR (futures) · Charles Schwab (stocks/options) · Robinhood (crypto)
+- **Execution:** IBKR (futures) · Robinhood (options)
 - **Dashboard:** Streamlit, read-only cockpit + 3 safe controls (pause/flatten/kill)
 - **Orchestration:** Hermes (cron + gateway) on the VPS
 
