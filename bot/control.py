@@ -20,8 +20,6 @@ default to RUNNING (which would let a bot trade blind). `get_control` raises
 import os
 import time
 
-from ib_insync import MarketOrder
-
 CONTROL_PK = 'CONTROL'
 CONTROL_SK = 'system'
 
@@ -166,7 +164,13 @@ def flatten_ibkr(ib, symbols, table, tags, today, mode='PAPER'):
     This is the GLOBAL kill-switch path: flattening a shared symbol (e.g. MES)
     also closes another bot's position in the same account, which is exactly
     what an emergency flatten should do.
+
+    MarketOrder is imported lazily: control.py is also imported by the
+    dashboard, whose Streamlit ScriptRunner thread has no asyncio event loop,
+    and importing ib_insync there raises at module scope.
     """
+    from ib_insync import MarketOrder
+
     ib.sleep(1)  # let reqPositions populate after connect
     for o in list(ib.openOrders()):
         if o.contract.symbol in symbols and o.order.orderType == 'STP':
