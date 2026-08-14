@@ -161,37 +161,54 @@ with tab_arch:
                     │      RESEARCH / DATA        │
                     │  TradingView (charts/Pine)  │
                     │  yfinance ES=F · AlphaVantage│
-                    │  Binance.US · Serper         │
+                    │  Binance.US (crypto data)   │
                     └──────────────┬──────────────┘
                                    │ signals / data
                                    ▼
-┌───────────────────────────────────────────────────────────┐
-│               AWS VPS (t3.small, us-east-1, 24/7)         │
-│                                                           │
-│  IB Gateway + IBC  (auto-login · auto-restart · API :4002)│
-│                                                           │
-│  ┌──────────┐  ┌────────────┐  ┌───────────────┐         │
-│  │ live.py  │→ │ RISK ENGINE│→ │ IBKR execution│         │
-│  │ bot cron │  │ sizing·halt│  │  (paper MES)  │         │
-│  │ 23:00 UTC│ └────────────┘  └───────────────┘         │
-│  └──────────┘                                            │
-│                                                           │
-│  Data lake: DynamoDB `trading-data` + S3 `trading-datalake`│
-│  Hermes ops agent (Telegram) · Dashboard :8501            │
-│  Secrets: .env + SSM (never in git)                       │
-└───────────────────────────────────────────────────────────┘
-         ▲                        │ alerts / results
-   control (SSH)                  ▼
-  ┌────────────┐          ┌──────────────┐
-  │  Laptop    │          │ Telegram bot │
-  │  (admin)   │          │ (control)    │
-  └────────────┘          └──────────────┘
+┌───────────────────────────────────────────────────────────────┐
+│               AWS VPS (t3.small · us-east-1 · 24/7)           │
+│                                                               │
+│   IB Gateway + IBC (auto-login · auto-restart · API :4002)    │
+│   Real-time CME/CBOT L1 → paper DUR193467 (marketDataType=1)  │
+│                                                               │
+│   ┌── bot/control.py (kill switch) ──────────────────────────┐│
+│   │  RUNNING/PAUSED/KILLED · flatten — read by ALL 3 bots    ││
+│   │  BEFORE any order (fail-closed if unreadable)            ││
+│   └───────────────────────┬──────────────────────────────────┘│
+│                           ▼                                    │
+│   ┌── BOTS (Hermes cron) ──────────────┐   ┌───────────────┐  │
+│   │ live.py · index MES/MNQ · 23:00    │   │  RISK ENGINE  │  │
+│   │   Donchian trend + RSI2 dip        │──▶│ budget sleeve │  │
+│   │ live_bondsfx.py · ZB/ZN · 23:05    │   │ loss halt     │  │
+│   │   fade-short (RSI2 / Bollinger)    │──▶│ fail-closed   │  │
+│   │ live_intraday.py · MES · */15 RTH  │   │               │  │
+│   │   FADESHORT + DONCH15 · EOD flatten│──▶└───────┬───────┘  │
+│   └────────────────────────────────────┘          ▼            │
+│                                          ┌───────────────┐    │
+│                                          │ IBKR execution│    │
+│                                          │   (paper)     │    │
+│                                          └───────────────┘    │
+│   Guards: cross-bot stand-down (intraday defers if daily      │
+│   bot holds MES) · same-day RUN# dedupe (Hermes cron only)    │
+│                                                               │
+│   Data lake: DynamoDB `trading-data` + S3 `trading-datalake`  │
+│   Dashboard :8501 · Hermes ops agent (Telegram)               │
+│   Secrets: .env + SSM (never in git)                          │
+│   Brokers: IBKR=futures · Robinhood=options L2 ·              │
+│            Binance.US=crypto data (tabled) · Schwab DROPPED   │
+└───────────────────────────────────────────────────────────────┘
+         ▲                         │ alerts / results
+   control (webhook :8644)         ▼
+  ┌────────────┐           ┌───────────────┐
+  │  Laptop    │           │ Telegram bot  │
+  │  (admin)   │           │ (observability)│
+  └────────────┘           └───────────────┘
 """, language="text")
 
 # ============================ ROADMAP TAB ============================
 with tab_road:
     st.subheader("Build roadmap & checklist")
-    st.caption("Phase 1 = futures (paper). Stocks/options/futures live next. Crypto tabled for last.")
+    st.caption("Phase 1 = futures (paper). 100% paper until edges earn trust. Stocks/options/futures live next. Crypto tabled.")
 
     st.markdown("#### ✅ Done")
     st.markdown("""
@@ -201,8 +218,13 @@ with tab_road:
 | Infra | CloudFormation IaC + SSM secrets |
 | IBKR | **IBC automation** — auto-login, API :4002, daily auto-restart (no re-auth), weekly 2FA |
 | IBKR | Execution validated — MES paper round-trip filled |
-| Bot | `live.py` — entry/exit/stop, daily trailing, SMA200 exit |
+| IBKR | Real-time CME/CBOT L1 → paper DUR193467 (marketDataType=1) |
+| Bot | `live.py` — index futures MES/MNQ (Donchian trend + RSI2 dip), 23:00 UTC |
+| Bot | `live_bondsfx.py` — bonds ZB/ZN fade-short (RSI2 / Bollinger), 23:05 UTC |
+| Bot | `live_intraday.py` — intraday MES (FADESHORT + DONCH15), */15 RTH |
+| Bot | Kill switch (bot/control.py) + cross-bot guard + same-day RUN# dedupe |
 | Bot | Risk engine — budget sleeve, loss halt, fail-closed |
+| Strategy | Walk-forward/OOS — Donchian long OOS PF 2.08/2.16 (ES/NQ, n=59/53); ADX long 2.55/1.77 (n=10/11, thin) |
 | Strategy | ES breakout backtest — PF 2.73, MaxDD -7.9% |
 | Data | DynamoDB + S3 lake, crypto/equities ingest live |
 | Ops | VPS Hermes synced + self-checking (Telegram operator) |
@@ -212,19 +234,21 @@ with tab_road:
     st.markdown("""
 | # | Item |
 |---|---|
-| 1 | Paper-trade the live loop (watch for first signal) |
-| 2 | Walk-forward / out-of-sample backtest (confirm PF not overfit) |
-| 3 | Intraday futures (CME sub) — once capital/risk is sorted |
-| 4 | Options module — Robinhood Level 2 (CSP→CC wheel under evaluation) |
+| 1 | Paper-trade the live loop — first signals: index 23:00 UTC + bonds 23:05 UTC tonight, intraday Mon 13:30 UTC |
+| 2 | Risk-engine daily-loss auto-cap → wire record_fill/close accounting (follow-up, not blocking) |
 """)
+    st.caption("Known gap (honest): daily-loss auto-cap is stateless — record_fill/close "
+               "accounting not wired yet, so the halt can't trigger until it is.")
 
     st.markdown("#### ❌ Tabled / blocked")
     st.markdown("""
 | Item | Why |
 |---|---|
-| Crypto | User doesn't trust it yet — deferred until stocks/options/futures are live |
-| Live futures | Needs ~$1.3k+ on IBKR (or discount-broker day-margin) — capital decision pending |
+| Crypto | User doesn't trust it — deferred (Binance.US = data only) |
+| Live futures | Capital HOLD — 100% paper until edges earn trust (several clean paper signals first) |
 | Discount-broker day-margin | High leverage (~195×) = account-wipeout risk — user rejected |
+| Options module (Robinhood L2) | Deferred until futures paper edge trusted |
+| Schwab API | Dropped (futures=IBKR, options=Robinhood L2) |
 """)
 
 st.caption(f"Updated {dt.datetime.now(dt.UTC).strftime('%Y-%m-%d %H:%M')} UTC · Data: DynamoDB `trading-data` · S3 `trading-datalake-920641308584`")
