@@ -35,7 +35,9 @@ import boto3
 from dotenv import load_dotenv
 
 from risk import RiskEngine, RiskConfig
-from control import get_control, control_state, wants_flatten, clear_flatten, flatten_ibkr, already_ran_today, mark_ran_today
+from control import (get_control, control_state, control_allows_entry, wants_flatten,
+                     clear_flatten, flatten_ibkr, already_ran_today, mark_ran_today,
+                     ControlUnavailable, account_mode_ok)
 
 load_dotenv()
 
@@ -229,7 +231,7 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
             print(f">>> {mode} {tag} hold pos={pos} held={held}d | "
                   f"close {detail['close']:.1f} {strat['label']}")
     elif entry:
-        if control_state(ctrl or {}) != 'RUNNING':
+        if not control_allows_entry(ctrl or {}):
             print(f">>> {mode} {tag} no entry — control state {control_state(ctrl or {})}")
             return
         risk = RiskEngine(RiskConfig(risk_budget_usd=RISK_BUDGET))
@@ -289,8 +291,21 @@ def main():
         return
 
     try:
-        # 3. control plane — honour kill/pause/flatten BEFORE any order
-        ctrl = get_control(dynamo)
+        # 3. account guard — refuse orders on paper/live mismatch (fail-closed)
+        ok, why = account_mode_ok(mode, ib.managedAccounts())
+        if not ok:
+            print(f"[{today}] {mode} HALT — {why}")
+            return
+
+        # 4. control plane — honour kill/pause/flatten BEFORE any order (fail-closed)
+        try:
+            ctrl = get_control(dynamo)
+        except ControlUnavailable as e:
+            print(f"[{today}] {mode} HALT — control state unavailable (fail-closed): {e}")
+            return
+        if control_state(ctrl) is None:
+            print(f"[{today}] {mode} HALT — unknown control state (fail-closed)")
+            return
         if wants_flatten(ctrl):
             all_tags = [f"{c['symbol']}_{s['name']}" for c in CONTRACTS for s in STRATEGIES]
             flatten_ibkr(ib, [c['symbol'] for c in CONTRACTS], dynamo, all_tags, today, mode)

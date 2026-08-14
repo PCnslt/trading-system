@@ -13,7 +13,7 @@ table = boto3.resource('dynamodb', region_name=REGION).Table(TABLE)
 # 1. Control state
 ctrl = table.get_item(Key={'pk': 'CONTROL', 'sk': 'system'}).get('Item') or {}
 print("=== CONTROL/system ===")
-print(ctrl if ctrl else "(missing -> treated as RUNNING)")
+print(ctrl if ctrl else "(missing -> bots HALT (fail-closed); set a state to trade)")
 
 # 2. Open positions (POSITION#* with pos != 0)
 print("\n=== OPEN POSITIONS (pos != 0) ===")

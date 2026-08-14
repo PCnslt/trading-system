@@ -13,29 +13,62 @@ Every bot reads it each run and honours it BEFORE placing any order:
   flatten  — one-shot: flatten every open position now (the dashboard
              'Flatten positions' button). Cleared once a bot honours it.
 
-Fail-closed: callers treat a missing/unreadable control item as RUNNING only
-when the read itself returns empty; if get_item raises, the caller must halt.
-The helpers here never raise — they return empty on read error so callers can
-decide (bots check `control_state` and, on KILLED, flatten and return).
+Fail-closed: an unreadable OR missing control item must HALT the caller, never
+default to RUNNING (which would let a bot trade blind). `get_control` raises
+`ControlUnavailable` in both cases; bots catch it and return before any order.
 """
+import os
 import time
 
 CONTROL_PK = 'CONTROL'
 CONTROL_SK = 'system'
 
+VALID_STATES = {'RUNNING', 'PAUSED', 'KILLED'}
+PAPER_ACCOUNT_IDS = set(os.getenv('PAPER_ACCOUNTS', 'DUR193467').split(','))
+
+
+class ControlUnavailable(Exception):
+    """Control state unreadable or missing — callers must HALT (fail-closed)."""
+
 
 def get_control(table):
-    """Read CONTROL/system. Returns {} on any error (caller decides fail-closed)."""
+    """Read CONTROL/system. RAISES ControlUnavailable on read error OR missing item.
+
+    Callers must treat the exception as a halt — never trade on an unknown
+    control state.
+    """
     try:
         r = table.get_item(Key={'pk': CONTROL_PK, 'sk': CONTROL_SK})
-        return r.get('Item') or {}
     except Exception as e:  # pragma: no cover - network failure
-        print(f"[control] get_control read failed (fail-closed): {e}")
-        return {}
+        raise ControlUnavailable(f"control read failed: {e}") from e
+    item = r.get('Item')
+    if not item:
+        raise ControlUnavailable("CONTROL/system item missing")
+    return item
 
 
 def control_state(ctrl):
-    return ctrl.get('state', 'RUNNING')
+    """Control state, or None if unknown/missing (fail-closed)."""
+    s = ctrl.get('state')
+    return s if s in VALID_STATES else None
+
+
+def control_allows_entry(ctrl):
+    """True only when the control plane explicitly says RUNNING (fail-closed)."""
+    return control_state(ctrl) == 'RUNNING'
+
+
+def account_mode_ok(mode, account_ids):
+    """(ok, reason): refuse orders on account/mode mismatch (paper vs live)."""
+    ids = list(account_ids or [])
+    if mode == 'LIVE':
+        if any(a in PAPER_ACCOUNT_IDS for a in ids):
+            return False, f"PAPER account {ids} with LIVE mode — refusing orders"
+        return True, "ok"
+    # PAPER mode
+    if any(a in PAPER_ACCOUNT_IDS for a in ids):
+        return True, "ok"
+    return False, f"LIVE account {ids} with PAPER mode — refusing orders"
 
 
 def wants_flatten(ctrl):
