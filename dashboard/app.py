@@ -160,108 +160,188 @@ with tab_live:
 
 # ============================ ARCHITECTURE TAB ============================
 with tab_arch:
-    st.subheader("System architecture")
-    st.code("""
-                    ┌─────────────────────────────┐
-                    │      RESEARCH / DATA        │
-                    │  TradingView (charts/Pine)  │
-                    │  yfinance ES=F · AlphaVantage│
-                    │  Binance.US (crypto data)   │
-                    └──────────────┬──────────────┘
-                                   │ signals / data
-                                   ▼
-┌───────────────────────────────────────────────────────────────┐
-│               AWS VPS (t3.small · us-east-1 · 24/7)           │
-│                                                               │
-│   IB Gateway + IBC (auto-login · auto-restart · API :4002)    │
-│   Real-time CME/CBOT L1 → paper DUR193467 (marketDataType=1)  │
-│                                                               │
-│   ┌── bot/control.py (kill switch) ──────────────────────────┐│
-│   │  RUNNING/PAUSED/KILLED · flatten — read by ALL 3 bots    ││
-│   │  BEFORE any order (fail-closed if unreadable)            ││
-│   └───────────────────────┬──────────────────────────────────┘│
-│                           ▼                                    │
-│   ┌── BOTS (Hermes cron) ──────────────┐   ┌───────────────┐  │
-│   │ live.py · index MES/MNQ · 23:00    │   │  RISK ENGINE  │  │
-│   │   Donchian trend + RSI2 dip        │──▶│ budget sleeve │  │
-│   │ live_bondsfx.py · ZB/ZN · 23:05    │   │ loss halt     │  │
-│   │   fade-short (RSI2 / Bollinger)    │──▶│ fail-closed   │  │
-│   │ live_intraday.py · MES · */15 RTH  │   │               │  │
-│   │   FADESHORT + DONCH15 · EOD flatten│──▶└───────┬───────┘  │
-│   └────────────────────────────────────┘          ▼            │
-│                                          ┌───────────────┐    │
-│                                          │ IBKR execution│    │
-│                                          │   (paper)     │    │
-│                                          └───────────────┘    │
-│   Guards: cross-bot stand-down (intraday defers if daily      │
-│   bot holds MES) · same-day RUN# dedupe (Hermes cron only)    │
-│                                                               │
-│   Data lake: DynamoDB `trading-data` + S3 `trading-datalake`  │
-│   Dashboard :8501 · Hermes ops agent (Telegram)               │
-│   Secrets: .env + SSM (never in git)                          │
-│   Brokers: IBKR=futures · Robinhood=options L2 ·              │
-│            Binance.US=crypto data (tabled) · Schwab DROPPED   │
-└───────────────────────────────────────────────────────────────┘
-         ▲                         │ alerts / results
-   control (webhook :8644)         ▼
-  ┌────────────┐           ┌───────────────┐
-  │  Laptop    │           │ Telegram bot  │
-  │  (admin)   │           │ (observability)│
-  └────────────┘           └───────────────┘
-""", language="text")
+    st.subheader("System architecture — TARGET (current vs target annotated)")
+    st.caption("This is the target layered design, NOT the as-built state. Layers 2–7 are the hardening "
+               "being added — current code skips straight from strategy → IBKR.")
+
+    st.code("""                        RESEARCH / DATA
+        ┌───────────────────────────────────────────────┐
+        │  TradingView (charts / Pine)                  │
+        │  yfinance ES=F · AlphaVantage · Binance.US    │
+        │  Serper (news) · S3 research datasets         │
+        └──────────────────────┬────────────────────────┘
+                               │ data / signals
+                               ▼
+                     ┌─────────────────────┐
+                     │  STRATEGY RUNNER     │
+                     │  (3 bots, Hermes cron)│
+                     │  live.py        23:00 │  index MES/MNQ (Donchian + RSI2)
+                     │  live_bondsfx   23:05 │  bonds ZB/ZN (fade-short)
+                     │  live_intraday  */15  │  intraday MES (RTH)
+                     └──────────┬──────────┘
+                                │ TradeIntent (deterministic signal_id/intent_id)
+                                ▼
+                     ┌──────────────────────┐
+                     │ RISK / ADMISSION      │
+                     │  kill switch (fail-   │
+                     │   closed)             │
+                     │  daily loss cap       │
+                     │  portfolio/inst/strat │
+                     │   limits              │
+                     │  stale-signal + data- │
+                     │   health gate         │
+                     │  session + account-id │
+                     │  dedupe / idempotency │
+                     └──────────┬───────────┘
+                                │ approved intent
+                                ▼
+                     ┌──────────────────────┐
+                     │ EXECUTION MANAGER     │
+                     │  order lifecycle      │
+                     │  idempotency          │
+                     │  partial fills        │
+                     │  cancel/replace       │
+                     │  timeout → UNKNOWN    │
+                     └──────────┬───────────┘
+                                ▼
+                        ┌──────────────┐
+                        │    IBKR      │
+                        │ Gateway :4002│
+                        │ (paper MES)  │
+                        └──────┬───────┘
+                               │
+                 +─────────────+─────────────+
+                 ▼                           ▼
+            Orders / Fills              Positions
+                 │                           │
+                 +─────────────+─────────────+
+                               ▼
+                     ┌──────────────────────┐
+                     │ RECONCILIATION        │
+                     │ broker truth vs       │
+                     │ internal state        │
+                     └──────────┬───────────┘
+                                │
+                +───────────────+───────────────+
+                ▼                               ▼
+        ┌──────────────┐               ┌───────────────┐
+        │ OPERATIONAL   │               │ RISK LEDGER   │
+        │ STATE         │               │ (persistent)  │
+        │ DynamoDB:     │               │ daily P&L     │
+        │ intents/orders│               │ exposure      │
+        │ positions     │               │ loss limits   │
+        └──────┬───────┘               │ equity        │
+               │                       └──────┬────────┘
+               +──────────────+───────────────+
+                              ▼
+                    ┌──────────────────────┐
+                    │ OBSERVABILITY         │
+                    │  Dashboard :8501      │
+                    │  Telegram (user)      │
+                    │  heartbeats + alerts  │
+                    └──────────────────────┘
+
+     CONTROL PLANE (out-of-band, fail-closed)
+     ┌──────────────┐      ┌───────────────────────┐
+     │ Laptop       │ ───▶ │ Webhook :8644 (HMAC)  │
+     │ (director)   │      │ → VPS Hermes (exec)   │
+     └──────────────┘      └───────────────────────┘
+             ▲                       │
+             └──── Telegram group ────┘  (user visibility, not transport)""", language="text")
+
+    st.markdown("#### Current → Target delta")
+    st.markdown("""
+- no TradeIntent layer → add it (strategies express intent, don't call broker)
+- no Execution Manager → centralize order submission (idempotency, timeout=UNKNOWN)
+- no Reconciliation → broker = source of truth for positions/orders/fills
+- risk state stateless per-run → persistent Risk Ledger
+- control plane fail-open → fail-closed (unreadable state = HALT) ✅ **[NOW DONE]**
+- no fill verification → verify fill before writing position/stop ✅ **[NOW DONE]**
+""")
 
 # ============================ ROADMAP TAB ============================
 with tab_road:
     st.subheader("Build roadmap & checklist")
-    st.caption("Phase 1 = futures (paper). 100% paper until edges earn trust. Stocks/options/futures live next. Crypto tabled.")
+    st.caption("Phase 1 = futures (paper). 100% paper until edges earn trust. Crypto tabled.")
 
-    st.markdown("#### ✅ Done")
+    st.markdown("#### ✅ Checklist (current state)")
     st.markdown("""
-| Area | Item |
-|---|---|
-| Infra | EC2 t3.small + 2GB swap + Elastic IP |
-| Infra | CloudFormation IaC + SSM secrets |
-| IBKR | **IBC automation** — auto-login, API :4002, daily auto-restart (no re-auth), weekly 2FA |
-| IBKR | Execution validated — MES paper round-trip filled |
-| IBKR | Real-time CME/CBOT L1 → paper DUR193467 (marketDataType=1) |
-| Bot | `live.py` — index futures MES/MNQ (Donchian trend + RSI2 dip), 23:00 UTC |
-| Bot | `live_bondsfx.py` — bonds ZB/ZN fade-short (RSI2 / Bollinger), 23:05 UTC |
-| Bot | `live_intraday.py` — intraday MES (FADESHORT + DONCH15), */15 RTH |
-| Bot | Kill switch (bot/control.py) + cross-bot guard + same-day RUN# dedupe |
-| Bot | Risk engine — budget sleeve, loss halt, fail-closed |
-| Strategy | Walk-forward/OOS — Donchian long OOS PF 2.08/2.16 (ES/NQ, n=59/53); ADX long 2.55/1.77 (n=10/11, thin) |
-| Strategy | ES breakout backtest — PF 2.73, MaxDD -7.9% |
-| Data | DynamoDB + S3 lake, crypto/equities ingest live |
-| Ops | VPS Hermes synced + self-checking (Telegram operator) |
+| Area | Item | Status |
+|---|---|---|
+| Infra | EC2 t3.small (us-east-1) + 2GB swap + Elastic IP (52.7.95.127) | done |
+| Infra | CloudFormation IaC + SSM secrets | done |
+| Infra | DynamoDB `trading-data` + S3 `trading-datalake-920641308584` | done |
+| Infra | Hermes gateway (systemd) + webhook :8644 (laptop→VPS) | done |
+| IBKR | IBC 3.24.1 auto-login (build 10.45.1j), API :4002, daily restart + weekly 2FA | done |
+| IBKR | MES paper round-trip filled | done |
+| IBKR | Real-time CME/CBOT L1 → paper DUR193467 | done |
+| Bots | live.py (index MES/MNQ, 23:00 UTC) | done |
+| Bots | live_bondsfx.py (bonds ZB/ZN, 23:05 UTC) | done |
+| Bots | live_intraday.py (intraday MES, */15 RTH) | done |
+| Bots | Kill switch (control.py) read by all 3 bots before order | done |
+| Bots | Cross-bot guard (intraday stands down if daily holds MES) | done |
+| Bots | Same-day RUN# dedupe guard | done |
+| Bots | Control plane fail-open → fail-closed | done (0b769c9) |
+| Bots | Dashboard set_control flag-wipe → read-modify-write | done (2f5ba70) |
+| Bots | Flatten per-bot → global (ack-based) | done (766b694) |
+| Bots | Risk-engine guardrails dead code → wired + persistent | done (0e66637) |
+| Bots | Sizing cap silent breach → enforced (returns 0) | done (434cca1) |
+| Bots | Exit race double-fill → cancel-then-close | done (40eefb9) |
+| Bots | Non-deterministic hash() → hashlib.md5 | done (2b4906f) |
+| Bots | _reconcile must not flatten daily MES | done (3f53bbe) |
+| Bots | Fill verification before writing position/stop | done (0858c77) |
+| Bots | MarketOrder/StopOrder to module scope (latent NameError) | done (b9576e7) |
+| Bots | status_report sk time parsing | done (9a14de8) |
+| Bots | datetime.utcnow() → timezone-aware | done (614a47b) |
+| Bots | pytest suite (47 safety-invariant + regression tests) | done (fc99d8f) |
+| Bots | Dashboard crash: lazy-import ib_insync in control.py | done (e68ee33) |
+| Risk | Persistent risk state (survive restart) | next phase |
+| Risk | Daily loss cap fully functional end-to-end | next phase |
+| Strategy | ES breakout backtest PF 2.73, MaxDD -7.9% | done |
+| Strategy | Walk-forward/OOS: Donchian long PF 2.08/2.16 (ES/NQ n=59/53), ADX 2.55/1.77 (thin) | done |
+| Strategy | Paper forward-testing (first signals 23:00/23:05 UTC; intraday Mon) | in progress |
+| Data | Broker reconciliation (startup + periodic + reconnect) | next phase |
+| Data | Data-health gate + stale-signal gate | next phase |
+| Obs | Streamlit dashboard :8501 (Live + Architecture + Roadmap) | done |
+| Obs | Telegram group (user visibility) | done |
+| Obs | Daily summary 23:45, health watchdog */30, weekly scan | done |
+| Obs | Heartbeats, severity levels, correlation IDs, daily report | next phase |
+| Ops | Cron split (data=crontab, bots=Hermes cron) | done |
+| Ops | Verify ideas online before proposing/implementing | standing rule |
 """)
-
-    st.markdown("#### 🔄 In progress / next")
-    st.markdown("""
-| # | Item |
-|---|---|
-| 1 | Paper-trade the live loop — first signals: index 23:00 UTC + bonds 23:05 UTC tonight, intraday Mon 13:30 UTC |
-| 2 | ~~Risk-engine daily-loss auto-cap~~ ✅ DONE — record_fill/close wired + one persistent engine per run |
-""")
-
-    st.markdown("#### 🗺️ Next phase (architecture review — roadmap, do NOT start wholesale)")
-    st.markdown("""
-1. **Persistent broker reconciliation** — broker is source of truth for positions/orders/fills; reconcile at startup + periodic + after reconnect.
-2. **Central execution manager + idempotent TradeIntent** — strategy → intent → risk → execution → broker; deterministic signal_id/intent_id; timeout=UNKNOWN (never infer fill from local state).
-3. **Persistent portfolio-level risk state** — survive restart; daily P&L ledger, loss limits, exposure.
-""")
-    st.caption("Go-live checklist = promotion gates (§59): strategy validity → execution validity → risk validity → "
-               "operational validity → paper validation → shadow mode → micro-live. Keep single-host (no k8s/microservices). "
-               "Remaining gap (honest): daily-loss auto-cap is per-run, not persisted across restarts — that is next-phase item 3.")
 
     st.markdown("#### ❌ Tabled / blocked")
     st.markdown("""
 | Item | Why |
 |---|---|
-| Crypto | User doesn't trust it — deferred (Binance.US = data only) |
-| Live futures | Capital HOLD — 100% paper until edges earn trust (several clean paper signals first) |
-| Discount-broker day-margin | High leverage (~195×) = account-wipeout risk — user rejected |
-| Options module (Robinhood L2) | Deferred until futures paper edge trusted |
-| Schwab API | Dropped (futures=IBKR, options=Robinhood L2) |
+| Crypto | user distrust — deferred |
+| Live futures | needs capital + proven edge |
+| Options (Robinhood L2) | defer until futures edge trusted |
+| Schwab API | dropped (not needed) |
+| Discount-broker day-margin | rejected (wipeout risk) |
+""")
+
+    st.markdown("#### 🗺️ Roadmap (phased)")
+    st.markdown("""
+- **Phase 0** — now: 9 defect fixes + safety-invariant tests (DONE, 42f238a..e68ee33).
+- **Phase 1** — Persistent risk ledger: restart-safe daily P&L, loss limits, persistent risk state.
+- **Phase 2** — Execution manager + idempotent TradeIntent: strategy → intent → risk → execution → broker; deterministic IDs; timeout=UNKNOWN.
+- **Phase 3** — Broker reconciliation: broker = truth for positions/orders/fills; startup + periodic + post-reconnect.
+- **Phase 4** — Contract/session/data layer: contract resolver, rollover, session calendar, data-health + stale-signal gates.
+- **Phase 5** — Portfolio-level risk: net/gross exposure, per-instrument/strategy limits.
+- **Phase 6** — Observability: heartbeats, health states, incident severity, daily report, correlation IDs.
+- **Phase 7** — Chaos tests: break gateway/network/DB/market-data/orders; verify safe state.
+""")
+
+    st.markdown("#### 🎯 Promotion gates → live (only after all above)")
+    st.markdown("""
+1. Strategy validity (OOS, fees, slippage, sensitivity, regime, correlation)
+2. Execution validity (exec manager, order state machine, idempotency)
+3. Risk validity (persistent ledger, functional caps, kill + flatten verified)
+4. Operational validity (restart-safe, reconciliation, heartbeats, monitoring)
+5. Paper validation (min days/trades, no reconciliation incidents, fill quality)
+6. Shadow mode (real signals, no submission)
+7. Micro-live (min size, hard loss limit, tested kill + rollback)
 """)
 
 st.caption(f"Updated {dt.datetime.now(dt.UTC).strftime('%Y-%m-%d %H:%M')} UTC · Data: DynamoDB `trading-data` · S3 `trading-datalake-920641308584`")
