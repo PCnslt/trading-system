@@ -46,6 +46,7 @@ from dotenv import load_dotenv
 from ib_insync import IB, Future, MarketOrder, StopOrder
 
 from risk import RiskEngine, RiskConfig, realized_pnl
+from execution import confirm_fill
 from intraday_scan import load_ibkr_bars, prep_rth
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, ControlUnavailable,
@@ -350,21 +351,28 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
                 return
             nside = 'SHORT' if entry_side == -1 else 'LONG'
             action = 'SELL' if entry_side == -1 else 'BUY'
-            ib.placeOrder(con, MarketOrder(action, size, tif='DAY'))
-            ib.sleep(1)
+            trade = ib.placeOrder(con, MarketOrder(action, size, tif='DAY'))
+            filled, avg_px, fstatus = confirm_fill(ib, trade)
+            if filled <= 0:
+                print(f">>> {mode} {tag} ENTRY NOT FILLED (status={fstatus}) — no state written")
+                return
+            if filled < size:
+                print(f">>> {mode} {tag} PARTIAL fill {filled}/{size} — writing actual qty")
+                size = filled
+            entry_px_filled = avg_px if avg_px > 0 else detail['close']
             if strat['has_stop_order']:
                 saction = 'BUY' if entry_side == -1 else 'SELL'
                 ib.placeOrder(con, StopOrder(saction, size, stop_px, tif='DAY'))
             risk.record_fill()
             log_dynamo(dynamo, f"TRADE#{tag}", now.isoformat(), {
-                'side': nside, 'qty': size, 'entry': str(round(detail['close'], 2)),
+                'side': nside, 'qty': size, 'entry': str(round(entry_px_filled, 2)),
                 'stop': str(round(stop_px, 2)), 'contract': front_month(),
                 'strategy': sname, 'ts': int(time.time())})
             log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
                 'pos': size, 'side': nside, 'stop': str(round(stop_px, 2)),
-                'entry': str(round(detail['close'], 2)), 'entry_ts': now.isoformat(),
+                'entry': str(round(entry_px_filled, 2)), 'entry_ts': now.isoformat(),
                 'session_date': today, 'contract': front_month(), 'ts': int(time.time())})
-            print(f">>> {mode} {tag} ENTRY: {nside} {size} @ market, "
+            print(f">>> {mode} {tag} ENTRY: {nside} {size} @ {round(entry_px_filled, 2)}, "
                   f"stop {round(stop_px, 1)} ({ereason})")
         else:
             gate = 'EOD' if eod else ('entry-cutoff' if not entry_allowed else 'no-signal')

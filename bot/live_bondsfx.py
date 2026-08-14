@@ -50,6 +50,7 @@ import boto3
 from dotenv import load_dotenv
 
 from risk import RiskEngine, RiskConfig, realized_pnl
+from execution import confirm_fill
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, already_ran_today,
                      mark_ran_today, ControlUnavailable, account_mode_ok)
@@ -252,18 +253,25 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
         stop_price = strat['stop'](detail)       # above entry (short)
         size = risk.position_size(stop_price - detail['close'], point_value=c['point_value'])
         if size > 0:
-            ib.placeOrder(con, MarketOrder('SELL', size, tif='DAY'))  # sell-to-open short
-            ib.sleep(1)
+            trade = ib.placeOrder(con, MarketOrder('SELL', size, tif='DAY'))  # sell-to-open short
+            filled, avg_px, fstatus = confirm_fill(ib, trade)
+            if filled <= 0:
+                print(f">>> {mode} {tag} ENTRY NOT FILLED (status={fstatus}) — no state written")
+                return
+            if filled < size:
+                print(f">>> {mode} {tag} PARTIAL fill {filled}/{size} — writing actual qty")
+                size = filled
+            entry_px_filled = avg_px if avg_px > 0 else detail['close']
             risk.record_fill()
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
-                'side': 'SELL', 'qty': size, 'entry': str(round(detail['close'], 4)),
+                'side': 'SELL', 'qty': size, 'entry': str(round(entry_px_filled, 4)),
                 'stop': str(round(stop_price, 4)), 'contract': front_month(),
                 'strategy': sname, 'ts': int(time.time())})
             log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
                 'pos': size, 'stop': str(round(stop_price, 4)),
-                'entry': str(round(detail['close'], 4)),
+                'entry': str(round(entry_px_filled, 4)),
                 'entry_date': today, 'contract': front_month(), 'ts': int(time.time())})
-            print(f">>> {mode} {tag} ENTRY: SELL {size} @ market (fade rally), "
+            print(f">>> {mode} {tag} ENTRY: SELL {size} @ {round(entry_px_filled, 4)} (fade rally), "
                   f"stop {round(stop_price, 4)} ({ereason})")
         else:
             print(f">>> {mode} {tag} size=0 (stop too wide for budget), skip")

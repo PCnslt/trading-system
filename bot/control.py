@@ -182,7 +182,23 @@ def flatten_ibkr(ib, symbols, table, tags, today, mode='PAPER'):
                 ib.placeOrder(p.contract, MarketOrder(action, qty, tif='DAY'))
             except Exception as e:
                 print(f"[control] close {p.contract.symbol} failed: {e}")
-    ib.sleep(1)
+
+    # Never declare FLAT until the broker confirms flat. Poll positions briefly;
+    # if anything is still open, leave state intact so the next run retries.
+    flat = False
+    remaining = []
+    for _ in range(10):   # up to ~5s
+        remaining = [p for p in ib.positions()
+                     if p.contract.symbol in symbols and int(p.position) != 0]
+        if not remaining:
+            flat = True
+            break
+        ib.sleep(0.5)
+    if not flat:
+        print(f"[control] {mode} flatten NOT confirmed by broker — leaving state intact "
+              f"(will retry): {[(p.contract.symbol, p.position) for p in remaining]}")
+        return
+
     for tag in tags:
         table.put_item(Item={
             'pk': f'POSITION#{tag}', 'sk': 'current',
