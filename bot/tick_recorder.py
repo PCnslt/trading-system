@@ -73,8 +73,8 @@ class TickWriter:
         self.s3 = boto3.client('s3', region_name=AWS_REGION)
         self.table = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
 
-    def flush(self, buffer):
-        """Write one S3 JSONL batch + latest QUOTE# per symbol, then clear."""
+    def flush(self, buffer, latest):
+        """Write one S3 JSONL batch + latest QUOTE# per symbol, then clear ticks."""
         now = dt.datetime.now(dt.timezone.utc)
         date = now.strftime('%Y-%m-%d')
         ts = int(now.timestamp())
@@ -84,20 +84,22 @@ class TickWriter:
             lines = '\n'.join(json.dumps(t) for t in ticks) + '\n'
             key = f'futures-ticks/{sym}/{date}/{ts}.jsonl'
             self.s3.put_object(Bucket=S3_BUCKET, Key=key, Body=lines)
-            last = ticks[-1]
-            q = {'pk': f'QUOTE#{sym}', 'sk': 'latest',
-                 'bid': str(last['bid']), 'ask': str(last['ask']),
-                 'last': str(last['last']), 'ts': ts, 'ttl': ts + QUOTE_TTL_S}
-            for f in ('bidSize', 'askSize', 'lastSize', 'volume'):
-                if last.get(f) is not None:
-                    q[f] = str(last[f])
-            self.table.put_item(Item=q)
-            n = len(ticks)
             buffer[sym] = []
+        # latest-quote snapshot: most-recent non-None value per field (not just last tick)
+        for sym, lq in latest.items():
+            if not lq:
+                continue
+            q = {'pk': f'QUOTE#{sym}', 'sk': 'latest',
+                 'bid': str(lq.get('bid')), 'ask': str(lq.get('ask')),
+                 'last': str(lq.get('last')), 'ts': int(lq['ts']), 'ttl': int(lq['ts']) + QUOTE_TTL_S}
+            for f in ('bidSize', 'askSize', 'lastSize', 'volume'):
+                if lq.get(f) is not None:
+                    q[f] = str(lq[f])
+            self.table.put_item(Item=q)
         return
 
 
-def on_tick_factory(buffer):
+def on_tick_factory(buffer, latest):
     def on_tick(tickers):
         if not _in_rth():
             return
@@ -114,6 +116,11 @@ def on_tick_factory(buffer):
                    'last': last, 'lastSize': _num(t.lastSize),
                    'volume': _num(t.volume)}
             buffer[sym].append(rec)
+            lq = latest.setdefault(sym, {})
+            for f in ('bid', 'ask', 'last', 'bidSize', 'askSize', 'lastSize', 'volume'):
+                if rec.get(f) is not None:
+                    lq[f] = rec[f]
+            lq['ts'] = now
     return on_tick
 
 
@@ -130,7 +137,8 @@ def run_session():
 
     writer = TickWriter()
     buffer = defaultdict(list)
-    ib.pendingTickersEvent += on_tick_factory(buffer)
+    latest = {}
+    ib.pendingTickersEvent += on_tick_factory(buffer, latest)
 
     in_rth = _in_rth()
     log(f"RTH state at start: {'OPEN' if in_rth else 'CLOSED'} "
@@ -142,7 +150,7 @@ def run_session():
             if now_in_rth != in_rth:
                 in_rth = now_in_rth
                 log(f"RTH -> {'OPEN (recording)' if in_rth else 'CLOSED (idle)'}")
-            writer.flush(buffer)
+            writer.flush(buffer, latest)
     finally:
         ib.disconnect()
 
