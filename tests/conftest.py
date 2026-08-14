@@ -21,8 +21,13 @@ class FakeTable:
             return {'Item': dict(self.items[key])}
         return {}
 
-    def put_item(self, Item=None, **kwargs):
+    def put_item(self, Item=None, ConditionExpression=None, **kwargs):
         item = dict(Item or {})
+        if ConditionExpression and 'attribute_not_exists' in ConditionExpression:
+            pk = item.get('pk')
+            if any(k[0] == pk for k in self.items.keys()):
+                from hardening.exec_manager import ConditionalWriteConflict
+                raise ConditionalWriteConflict()
         self.put_calls.append(item)
         self.items[(item.get('pk'), item.get('sk'))] = item
         return item

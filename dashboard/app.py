@@ -303,6 +303,7 @@ with tab_road:
 | Bots | Non-deterministic hash() → hashlib.md5 | done (2b4906f) |
 | Bots | _reconcile must not flatten daily MES | done (3f53bbe) |
 | Bots | Fill verification before writing position/stop | done (0858c77) |
+| Bots | Execution manager (no strategy calls IBKR) + idempotent TradeIntent (signal_id conditional write) | done |
 | Bots | MarketOrder/StopOrder to module scope (latent NameError) | done (b9576e7) |
 | Bots | status_report sk time parsing | done (9a14de8) |
 | Bots | datetime.utcnow() → timezone-aware | done (614a47b) |
@@ -364,7 +365,7 @@ with tab_road:
 - **Screening CLOSED** — weekly scan paused; no new strategy screening.
 
 **Path to live capital (in order):**
-1. Execution-layer hardening — broker reconciliation ✅ DONE (Phase 2) + execution manager (Phase 3, next).
+1. Execution-layer hardening — broker reconciliation ✅ (Phase 2) + execution manager & idempotency ✅ (Phase 3).
 2. Persistent risk ledger — restart-safe daily P&L + loss cap. ✅ DONE (Phase 1)
 3. Paper-forward the index edge (live.py) until Gate 5 (paper validation) passes.
 4. Micro-live — min size, hard loss limit, tested kill.
@@ -373,8 +374,8 @@ with tab_road:
     st.markdown("#### 🎯 Promotion gates → live (only after all above)")
     st.markdown("""
 1. Strategy validity (OOS, fees, slippage, sensitivity, regime, correlation) — ✅ answered (index LONG = sole edge)
-2. Execution validity (exec manager, order state machine, idempotency)
-3. Risk validity (persistent ledger, functional caps, kill + flatten verified)
+2. Execution validity (exec manager, order state machine, idempotency) — ✅ done (Phase 3)
+3. Risk validity (persistent ledger, functional caps, kill + flatten verified) — ✅ done (Phase 1)
 4. Operational validity (restart-safe, reconciliation, heartbeats, monitoring)
 5. Paper validation (min days/trades, no reconciliation incidents, fill quality)
 6. Shadow mode (real signals, no submission)

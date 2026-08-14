@@ -34,15 +34,15 @@ import numpy as np
 import pandas as pd
 import boto3
 from dotenv import load_dotenv
-from ib_insync import IB, Future, MarketOrder, StopOrder
+from ib_insync import IB, Future
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.s3_archive import archive_daily_bar
 
 from risk import RiskEngine, RiskConfig, realized_pnl
-from execution import confirm_fill
 from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
 from hardening.reconciler import reconcile
+from hardening.exec_manager import ExecutionManager, TradeIntent
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, already_ran_today,
                      mark_ran_today, ControlUnavailable, account_mode_ok)
@@ -197,14 +197,9 @@ def _archive_daily_bar(c, df):
         print(f"[{c['symbol']}] daily bar archive failed: {e}")
 
 
-def stop_open(ib, sym):
-    """True if a GTC SELL stop order for sym is still resting."""
-    return any(o.contract.symbol == sym and o.order.action == 'SELL'
-               and o.order.orderType == 'STP' for o in ib.openOrders())
-
-
 # ===== per-strategy runner =====
-def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=None, risk=None):
+def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=None,
+                 risk=None, exec_mgr=None):
     sname = strat['name']
     tag = f"{sym}_{sname}"                       # e.g. MES_DONCHIAN, MES_RSI2
     state = get_state(dynamo, f"POSITION#{tag}", 'current') or {}
@@ -235,15 +230,21 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
     if pos > 0:
         should_exit, xreason = strat['exit'](detail, stop, held)
         if should_exit:
-            exit_px = detail['close']
-            # Cancel the resting GTC stop BEFORE the market close so the two
-            # orders can't race (stop fill vs exit fill) and double-fill.
-            if strat['has_stop_order']:
-                for o in ib.openOrders():
-                    if o.contract.symbol == sym and o.order.action == 'SELL' and o.order.orderType == 'STP':
-                        ib.cancelOrder(o)
-            ib.placeOrder(con, MarketOrder('SELL', pos, tif='DAY'))
-            ib.sleep(1)
+            # Cancel the resting GTC stop BEFORE the market close (race-free),
+            # then close via the execution manager (idempotent + fill-verified).
+            exit_intent = TradeIntent(scope='live', tag=tag, symbol=sym, action='SELL',
+                                      side='LONG', qty=pos, order_type='MKT', stop_price=0.0,
+                                      contract_month=front_month(), bar_time=today,
+                                      signal_reason=xreason)
+            res = exec_mgr.submit_exit(exit_intent, con, cancel_stop=strat['has_stop_order'])
+            if res.status == 'DUPLICATE':
+                print(f">>> {mode} {tag} duplicate exit signal — skip (idempotent)")
+                return
+            if res.status == 'UNKNOWN':
+                print(f">>> {mode} {tag} EXIT UNKNOWN (timeout) — not recording close; "
+                      f"reconcile will resolve")
+                return
+            exit_px = res.avg_px if res.avg_px > 0 else detail['close']
             if risk is not None and entry_px is not None:
                 risk.record_close(realized_pnl('LONG', entry_px, exit_px, c['point_value'], pos))
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
@@ -252,7 +253,7 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
             log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
                 'pos': 0, 'stop': '0', 'entry': '0', 'entry_date': '', 'ts': int(time.time())})
             print(f">>> {mode} {tag} EXIT {pos} ({xreason})")
-        elif strat['has_stop_order'] and not stop_open(ib, sym):
+        elif strat['has_stop_order'] and not exec_mgr.is_stop_open(sym, 'LONG'):
             # state long but GTC stop no longer resting -> filled intraday
             exit_px = stop if stop is not None else detail['close']
             if risk is not None and entry_px is not None:
@@ -279,17 +280,25 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
         stop_price = strat['stop'](detail)
         size = risk.position_size(detail['close'] - stop_price, point_value=c['point_value'])
         if size > 0:
-            trade = ib.placeOrder(con, MarketOrder('BUY', size, tif='DAY'))
-            filled, avg_px, fstatus = confirm_fill(ib, trade)
-            if filled <= 0:
-                print(f">>> {mode} {tag} ENTRY NOT FILLED (status={fstatus}) — no state written")
+            intent = TradeIntent(scope='live', tag=tag, symbol=sym, action='BUY',
+                                 side='LONG', qty=size, order_type='MKT',
+                                 stop_price=float(stop_price), contract_month=front_month(),
+                                 bar_time=today, signal_reason=ereason)
+            res = exec_mgr.submit_entry(intent, con, has_stop=strat['has_stop_order'])
+            if res.status == 'DUPLICATE':
+                print(f">>> {mode} {tag} duplicate signal {res.signal_id} — skip (idempotent)")
                 return
-            if filled < size:
-                print(f">>> {mode} {tag} PARTIAL fill {filled}/{size} — writing actual qty")
-                size = filled
-            entry_px_filled = avg_px if avg_px > 0 else detail['close']
-            if strat['has_stop_order']:
-                ib.placeOrder(con, StopOrder('SELL', size, stop_price, tif='GTC'))
+            if res.status == 'UNKNOWN':
+                print(f">>> {mode} {tag} ENTRY UNKNOWN (timeout) — no state written; "
+                      f"reconcile will resolve")
+                return
+            if res.filled_qty <= 0:
+                print(f">>> {mode} {tag} ENTRY NOT FILLED (status={res.status}) — no state written")
+                return
+            if res.filled_qty < size:
+                print(f">>> {mode} {tag} PARTIAL fill {res.filled_qty}/{size} — writing actual qty")
+                size = res.filled_qty
+            entry_px_filled = res.avg_px if res.avg_px > 0 else detail['close']
             risk.record_fill()
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
                 'side': 'BUY', 'qty': size, 'entry': str(round(entry_px_filled, 2)),
@@ -393,6 +402,9 @@ def main():
             risk.emergency_halt(f"reconciliation {r.status}: {r.reason}")
             return
 
+        # 7. execution manager — the ONLY component that submits orders to IBKR.
+        exec_mgr = ExecutionManager(ib, dynamo, scope='live')
+
         for c in CONTRACTS:
             sym = c['symbol']
             df = data[sym]
@@ -409,7 +421,8 @@ def main():
                 continue
 
             for strat in STRATEGIES:
-                run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl, risk)
+                run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode,
+                             ctrl, risk, exec_mgr)
     finally:
         ib.disconnect()
 

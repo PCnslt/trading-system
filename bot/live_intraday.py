@@ -44,15 +44,15 @@ import numpy as np
 import pandas as pd
 import boto3
 from dotenv import load_dotenv
-from ib_insync import IB, Future, MarketOrder, StopOrder
+from ib_insync import IB, Future
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.s3_archive import archive_intraday_bars
 
 from risk import RiskEngine, RiskConfig, realized_pnl
-from execution import confirm_fill
 from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
 from hardening.reconciler import reconcile
+from hardening.exec_manager import ExecutionManager, TradeIntent
 from intraday_scan import load_ibkr_bars, prep_rth
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, ControlUnavailable,
@@ -276,27 +276,9 @@ def _daily_mes_held(dynamo):
     return False, None
 
 
-# ===== IBKR helpers =====
-def stop_open(ib, sym, side):
-    action = 'SELL' if side == 'LONG' else 'BUY'
-    return any(o.contract.symbol == sym and o.order.action == action
-               and o.order.orderType == 'STP' for o in ib.openOrders())
-
-
-def _place_close(ib, con, side, qty):
-    """Market order to close: sell a long, buy-to-cover a short."""
-    action = 'SELL' if side == 'LONG' else 'BUY'
-    ib.placeOrder(con, MarketOrder(action, qty, tif='DAY'))
-
-
-def _cancel_stops(ib, sym):
-    for o in ib.openOrders():
-        if o.contract.symbol == sym and o.order.orderType == 'STP':
-            ib.cancelOrder(o)
-
-
 # ===== runner =====
-def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=None):
+def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=None,
+                 exec_mgr=None):
     sname = strat['name']
     tag = f"MES_{sname}"
     detail = strat['detail'](df)
@@ -335,13 +317,13 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
         # open position -> evaluate exit / EOD flatten
         if eod:
             _exit(dynamo, ib, con, tag, sname, side, pos, 'EOD-flatten',
-                  detail['close'], today, mode, risk, entry_px)
+                  detail['close'], today, mode, risk, entry_px, exec_mgr)
             return
         should_exit, xreason = strat['exit'](detail, side)
         if should_exit:
             _exit(dynamo, ib, con, tag, sname, side, pos, xreason,
-                  detail['close'], today, mode, risk, entry_px)
-        elif strat['has_stop_order'] and not stop_open(ib, 'MES', side):
+                  detail['close'], today, mode, risk, entry_px, exec_mgr)
+        elif strat['has_stop_order'] and not exec_mgr.is_stop_open('MES', side):
             # protective stop no longer resting -> filled intraday
             exit_px = stop if stop is not None else detail['close']
             if risk is not None and entry_px is not None:
@@ -379,18 +361,26 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
                 return
             nside = 'SHORT' if entry_side == -1 else 'LONG'
             action = 'SELL' if entry_side == -1 else 'BUY'
-            trade = ib.placeOrder(con, MarketOrder(action, size, tif='DAY'))
-            filled, avg_px, fstatus = confirm_fill(ib, trade)
-            if filled <= 0:
-                print(f">>> {mode} {tag} ENTRY NOT FILLED (status={fstatus}) — no state written")
+            intent = TradeIntent(scope='live_intraday', tag=tag, symbol='MES', action=action,
+                                 side=nside, qty=size, order_type='MKT',
+                                 stop_price=float(stop_px), contract_month=front_month(),
+                                 bar_time=now.isoformat(), signal_reason=ereason)
+            res = exec_mgr.submit_entry(intent, con, has_stop=strat['has_stop_order'],
+                                        stop_tif='DAY')
+            if res.status == 'DUPLICATE':
+                print(f">>> {mode} {tag} duplicate signal {res.signal_id} — skip (idempotent)")
                 return
-            if filled < size:
-                print(f">>> {mode} {tag} PARTIAL fill {filled}/{size} — writing actual qty")
-                size = filled
-            entry_px_filled = avg_px if avg_px > 0 else detail['close']
-            if strat['has_stop_order']:
-                saction = 'BUY' if entry_side == -1 else 'SELL'
-                ib.placeOrder(con, StopOrder(saction, size, stop_px, tif='DAY'))
+            if res.status == 'UNKNOWN':
+                print(f">>> {mode} {tag} ENTRY UNKNOWN (timeout) — no state written; "
+                      f"reconcile will resolve")
+                return
+            if res.filled_qty <= 0:
+                print(f">>> {mode} {tag} ENTRY NOT FILLED (status={res.status}) — no state written")
+                return
+            if res.filled_qty < size:
+                print(f">>> {mode} {tag} PARTIAL fill {res.filled_qty}/{size} — writing actual qty")
+                size = res.filled_qty
+            entry_px_filled = res.avg_px if res.avg_px > 0 else detail['close']
             risk.record_fill()
             log_dynamo(dynamo, f"TRADE#{tag}", now.isoformat(), {
                 'side': nside, 'qty': size, 'entry': str(round(entry_px_filled, 2)),
@@ -407,19 +397,34 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
             print(f"[{today}] {mode} {tag} flat ({gate}): {ereason}")
 
 
-def _exit(dynamo, ib, con, tag, sname, side, pos, reason, exit_px, today, mode, risk=None, entry_px=None):
-    _cancel_stops(ib, 'MES')
-    _place_close(ib, con, side, pos)
-    ib.sleep(1)
+def _exit(dynamo, ib, con, tag, sname, side, pos, reason, exit_px, today, mode,
+          risk=None, entry_px=None, exec_mgr=None):
+    # Close via the execution manager: cancels the resting stop first (race-free)
+    # and verifies the fill. On UNKNOWN (timeout) do NOT record a clean close —
+    # leave state intact so reconciliation surfaces the ambiguity.
+    action = 'SELL' if side == 'LONG' else 'BUY'
+    exit_intent = TradeIntent(scope='live_intraday', tag=tag, symbol='MES', action=action,
+                              side=side, qty=pos, order_type='MKT', stop_price=0.0,
+                              contract_month=front_month(), bar_time=now_utc().isoformat(),
+                              signal_reason=reason)
+    res = exec_mgr.submit_exit(exit_intent, con, cancel_stop=True)
+    if res.status == 'DUPLICATE':
+        print(f">>> {mode} {tag} duplicate exit — skip (idempotent)")
+        return
+    if res.status == 'UNKNOWN':
+        print(f">>> {mode} {tag} EXIT UNKNOWN (timeout) — not recording close; "
+              f"reconcile will resolve")
+        return
+    actual_px = res.avg_px if res.avg_px > 0 else exit_px
     if risk is not None and entry_px is not None:
-        risk.record_close(realized_pnl(side, entry_px, exit_px, CONTRACT['point_value'], pos))
+        risk.record_close(realized_pnl(side, entry_px, actual_px, CONTRACT['point_value'], pos))
     log_dynamo(dynamo, f"TRADE#{tag}", now_utc().isoformat(), {
-        'side': 'EXIT', 'qty': pos, 'exit_px': str(round(exit_px, 2)),
+        'side': 'EXIT', 'qty': pos, 'exit_px': str(round(actual_px, 2)),
         'reason': reason, 'strategy': sname, 'ts': int(time.time())})
     log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
         'pos': 0, 'side': '', 'stop': '0', 'entry': '0',
         'session_date': today, 'ts': int(time.time())})
-    print(f">>> {mode} {tag} EXIT {side} {pos} @ {exit_px:.2f} ({reason})")
+    print(f">>> {mode} {tag} EXIT {side} {pos} @ {actual_px:.2f} ({reason})")
 
 
 # ===== main =====
@@ -510,13 +515,16 @@ def main():
             risk.emergency_halt(f"reconciliation {r.status}: {r.reason}")
             return
 
+        # execution manager — the ONLY component that submits orders to IBKR.
+        exec_mgr = ExecutionManager(ib, dynamo, scope='live_intraday')
+
         for strat in STRATEGIES:
             df = bars[strat['name']]
             min_bars = FADE_BOLL_N + 5 if strat['name'] == 'FADESHORT' else DC_N + 5
             if df.empty or len(df) < min_bars:
                 print(f"[{now.isoformat()}] {mode} {strat['name']}: insufficient bars ({len(df)})")
                 continue
-            run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl, risk)
+            run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl, risk, exec_mgr)
     finally:
         ib.disconnect()
 
