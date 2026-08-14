@@ -20,6 +20,8 @@ default to RUNNING (which would let a bot trade blind). `get_control` raises
 import os
 import time
 
+from ib_insync import MarketOrder
+
 CONTROL_PK = 'CONTROL'
 CONTROL_SK = 'system'
 
@@ -165,8 +167,6 @@ def flatten_ibkr(ib, symbols, table, tags, today, mode='PAPER'):
     also closes another bot's position in the same account, which is exactly
     what an emergency flatten should do.
     """
-    from ib_insync import MarketOrder
-
     ib.sleep(1)  # let reqPositions populate after connect
     for o in list(ib.openOrders()):
         if o.contract.symbol in symbols and o.order.orderType == 'STP':

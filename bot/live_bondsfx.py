@@ -48,6 +48,7 @@ import numpy as np
 import pandas as pd
 import boto3
 from dotenv import load_dotenv
+from ib_insync import IB, Future, MarketOrder
 
 from risk import RiskEngine, RiskConfig, realized_pnl
 from execution import confirm_fill
@@ -300,7 +301,6 @@ def main():
         data[c['symbol']] = df
 
     # 2. connect IBKR (distinct clientId from live.py's 70)
-    from ib_insync import IB, Future, MarketOrder
     ib = IB()
     try:
         ib.connect(IBKR_HOST, IBKR_PORT, clientId=71, timeout=8)
