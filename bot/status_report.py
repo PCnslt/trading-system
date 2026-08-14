@@ -83,6 +83,28 @@ def _age_str(ts_epoch):
     return f'{h // 24}d'
 
 
+def _sk_time(it):
+    """HH:MM:SS from a TRADE item. sk is ISO for intraday bots and 'date#epoch'
+    for daily bots; prefer the explicit `ts` epoch, fall back to parsing sk."""
+    ts = it.get('ts')
+    if ts:
+        try:
+            return dt.datetime.fromtimestamp(int(ts), dt.timezone.utc).strftime('%H:%M:%S')
+        except (ValueError, OSError, OverflowError):
+            pass
+    sk = it.get('sk', '')
+    if '#' in sk:
+        try:
+            return dt.datetime.fromtimestamp(int(sk.split('#', 1)[1]),
+                                             dt.timezone.utc).strftime('%H:%M:%S')
+        except (ValueError, OSError, OverflowError):
+            pass
+    try:
+        return sk[11:19]
+    except (IndexError, TypeError):
+        return '--:--:--'
+
+
 def _side_of(tag, state):
     return state.get('side') or IMPLIED_SIDE.get(tag, '?')
 
@@ -145,7 +167,7 @@ def report_intraday():
             for t in sorted(trades, key=lambda x: x['sk']):
                 side_, qty, px = t.get('side'), t.get('qty'), t.get('entry') or t.get('exit_px')
                 reason = t.get('reason', '')
-                lines.append(f"    {t['sk'][11:19]} {side_} {qty} @ {px} ({reason})")
+                lines.append(f"    {_sk_time(t)} {side_} {qty} @ {px} ({reason})")
     return lines
 
 
