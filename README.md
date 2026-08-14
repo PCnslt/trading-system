@@ -23,4 +23,7 @@ dashboard/   Streamlit app
 - Broker secrets via OAuth where possible
 
 ## Status
-PLANNING → provisioning ($0 AWS free tier). See `.hermes/plans/trading-system-checklist.md`.
+BUILDING — futures phase (paper forward-test). 3 bots live on cron:
+`live.py` (index, 23:00 UTC) · `live_bondsfx.py` (bonds, 23:05) ·
+`live_intraday.py` (MES, 15-min RTH). Kill-switch + dashboard live.
+See `.hermes/plans/trading-system-checklist.md`.
