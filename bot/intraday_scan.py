@@ -27,12 +27,17 @@ claims — treat every number as a preliminary smoke result, not an edge. The
 walk-forward split (60/40 chronological) is reported only when the OOS fold
 has >= 10 trades; at this sample size it is directionally interesting at best.
 """
+import os
+import sys
 import datetime as dt
 import json
 
 import numpy as np
 import pandas as pd
 import yfinance as yf
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from data.s3_archive import archive_scan_results
 
 # ===== config =====
 RTH_OPEN = dt.time(9, 30)
@@ -331,6 +336,10 @@ def main():
     with open(out, 'w') as f:
         json.dump(payload, f, indent=2)
     print(f'wrote {out}')
+    try:
+        archive_scan_results('intraday', payload)
+    except Exception as e:
+        print(f'S3 archive failed: {e}')
 
 
 if __name__ == '__main__':

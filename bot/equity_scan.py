@@ -12,11 +12,15 @@ pooled out-of-sample PF (walk-forward 60/40 test half). A strategy is only
 "alive" if pooled OOS PF > 1.1 at the realistic cost level.
 """
 import os
+import sys
 import time
 
 import numpy as np
 import pandas as pd
 import yfinance as yf
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from data.s3_archive import archive_scan_results
 
 from strategy_scan import sig_donchian, sig_rsi2, sig_ma_cross, sig_bollinger
 
@@ -135,6 +139,10 @@ def main():
         import json
         json.dump(payload, f, indent=2, default=float)
     print(f"Saved results -> {RESULTS_FILE}")
+    try:
+        archive_scan_results('equity', payload)
+    except Exception as e:
+        print(f"S3 archive failed: {e}")
 
     # verdict
     print("=== VERDICT (pooled OOS PF > 1.1 = alive) ===")

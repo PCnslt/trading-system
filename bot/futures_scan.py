@@ -30,10 +30,14 @@ Results also written to bot/futures_scan_results.json for cron/summary.
 """
 import json
 import os
+import sys
 
 import numpy as np
 import pandas as pd
 import yfinance as yf
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from data.s3_archive import archive_scan_results
 
 COST = 0.00013        # 1.3 bps round-trip, applied to returns (see docstring)
 MAX_HOLD = 5          # time stop (days) for the short-horizon strategies only
@@ -453,6 +457,10 @@ def main():
     with open(RESULTS_FILE, 'w') as f:
         json.dump(payload, f, indent=2, default=float)
     print(f"\nSaved results → {RESULTS_FILE}")
+    try:
+        archive_scan_results('futures', payload)
+    except Exception as e:
+        print(f"S3 archive failed: {e}")
 
 
 if __name__ == '__main__':
