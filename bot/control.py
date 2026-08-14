@@ -118,12 +118,39 @@ def set_control(table, **fields):
     return item
 
 
-def clear_flatten(table):
-    """One-shot: reset the flatten flag after a bot honours it. Preserves state."""
+BOT_KEYS = ('live', 'live_bondsfx', 'live_intraday')
+
+
+def ack_flatten(table, bot_key):
+    """Record that `bot_key` has honoured the current flatten flag.
+
+    The flatten flag is GLOBAL: it must persist until EVERY bot has flattened,
+    not be cleared by the first bot that runs (which would leave the other bots
+    blind to it). Each bot acks here after honouring it.
+    """
     try:
         item = table.get_item(Key={'pk': CONTROL_PK, 'sk': CONTROL_SK}).get('Item')
-        if item and item.get('flatten') == 'true':
+        if not item or item.get('flatten') != 'true':
+            return
+        acked = set(item.get('flatten_acked') or [])
+        acked.add(bot_key)
+        item['flatten_acked'] = sorted(acked)
+        item['ts'] = int(time.time())
+        table.put_item(Item=item)
+    except Exception as e:
+        print(f"[control] ack_flatten failed (non-fatal): {e}")
+
+
+def clear_flatten(table):
+    """Clear the flatten flag ONLY once EVERY bot has acknowledged it."""
+    try:
+        item = table.get_item(Key={'pk': CONTROL_PK, 'sk': CONTROL_SK}).get('Item')
+        if not item or item.get('flatten') != 'true':
+            return
+        acked = set(item.get('flatten_acked') or [])
+        if set(BOT_KEYS) <= acked:
             item['flatten'] = 'false'
+            item.pop('flatten_acked', None)
             item['ts'] = int(time.time())
             table.put_item(Item=item)
     except Exception as e:

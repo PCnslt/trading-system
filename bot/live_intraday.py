@@ -48,7 +48,8 @@ from ib_insync import IB, Future, MarketOrder, StopOrder
 from risk import RiskEngine, RiskConfig
 from intraday_scan import load_ibkr_bars, prep_rth
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
-                     clear_flatten, flatten_ibkr, ControlUnavailable, account_mode_ok)
+                     clear_flatten, ack_flatten, flatten_ibkr, ControlUnavailable,
+                     account_mode_ok)
 
 load_dotenv()
 
@@ -441,6 +442,7 @@ def main():
             flatten_ibkr(ib, [CONTRACT['symbol']], dynamo,
                          [f"MES_{s['name']}" for s in STRATEGIES] + DAILY_MES_TAGS,
                          today, mode)
+            ack_flatten(dynamo, 'live_intraday')
             clear_flatten(dynamo)
         if control_state(ctrl) == 'KILLED':
             print(f"[{now.isoformat()}] {mode} KILLED — all trading halted (positions flattened)")

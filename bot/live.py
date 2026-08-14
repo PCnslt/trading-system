@@ -36,8 +36,8 @@ from dotenv import load_dotenv
 
 from risk import RiskEngine, RiskConfig
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
-                     clear_flatten, flatten_ibkr, already_ran_today, mark_ran_today,
-                     ControlUnavailable, account_mode_ok)
+                     clear_flatten, ack_flatten, flatten_ibkr, already_ran_today,
+                     mark_ran_today, ControlUnavailable, account_mode_ok)
 
 load_dotenv()
 
@@ -309,6 +309,7 @@ def main():
         if wants_flatten(ctrl):
             all_tags = [f"{c['symbol']}_{s['name']}" for c in CONTRACTS for s in STRATEGIES]
             flatten_ibkr(ib, [c['symbol'] for c in CONTRACTS], dynamo, all_tags, today, mode)
+            ack_flatten(dynamo, 'live')
             clear_flatten(dynamo)
         if control_state(ctrl) == 'KILLED':
             print(f"[{today}] {mode} KILLED — all trading halted (positions flattened)")
