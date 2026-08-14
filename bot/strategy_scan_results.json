@@ -1,0 +1,278 @@
+{
+  "best_strategy": "Bollinger reversal",
+  "rank": [
+    "Bollinger reversal",
+    "Donchian/ATR breakout",
+    "RSI(2) mean-reversion",
+    "MA 5/20 crossover"
+  ],
+  "rows": [
+    {
+      "strategy": "Donchian/ATR breakout",
+      "ticker": "ES=F",
+      "trades": 206,
+      "winrate": 41.74757281553398,
+      "pf": 0.5813290897486967,
+      "cagr": -0.07358313476264144,
+      "maxdd": -0.5902544777501006,
+      "avg_days": 4.888349514563107,
+      "final": 0.4122046776986614
+    },
+    {
+      "strategy": "Donchian/ATR breakout",
+      "ticker": "SPY",
+      "trades": 231,
+      "winrate": 42.857142857142854,
+      "pf": 0.5284302970576726,
+      "cagr": -0.09149112352830047,
+      "maxdd": -0.6775100659465075,
+      "avg_days": 4.766233766233766,
+      "final": 0.3288381691717452
+    },
+    {
+      "strategy": "Donchian/ATR breakout",
+      "ticker": "QQQ",
+      "trades": 221,
+      "winrate": 45.70135746606335,
+      "pf": 0.6517806956831668,
+      "cagr": -0.07899187502340099,
+      "maxdd": -0.654141021234689,
+      "avg_days": 4.800904977375565,
+      "final": 0.3852726134282938
+    },
+    {
+      "strategy": "Donchian/ATR breakout",
+      "ticker": "TQQQ",
+      "trades": 213,
+      "winrate": 53.051643192488264,
+      "pf": 1.0970787749321018,
+      "cagr": -0.056382867639051204,
+      "maxdd": -0.6708622411298659,
+      "avg_days": 4.826291079812207,
+      "final": 0.5103304918531549
+    },
+    {
+      "strategy": "Donchian/ATR breakout",
+      "ticker": "SQQQ",
+      "trades": 235,
+      "winrate": 49.787234042553195,
+      "pf": 0.7861878078901726,
+      "cagr": -0.17446054149969892,
+      "maxdd": -0.9192687997958244,
+      "avg_days": 4.719148936170213,
+      "final": 0.10836419059527122
+    },
+    {
+      "strategy": "RSI(2) mean-reversion",
+      "ticker": "ES=F",
+      "trades": 341,
+      "winrate": 43.988269794721404,
+      "pf": 0.5398100105392848,
+      "cagr": -0.11448731364801057,
+      "maxdd": -0.7708184896047883,
+      "avg_days": 3.93841642228739,
+      "final": 0.24418050556841936
+    },
+    {
+      "strategy": "RSI(2) mean-reversion",
+      "ticker": "SPY",
+      "trades": 335,
+      "winrate": 45.07462686567164,
+      "pf": 0.5656958783491256,
+      "cagr": -0.10716555777237491,
+      "maxdd": -0.749847185460512,
+      "avg_days": 3.934328358208955,
+      "final": 0.26876494802920026
+    },
+    {
+      "strategy": "RSI(2) mean-reversion",
+      "ticker": "QQQ",
+      "trades": 345,
+      "winrate": 51.30434782608695,
+      "pf": 0.6360733743467778,
+      "cagr": -0.11708505458441965,
+      "maxdd": -0.7982061492566325,
+      "avg_days": 3.8521739130434782,
+      "final": 0.23611904041966675
+    },
+    {
+      "strategy": "RSI(2) mean-reversion",
+      "ticker": "TQQQ",
+      "trades": 342,
+      "winrate": 54.67836257309941,
+      "pf": 0.8755946492543097,
+      "cagr": -0.15923987970783726,
+      "maxdd": -0.9383454104041258,
+      "avg_days": 3.8976608187134505,
+      "final": 0.13392264769159354
+    },
+    {
+      "strategy": "RSI(2) mean-reversion",
+      "ticker": "SQQQ",
+      "trades": 340,
+      "winrate": 55.588235294117645,
+      "pf": 0.9545175614681588,
+      "cagr": -0.15003511793079571,
+      "maxdd": -0.929393603892853,
+      "avg_days": 3.885294117647059,
+      "final": 0.15193846558270013
+    },
+    {
+      "strategy": "MA 5/20 crossover",
+      "ticker": "ES=F",
+      "trades": 557,
+      "winrate": 39.497307001795335,
+      "pf": 0.5570553439290881,
+      "cagr": -0.20442946139781126,
+      "maxdd": -0.929784053447329,
+      "avg_days": 4.434470377019749,
+      "final": 0.07052543708345141
+    },
+    {
+      "strategy": "MA 5/20 crossover",
+      "ticker": "SPY",
+      "trades": 556,
+      "winrate": 39.74820143884892,
+      "pf": 0.564786700342422,
+      "cagr": -0.20192475378844255,
+      "maxdd": -0.9271804457472304,
+      "avg_days": 4.442446043165468,
+      "final": 0.07320887336166439
+    },
+    {
+      "strategy": "MA 5/20 crossover",
+      "ticker": "QQQ",
+      "trades": 553,
+      "winrate": 41.952983725135624,
+      "pf": 0.6208445881654993,
+      "cagr": -0.21966247670364247,
+      "maxdd": -0.9451693554739915,
+      "avg_days": 4.466546112115732,
+      "final": 0.056417947885886686
+    },
+    {
+      "strategy": "MA 5/20 crossover",
+      "ticker": "TQQQ",
+      "trades": 556,
+      "winrate": 46.76258992805755,
+      "pf": 0.9216745870875606,
+      "cagr": -0.27926679347372363,
+      "maxdd": -0.9802368413721779,
+      "avg_days": 4.440647482014389,
+      "final": 0.022460851718361693
+    },
+    {
+      "strategy": "MA 5/20 crossover",
+      "ticker": "SQQQ",
+      "trades": 558,
+      "winrate": 47.67025089605735,
+      "pf": 0.8585449225268514,
+      "cagr": -0.3187020639780126,
+      "maxdd": -0.9898136858589448,
+      "avg_days": 4.424731182795699,
+      "final": 0.011699439166546406
+    },
+    {
+      "strategy": "Bollinger reversal",
+      "ticker": "ES=F",
+      "trades": 121,
+      "winrate": 37.1900826446281,
+      "pf": 0.5962948337399423,
+      "cagr": -0.046850778728033116,
+      "maxdd": -0.5210074288340629,
+      "avg_days": 4.743801652892562,
+      "final": 0.5732784855276833
+    },
+    {
+      "strategy": "Bollinger reversal",
+      "ticker": "SPY",
+      "trades": 128,
+      "winrate": 42.96875,
+      "pf": 0.7086344774031879,
+      "cagr": -0.03375051012984687,
+      "maxdd": -0.45428753726619164,
+      "avg_days": 4.6640625,
+      "final": 0.6716852224421649
+    },
+    {
+      "strategy": "Bollinger reversal",
+      "ticker": "QQQ",
+      "trades": 120,
+      "winrate": 45.0,
+      "pf": 0.6764673717502124,
+      "cagr": -0.0453411007533282,
+      "maxdd": -0.47156791053808533,
+      "avg_days": 4.816666666666666,
+      "final": 0.584003355515929
+    },
+    {
+      "strategy": "Bollinger reversal",
+      "ticker": "TQQQ",
+      "trades": 128,
+      "winrate": 43.75,
+      "pf": 0.986080626189657,
+      "cagr": -0.040663669355326504,
+      "maxdd": -0.6238660403086298,
+      "avg_days": 4.8046875,
+      "final": 0.6180444937244561
+    },
+    {
+      "strategy": "Bollinger reversal",
+      "ticker": "SQQQ",
+      "trades": 111,
+      "winrate": 49.549549549549546,
+      "pf": 1.1410710720534392,
+      "cagr": -0.05380547566999305,
+      "maxdd": -0.7097970653983052,
+      "avg_days": 4.738738738738738,
+      "final": 0.5267234911585067
+    }
+  ],
+  "walk_forward": [
+    {
+      "ticker": "ES=F",
+      "in_pf": 0.5696793682410426,
+      "out_pf": 0.6328262012772238,
+      "in_trades": 65,
+      "out_trades": 56,
+      "out_cagr": -0.04498259886644962,
+      "out_maxdd": -0.2751914205221285
+    },
+    {
+      "ticker": "SPY",
+      "in_pf": 0.6906814434845404,
+      "out_pf": 0.7436071584537686,
+      "in_trades": 70,
+      "out_trades": 57,
+      "out_cagr": -0.02996376242712051,
+      "out_maxdd": -0.2201094676106884
+    },
+    {
+      "ticker": "QQQ",
+      "in_pf": 0.7862862112571627,
+      "out_pf": 0.5382546145619697,
+      "in_trades": 72,
+      "out_trades": 48,
+      "out_cagr": -0.06839581930046357,
+      "out_maxdd": -0.3241075813047859
+    },
+    {
+      "ticker": "TQQQ",
+      "in_pf": 1.0703300141629626,
+      "out_pf": 0.8915503162267697,
+      "in_trades": 75,
+      "out_trades": 53,
+      "out_cagr": -0.08713182370671146,
+      "out_maxdd": -0.6178089870572243
+    },
+    {
+      "ticker": "SQQQ",
+      "in_pf": 1.4132927611932842,
+      "out_pf": 0.8660171431860982,
+      "in_trades": 66,
+      "out_trades": 45,
+      "out_cagr": -0.12279171720232351,
+      "out_maxdd": -0.5657080459033079
+    }
+  ]
+}
