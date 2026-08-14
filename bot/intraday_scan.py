@@ -80,8 +80,11 @@ def load_ibkr_bars(ib, contract, duration='60 D', bar_size='5 mins', rth=True):
                                 useRTH=rth, formatDate=2)
     if not bars:
         return pd.DataFrame()
-    df = util.df(bars).rename(columns=str.title).set_index('date')
-    df.index = pd.to_datetime(df.index, utc=True).tz_convert(TZ)
+    df = util.df(bars).rename(columns=str.title)
+    df = df.set_index('Date')
+    if getattr(df.index, 'tz', None) is None:
+        df.index = pd.to_datetime(df.index, utc=True)
+    df.index = df.index.tz_convert(TZ)
     return df[['Open', 'High', 'Low', 'Close', 'Volume']]
 
 
