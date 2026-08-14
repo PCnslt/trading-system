@@ -1,0 +1,13 @@
+[Unit]
+Description=IB Gateway (headless paper trading)
+After=network.target
+
+[Service]
+User=ubuntu
+Environment=DISPLAY=:99
+ExecStart=/home/ubuntu/ibgateway-start.sh
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target
