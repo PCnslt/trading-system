@@ -1,15 +1,26 @@
-# Trading system cron — install with:  crontab infra/crontab.txt
+# Trading system scheduling — TWO layers, no overlap.
+#
+#  1) SYSTEM CRONTAB (this file)  = data ingestion only (silent, log to files).
+#     Install with:  crontab infra/crontab.txt
+#
+#  2) HERMES CRON jobs            = bot execution + monitoring (deliver to Telegram).
+#     Managed via `hermes` / ~/.hermes/cron/jobs.json. Do NOT also put bots here —
+#     double-scheduling caused clientId collisions (70/71/72) at 23:00/23:05.
+#
 # All times UTC. Paths absolute; python is the repo venv.
 
-# 24/7 ingestion
+# ---- data ingestion (system crontab) ----
 */10 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/crypto_tick.py >> /home/ubuntu/trading-system/data/crypto.log 2>&1
 0 21 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/ingest.py >> /home/ubuntu/trading-system/data/ingest.log 2>&1
 */30 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/market_research.py >> /home/ubuntu/trading-system/data/research.log 2>&1
 
-# Daily paper signals (after ES settle)
-0 23 * * * cd /home/ubuntu/trading-system/bot && /home/ubuntu/trading-system/venv/bin/python live.py >> /home/ubuntu/trading-system/bot/live.log 2>&1
-5 23 * * * cd /home/ubuntu/trading-system/bot && /home/ubuntu/trading-system/venv/bin/python live_bondsfx.py >> /home/ubuntu/trading-system/bot/live_bondsfx.log 2>&1
-
-# Intraday MES paper lane — every 15 min during RTH (13:30-20:00 UTC, weekdays).
-# The bot self-gates internally (entries 13:30-19:30, EOD flatten 19:45, skip outside).
-*/15 13-20 * * 1-5 cd /home/ubuntu/trading-system/bot && /home/ubuntu/trading-system/venv/bin/python live_intraday.py >> /home/ubuntu/trading-system/bot/live_intraday.log 2>&1
+# ---- bot execution (Hermes cron — NOT here) ----
+#   "Paper signals — index futures"    script paper_index_futures.sh   @ 0 23 * * *
+#   "Paper signals — bonds"            script paper_bonds.sh           @ 5 23 * * *
+#   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 13-20 * * 1-5
+#   "Daily trading summary"            prompt (status_report.py)       @ 45 23 * * *
+#   "IB Gateway health watchdog"       script ibgw_health.sh           @ */30 * * * *
+#   "Weekly strategy scan + refine"    prompt (strategy_scan.py)       @ 0 18 * * 0
+#
+# The intraday bot (live_intraday.py) self-gates internally:
+#   entries 13:30-19:30 UTC, EOD flatten 19:45 UTC, skip outside RTH.
