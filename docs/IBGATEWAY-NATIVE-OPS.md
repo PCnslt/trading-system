@@ -49,6 +49,10 @@ by the helper the first time it appears.
    `bot/execution_test.py` proves the full path; re-run during market hours for a fill.
 6. Weekly timer: `systemctl list-timers ibgateway-weekly.timer` → next = Sunday 13:00 UTC.
 7. Pin intact: `pgrep -af GWClient | grep -o 'DummyAutoUpdateService'` → present.
+8. Post-restart token re-login: after the 04:00 UTC auto-restart, the one-shot Hermes cron
+   check runs `~/.hermes/scripts/ibgw_restart_check.sh` (port 4002 + GWClient process +
+   read-only `managedAccounts()==['DUR193467']`) and reports to Telegram. Reuse it to
+   verify any restart without re-deriving the checks.
 
 ## Standing rule — NEVER DISCARD PAID DATA
 
