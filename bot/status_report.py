@@ -100,7 +100,8 @@ def _sk_time(it):
         except (ValueError, OSError, OverflowError):
             pass
     try:
-        return sk[11:19]
+        t = sk[11:19]
+        return t if t else '--:--:--'
     except (IndexError, TypeError):
         return '--:--:--'
 
