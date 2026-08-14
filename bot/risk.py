@@ -34,6 +34,12 @@ class RiskConfig:
     price_sigma: float = 3.0           # |z| of return that = price shock
 
 
+def realized_pnl(side, entry, exit_px, point_value, qty):
+    """Realized P&L for a closed position. side: 'LONG'/'SHORT'."""
+    direction = 1 if side == 'LONG' else -1
+    return direction * (float(exit_px) - float(entry)) * float(point_value) * int(qty)
+
+
 class RiskEngine:
     """Stateful risk gate. One instance per trading session/day."""
 
@@ -82,6 +88,10 @@ class RiskEngine:
 
     def touch_data(self):
         self._last_data_ts = time.time()
+
+    def set_open_positions(self, n: int):
+        """Seed open_positions from authoritative state (existing open positions)."""
+        self.open_positions = int(n)
 
     # ---- sizing ----
     def position_size(self, stop_distance: float, point_value: float) -> int:

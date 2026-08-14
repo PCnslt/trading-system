@@ -34,7 +34,7 @@ import pandas as pd
 import boto3
 from dotenv import load_dotenv
 
-from risk import RiskEngine, RiskConfig
+from risk import RiskEngine, RiskConfig, realized_pnl
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, already_ran_today,
                      mark_ran_today, ControlUnavailable, account_mode_ok)
@@ -177,12 +177,13 @@ def stop_open(ib, sym):
 
 
 # ===== per-strategy runner =====
-def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=None):
+def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=None, risk=None):
     sname = strat['name']
     tag = f"{sym}_{sname}"                       # e.g. MES_DONCHIAN, MES_RSI2
     state = get_state(dynamo, f"POSITION#{tag}", 'current') or {}
     pos = int(state.get('pos', 0))
     stop = float(state['stop']) if state.get('stop') else None
+    entry_px = float(state['entry']) if state.get('entry') else None
     entry_date = state.get('entry_date')
     held = held_days(df, entry_date)
 
@@ -207,12 +208,15 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
     if pos > 0:
         should_exit, xreason = strat['exit'](detail, stop, held)
         if should_exit:
+            exit_px = detail['close']
             ib.placeOrder(con, MarketOrder('SELL', pos, tif='DAY'))
             if strat['has_stop_order']:
                 for o in ib.openOrders():
                     if o.contract.symbol == sym and o.order.action == 'SELL' and o.order.orderType == 'STP':
                         ib.cancelOrder(o)
             ib.sleep(1)
+            if risk is not None and entry_px is not None:
+                risk.record_close(realized_pnl('LONG', entry_px, exit_px, c['point_value'], pos))
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
                 'side': 'EXIT', 'qty': pos, 'reason': xreason, 'strategy': sname,
                 'ts': int(time.time())})
@@ -221,6 +225,9 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
             print(f">>> {mode} {tag} EXIT {pos} ({xreason})")
         elif strat['has_stop_order'] and not stop_open(ib, sym):
             # state long but GTC stop no longer resting -> filled intraday
+            exit_px = stop if stop is not None else detail['close']
+            if risk is not None and entry_px is not None:
+                risk.record_close(realized_pnl('LONG', entry_px, exit_px, c['point_value'], pos))
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
                 'side': 'EXIT', 'qty': pos, 'reason': 'stop-filled (intraday)',
                 'strategy': sname, 'ts': int(time.time())})
@@ -234,7 +241,8 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
         if not control_allows_entry(ctrl or {}):
             print(f">>> {mode} {tag} no entry — control state {control_state(ctrl or {})}")
             return
-        risk = RiskEngine(RiskConfig(risk_budget_usd=RISK_BUDGET))
+        if risk is None:
+            risk = RiskEngine(RiskConfig(risk_budget_usd=RISK_BUDGET))
         allowed, why = risk.can_enter()
         if not allowed:
             print(f">>> {mode} {tag} blocked by risk: {why}")
@@ -246,6 +254,7 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
             ib.sleep(1)
             if strat['has_stop_order']:
                 ib.placeOrder(con, StopOrder('SELL', size, stop_price, tif='GTC'))
+            risk.record_fill()
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
                 'side': 'BUY', 'qty': size, 'entry': str(round(detail['close'], 2)),
                 'stop': str(round(stop_price, 2)), 'contract': front_month(),
@@ -317,6 +326,20 @@ def main():
         if control_state(ctrl) == 'PAUSED':
             print(f"[{today}] {mode} PAUSED — no new entries; managing exits only")
 
+        # 5. persistent risk engine — ONE instance for the whole run so
+        #    daily_pnl / daily_trades / consecutive_losses accumulate across
+        #    strategies (not re-instantiated per symbol x strategy).
+        risk = RiskEngine(RiskConfig(risk_budget_usd=RISK_BUDGET,
+                                     max_concurrent_positions=len(CONTRACTS) * len(STRATEGIES)))
+        open_n = 0
+        for c in CONTRACTS:
+            for s in STRATEGIES:
+                st = get_state(dynamo, f"POSITION#{c['symbol']}_{s['name']}", 'current') or {}
+                if int(st.get('pos', 0)) > 0:
+                    open_n += 1
+        risk.set_open_positions(open_n)
+        risk.touch_data()
+
         for c in CONTRACTS:
             sym = c['symbol']
             df = data[sym]
@@ -333,7 +356,7 @@ def main():
                 continue
 
             for strat in STRATEGIES:
-                run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl)
+                run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl, risk)
     finally:
         ib.disconnect()
 

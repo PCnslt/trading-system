@@ -45,7 +45,7 @@ import boto3
 from dotenv import load_dotenv
 from ib_insync import IB, Future, MarketOrder, StopOrder
 
-from risk import RiskEngine, RiskConfig
+from risk import RiskEngine, RiskConfig, realized_pnl
 from intraday_scan import load_ibkr_bars, prep_rth
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, ControlUnavailable,
@@ -267,7 +267,7 @@ def _cancel_stops(ib, sym):
 
 
 # ===== runner =====
-def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None):
+def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=None):
     sname = strat['name']
     tag = f"MES_{sname}"
     detail = strat['detail'](df)
@@ -275,6 +275,7 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None):
     pos = int(state.get('pos', 0))
     side = state.get('side')                  # 'LONG' / 'SHORT'
     stop = float(state['stop']) if state.get('stop') else None
+    entry_px = float(state['entry']) if state.get('entry') else None
 
     now_t = now.time()
     in_window = RTH_OPEN_UTC <= now_t < RTH_CLOSE_UTC
@@ -305,14 +306,17 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None):
         # open position -> evaluate exit / EOD flatten
         if eod:
             _exit(dynamo, ib, con, tag, sname, side, pos, 'EOD-flatten',
-                  detail['close'], today, mode)
+                  detail['close'], today, mode, risk, entry_px)
             return
         should_exit, xreason = strat['exit'](detail, side)
         if should_exit:
             _exit(dynamo, ib, con, tag, sname, side, pos, xreason,
-                  detail['close'], today, mode)
+                  detail['close'], today, mode, risk, entry_px)
         elif strat['has_stop_order'] and not stop_open(ib, 'MES', side):
             # protective stop no longer resting -> filled intraday
+            exit_px = stop if stop is not None else detail['close']
+            if risk is not None and entry_px is not None:
+                risk.record_close(realized_pnl(side, entry_px, exit_px, CONTRACT['point_value'], pos))
             log_dynamo(dynamo, f"TRADE#{tag}", now.isoformat(), {
                 'side': 'EXIT', 'qty': pos, 'exit_px': str(stop),
                 'reason': 'stop-filled', 'strategy': sname, 'ts': int(time.time())})
@@ -332,7 +336,8 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None):
             if other:
                 print(f"[{today}] {mode} {tag} no entry — {other_name} already holds MES")
                 return
-            risk = RiskEngine(RiskConfig(risk_budget_usd=INTRA_RISK_BUDGET))
+            if risk is None:
+                risk = RiskEngine(RiskConfig(risk_budget_usd=INTRA_RISK_BUDGET))
             allowed, why = risk.can_enter()
             if not allowed:
                 print(f">>> {mode} {tag} blocked by risk: {why}")
@@ -350,6 +355,7 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None):
             if strat['has_stop_order']:
                 saction = 'BUY' if entry_side == -1 else 'SELL'
                 ib.placeOrder(con, StopOrder(saction, size, stop_px, tif='DAY'))
+            risk.record_fill()
             log_dynamo(dynamo, f"TRADE#{tag}", now.isoformat(), {
                 'side': nside, 'qty': size, 'entry': str(round(detail['close'], 2)),
                 'stop': str(round(stop_px, 2)), 'contract': front_month(),
@@ -365,10 +371,12 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None):
             print(f"[{today}] {mode} {tag} flat ({gate}): {ereason}")
 
 
-def _exit(dynamo, ib, con, tag, sname, side, pos, reason, exit_px, today, mode):
+def _exit(dynamo, ib, con, tag, sname, side, pos, reason, exit_px, today, mode, risk=None, entry_px=None):
     _cancel_stops(ib, 'MES')
     _place_close(ib, con, side, pos)
     ib.sleep(1)
+    if risk is not None and entry_px is not None:
+        risk.record_close(realized_pnl(side, entry_px, exit_px, CONTRACT['point_value'], pos))
     log_dynamo(dynamo, f"TRADE#{tag}", now_utc().isoformat(), {
         'side': 'EXIT', 'qty': pos, 'exit_px': str(round(exit_px, 2)),
         'reason': reason, 'strategy': sname, 'ts': int(time.time())})
@@ -455,6 +463,17 @@ def main():
                   f"daily bot holds MES ({daily_tag})")
             return
 
+        # persistent risk engine — ONE instance for the whole run.
+        risk = RiskEngine(RiskConfig(risk_budget_usd=INTRA_RISK_BUDGET,
+                                     max_concurrent_positions=1))
+        open_n = 0
+        for sname in ('FADESHORT', 'DONCH15'):
+            st = _read_state(dynamo, sname, today)
+            if int(st.get('pos', 0)) > 0:
+                open_n += 1
+        risk.set_open_positions(open_n)
+        risk.touch_data()
+
         bars = {}
         for strat in STRATEGIES:
             df = load_ibkr_bars(ib, con, duration=DURATION, bar_size=strat['barsize'], rth=True)
@@ -468,7 +487,7 @@ def main():
             if df.empty or len(df) < min_bars:
                 print(f"[{now.isoformat()}] {mode} {strat['name']}: insufficient bars ({len(df)})")
                 continue
-            run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl)
+            run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl, risk)
     finally:
         ib.disconnect()
 
