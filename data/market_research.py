@@ -19,12 +19,15 @@ from dotenv import load_dotenv
 
 load_dotenv('/home/ubuntu/trading-system/.env')
 
+from s3_archive import archive_news_batch
+
 SERPER = os.getenv('SERPER_API_KEY')
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 SENTIMENT_MODEL = os.getenv(
     'SENTIMENT_MODEL',
     'mrm8488/distilroberta-finetuned-financial-news-sentiment-analysis',
 )
+NEWS_TTL_DAYS = int(os.getenv('NEWS_TTL_DAYS', '30'))  # DynamoDB hot-window retention
 
 # Market-moving topics to track. Add tickers/sectors as the system grows.
 TOPICS = [
@@ -89,10 +92,28 @@ def serper_news(q, n=8):
         return json.loads(r.read().decode()).get('news', [])
 
 
+def _enable_ttl(table):
+    """Enable DynamoDB TTL on the 'ttl' attribute (idempotent).
+
+    Only items carrying a 'ttl' attribute are ever deleted — everything else
+    (signals, positions, control) is untouched. TTL is best-effort: AWS purges
+    expired items within ~48h, which is fine for bounding NEWS/QUOTE growth.
+    """
+    try:
+        table.meta.client.update_time_to_live(
+            TableName=table.table_name,
+            TimeToLiveSpecification={'Enabled': True, 'AttributeName': 'ttl'},
+        )
+    except Exception as e:
+        print(f'TTL enable skipped: {e}')
+
+
 def main():
     table = boto3.resource('dynamodb', region_name='us-east-1').Table(DYNAMO_TABLE)
     now = int(time.time())
     day = dt.datetime.now(dt.UTC).strftime('%Y-%m-%d')
+
+    _enable_ttl(table)
 
     # 1. fetch all headlines
     articles = []  # list of (topic, title, source, date, link)
@@ -108,14 +129,25 @@ def main():
     # 2. batch sentiment
     scores = score_batch([t for _, t, *_ in articles])
 
-    # 3. log
+    # 3. log to DynamoDB (hot, TTL-bounded) + archive to S3 (cold)
+    batches = {}  # topic -> list of item dicts (pk/sk stripped)
     for (topic, title, source, date, link), s in zip(articles, scores):
-        table.put_item(Item={
+        item = {
             'pk': f'NEWS#{day}',
             'sk': f'{now}#{topic}#{hashlib.md5(title.encode()).hexdigest()}',
             'topic': topic, 'title': title, 'source': source, 'date': date,
-            'link': link, 'sentiment': s['label'], 'score': str(s['score']), 'ts': now,
-        })
+            'link': link, 'sentiment': s['label'], 'score': str(s['score']),
+            'ts': now, 'ttl': now + NEWS_TTL_DAYS * 86400,
+        }
+        table.put_item(Item=item)
+        batches.setdefault(topic, []).append(
+            {k: v for k, v in item.items() if k not in ('pk', 'sk')})
+
+    for topic, items in batches.items():
+        try:
+            archive_news_batch(topic, items)
+        except Exception as e:
+            print(f'news archive failed [{topic}]: {e}')
 
     pos = sum(1 for s in scores if s['label'] == 'positive')
     neg = sum(1 for s in scores if s['label'] == 'negative')
