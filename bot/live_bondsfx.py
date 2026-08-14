@@ -1,37 +1,42 @@
-"""Live trading bot — bonds/FX FADE-RALLY SHORT (paper forward-test).
+"""Live trading bot — bonds FADE-RALLY SHORT (paper forward-test).
 
-Two SHORT-only mean-reversion strategies on ZB (30yr), 6B (GBP/USD),
-6A (AUD/USD). This is the ROBUST expression of the range-bound rates/FX
-thesis validated in bot/meanrev_scan.py: the LONG mean-reversion lead was
+Two SHORT-only mean-reversion strategies on ZB (30yr) and ZN (10yr) Treasury
+futures. This is the ROBUST expression of the range-bound rates thesis
+validated in bot/meanrev_scan.py: the LONG mean-reversion lead was
 hold-period fragile (1.88 PF @5d -> 1.07 @10d), while the fade-rally SHORT
 side is hold-robust. Exact ports of the validated SHORT cells:
 
   1) RSI2SHORT — RSI(2) fade-the-rally short (meanrev_scan sig_rsi_mr SHORT,
-     n=2): pooled OOS PF 1.50, 6/6 markets >= 1.2 (n=362).
+     n=2): pooled OOS PF 1.50, 6/6 markets >= 1.2 (n=362); ZN OOS 1.68.
        Entry : RSI(2) > 90  (overbought -> sell short)
        Exit  : RSI(2) <= 50 (reversion done), or 5-day time stop. NO stop order
                (the backtest has none; 2*ATR used for position sizing only).
 
   2) BBANDSHORT — Bollinger fade-short (meanrev_scan sig_bollinger_mr SHORT,
-     n=20, k=2.0): pooled OOS PF 1.48 across markets at n=20 (best lookback;
-     pooled 1.25 across all lookbacks, 11/18 cells robust).
+     n=20, k=2.0): pooled OOS PF 1.48 across markets at n=20. ZN OOS 1.94.
        Entry : close > upper band (20-day mean + 2*std)  (overbought -> short)
        Exit  : close <= 20-day mean (mid band), or 5-day time stop. NO stop.
+
+UNIVERSE: ZB + ZN. The original FX legs (6B GBP/USD, 6A AUD/USD) were
+REMOVED — paper account DUR193467 has no CME FX-futures entitlement, so
+6B/6A never qualified. ZN (10yr CBOT) is a validated drop-in for both
+sleeves (Boll-short OOS 1.94 / RSI2-short 1.68) and IS tradable on the same
+paper account.
 
 SIZING HONESTY: this short edge (OOS PF ~1.3-1.5) is WEAKER than the index
 long edge (OOS PF ~2-3). It is a DIVERSIFIER, not the primary. Sized to its
 own, smaller risk sleeve — BONDFX_RISK_BUDGET (default 25k = half the index
-sleeve) — not the main RISK_BUDGET. Full-size contracts (ZB $100k face,
-6B GBP 62.5k, 6A AUD 100k) are large; min_contracts=1 means a single
-contract can exceed the 2%-of-sleeve risk target. That is accepted for a
-PAPER diversifier and is visible in the logs.
+sleeve) — not the main RISK_BUDGET. Full-size contracts (ZB/ZN $100k face)
+are large; min_contracts=1 means a single contract can exceed the 2%-of-sleeve
+risk target. That is accepted for a PAPER diversifier and is visible in the
+logs.
 
-Data: yfinance ZB=F / 6B=F / 6A=F daily (front-month continuation proxies).
-Execution: IBKR paper (DUR193467) ZB (CBOT) + 6B/6A (CME), front-month,
-  dynamic roll. SHORT mechanics: SELL-to-open on entry, BUY-to-cover on exit.
+Data: yfinance ZB=F / ZN=F daily (front-month continuation proxies).
+Execution: IBKR paper (DUR193467) ZB + ZN (CBOT), front-month, dynamic roll.
+  SHORT mechanics: SELL-to-open on entry, BUY-to-cover on exit.
 Logging: DynamoDB pk tagged per strategy —
   SIGNAL#<sym>_<STRAT> / TRADE#<sym>_<STRAT> / POSITION#<sym>_<STRAT>
-  (e.g. SIGNAL#ZB_RSI2SHORT, TRADE#6B_BBANDSHORT).
+  (e.g. SIGNAL#ZB_RSI2SHORT, TRADE#ZN_BBANDSHORT).
 Paper only — LIVE env var stays false. Run daily via cron (after live.py).
 """
 import os
@@ -63,11 +68,10 @@ RSI2_OVERBOUGHT = 90.0  # RSI(2) short entry (fade the rally)
 RSI2_MID = 50.0         # RSI(2) short exit (reversion done)
 
 # data ticker -> execution contract. Point value = $ per 1.0 price unit
-# (ZB 1 pt = $1,000 on $100k face; 6B GBP 62.5k notional; 6A AUD 100k notional).
+# (ZB 30yr / ZN 10yr, both $100k face => 1 pt = $1,000).
 CONTRACTS = [
     {'data': 'ZB=F', 'symbol': 'ZB', 'exchange': 'CBOT', 'point_value': 1000.0},
-    {'data': '6B=F', 'symbol': '6B', 'exchange': 'CME',  'point_value': 62500.0},
-    {'data': '6A=F', 'symbol': '6A', 'exchange': 'CME',  'point_value': 100000.0},
+    {'data': 'ZN=F', 'symbol': 'ZN', 'exchange': 'CBOT', 'point_value': 1000.0},
 ]
 
 
@@ -157,7 +161,7 @@ STRATEGIES = [
 
 # ===== contract =====
 def front_month(now=None):
-    """Front-month contract (YYYYMM), quarterly Mar/Jun/Sep/Dec (ZB/6B/6A)."""
+    """Front-month contract (YYYYMM), quarterly Mar/Jun/Sep/Dec (ZB/ZN)."""
     now = now or dt.date.today()
     for m in (3, 6, 9, 12):
         if now.month <= m:
@@ -189,7 +193,7 @@ def get_state(table, pk, sk):
 # ===== per-strategy runner (SHORT) =====
 def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode):
     sname = strat['name']
-    tag = f"{sym}_{sname}"                       # e.g. ZB_RSI2SHORT, 6B_BBANDSHORT
+    tag = f"{sym}_{sname}"                       # e.g. ZB_RSI2SHORT, ZN_BBANDSHORT
     state = get_state(dynamo, f"POSITION#{tag}", 'current') or {}
     pos = int(state.get('pos', 0))               # >0 = short contracts open
     stop = float(state['stop']) if state.get('stop') else None

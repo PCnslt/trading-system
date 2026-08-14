@@ -1,0 +1,121 @@
+{
+  "cost": 0.00013,
+  "walk_forward": true,
+  "symbols": {
+    "ES=F": {
+      "bars": 3868,
+      "days": 50
+    },
+    "NQ=F": {
+      "bars": 3868,
+      "days": 50
+    }
+  },
+  "note": "60d yfinance 5m \u2014 statistically weak, preliminary only",
+  "rows": [
+    {
+      "strategy": "ORB",
+      "side": "long",
+      "n": 49,
+      "win": 44.9,
+      "pf": 0.5,
+      "oos_n": 20,
+      "oos_pf": 1.47
+    },
+    {
+      "strategy": "ORB",
+      "side": "short",
+      "n": 48,
+      "win": 54.2,
+      "pf": 1.32,
+      "oos_n": 20,
+      "oos_pf": 1.28
+    },
+    {
+      "strategy": "ORB",
+      "side": "both",
+      "n": 97,
+      "win": 49.5,
+      "pf": 0.86,
+      "oos_n": 39,
+      "oos_pf": 1.42
+    },
+    {
+      "strategy": "MOM",
+      "side": "long",
+      "n": 338,
+      "win": 46.7,
+      "pf": 0.63,
+      "oos_n": 136,
+      "oos_pf": 0.73
+    },
+    {
+      "strategy": "MOM",
+      "side": "short",
+      "n": 361,
+      "win": 47.9,
+      "pf": 0.95,
+      "oos_n": 145,
+      "oos_pf": 0.94
+    },
+    {
+      "strategy": "MOM",
+      "side": "both",
+      "n": 699,
+      "win": 47.4,
+      "pf": 0.79,
+      "oos_n": 280,
+      "oos_pf": 0.82
+    },
+    {
+      "strategy": "VWAP",
+      "side": "long",
+      "n": 100,
+      "win": 54.0,
+      "pf": 0.61,
+      "oos_n": 40,
+      "oos_pf": 1.25
+    },
+    {
+      "strategy": "VWAP",
+      "side": "short",
+      "n": 111,
+      "win": 65.8,
+      "pf": 1.28,
+      "oos_n": 45,
+      "oos_pf": 0.93
+    },
+    {
+      "strategy": "VWAP",
+      "side": "both",
+      "n": 211,
+      "win": 60.2,
+      "pf": 0.87,
+      "oos_n": 85,
+      "oos_pf": 0.9
+    },
+    {
+      "strategy": "DONCH15",
+      "side": "long",
+      "n": 18,
+      "win": 11.1,
+      "pf": 0.08
+    },
+    {
+      "strategy": "DONCH15",
+      "side": "short",
+      "n": 21,
+      "win": 42.9,
+      "pf": 1.27
+    },
+    {
+      "strategy": "DONCH15",
+      "side": "both",
+      "n": 39,
+      "win": 28.2,
+      "pf": 0.48,
+      "oos_n": 16,
+      "oos_pf": 0.12
+    }
+  ]
+}
