@@ -314,10 +314,10 @@ with tab_road:
 | Strategy | Walk-forward/OOS: Donchian long PF 2.08/2.16 (ES/NQ n=59/53), ADX 2.55/1.77 (thin) | done |
 | Strategy | First paper signals fired (index 23:00 + bonds 23:05 UTC — flat, no entry, expected) | done |
 | Strategy | Gate-1 decision: index LONG PROMOTED, bonds fade-SHORT KILLED, BBAND_INDEX_LONG skipped, screening CLOSED | done |
-| Data | Historical backfill (ES/NQ 2y, ZB/ZN ~16mo entitlement-capped, MES 5m/15m 60 sessions) → S3 futures-bars | done |
+| Data | Historical backfill → S3 futures-bars: 12 sym (ES/NQ/MES/MNQ/RTY/YM/ZB/ZN/ZF/ZT/UB/TN), daily ~3y index / ~16mo rates + intraday 1h/15m/5m/1m | done |
 | Data | S3 cold-archive (7 gaps closed) | done |
 | Data | Research ingest (FMP/NewsAPI/crypto → S3) | done |
-| Data | Data-lake build-out (contract metadata + rollover, session calendar, L1 tick recorder) | in progress |
+| Data | Data-lake build-out (contract metadata + rollover, session calendar, L1 tick recorder) | done |
 | Data | Broker reconciliation (startup + periodic + reconnect) | next phase |
 | Data | Data-health gate + stale-signal gate | next phase |
 | Obs | Streamlit dashboard :8501 (Live + Architecture + Roadmap) | done |
