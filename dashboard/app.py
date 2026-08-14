@@ -240,10 +240,18 @@ with tab_road:
 | # | Item |
 |---|---|
 | 1 | Paper-trade the live loop — first signals: index 23:00 UTC + bonds 23:05 UTC tonight, intraday Mon 13:30 UTC |
-| 2 | Risk-engine daily-loss auto-cap → wire record_fill/close accounting (follow-up, not blocking) |
+| 2 | ~~Risk-engine daily-loss auto-cap~~ ✅ DONE — record_fill/close wired + one persistent engine per run |
 """)
-    st.caption("Known gap (honest): daily-loss auto-cap is stateless — record_fill/close "
-               "accounting not wired yet, so the halt can't trigger until it is.")
+
+    st.markdown("#### 🗺️ Next phase (architecture review — roadmap, do NOT start wholesale)")
+    st.markdown("""
+1. **Persistent broker reconciliation** — broker is source of truth for positions/orders/fills; reconcile at startup + periodic + after reconnect.
+2. **Central execution manager + idempotent TradeIntent** — strategy → intent → risk → execution → broker; deterministic signal_id/intent_id; timeout=UNKNOWN (never infer fill from local state).
+3. **Persistent portfolio-level risk state** — survive restart; daily P&L ledger, loss limits, exposure.
+""")
+    st.caption("Go-live checklist = promotion gates (§59): strategy validity → execution validity → risk validity → "
+               "operational validity → paper validation → shadow mode → micro-live. Keep single-host (no k8s/microservices). "
+               "Remaining gap (honest): daily-loss auto-cap is per-run, not persisted across restarts — that is next-phase item 3.")
 
     st.markdown("#### ❌ Tabled / blocked")
     st.markdown("""
