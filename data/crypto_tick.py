@@ -33,12 +33,16 @@ table = dynamodb.Table(DYNAMO_TABLE)
 
 def _enable_ttl():
     try:
+        desc = table.meta.client.describe_time_to_live(TableName=DYNAMO_TABLE)
+        status = desc.get('TimeToLiveDescription', {}).get('TimeToLiveStatus')
+        if status == 'ENABLED':
+            return
         table.meta.client.update_time_to_live(
             TableName=DYNAMO_TABLE,
             TimeToLiveSpecification={"Enabled": True, "AttributeName": "ttl"},
         )
     except Exception as e:
-        print(f"TTL enable skipped: {e}")
+        print(f"TTL enable check failed: {e}")
 
 
 def put_quote(sym, price):

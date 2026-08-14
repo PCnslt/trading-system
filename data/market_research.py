@@ -93,19 +93,23 @@ def serper_news(q, n=8):
 
 
 def _enable_ttl(table):
-    """Enable DynamoDB TTL on the 'ttl' attribute (idempotent).
+    """Ensure DynamoDB TTL is on for the 'ttl' attribute (idempotent, quiet).
 
     Only items carrying a 'ttl' attribute are ever deleted — everything else
     (signals, positions, control) is untouched. TTL is best-effort: AWS purges
     expired items within ~48h, which is fine for bounding NEWS/QUOTE growth.
     """
     try:
+        desc = table.meta.client.describe_time_to_live(TableName=table.table_name)
+        status = desc.get('TimeToLiveDescription', {}).get('TimeToLiveStatus')
+        if status == 'ENABLED':
+            return
         table.meta.client.update_time_to_live(
             TableName=table.table_name,
             TimeToLiveSpecification={'Enabled': True, 'AttributeName': 'ttl'},
         )
     except Exception as e:
-        print(f'TTL enable skipped: {e}')
+        print(f'TTL enable check failed: {e}')
 
 
 def main():
