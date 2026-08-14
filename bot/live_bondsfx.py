@@ -50,6 +50,7 @@ import boto3
 from dotenv import load_dotenv
 
 from risk import RiskEngine, RiskConfig
+from control import get_control, control_state, wants_flatten, clear_flatten, flatten_ibkr
 
 load_dotenv()
 
@@ -191,7 +192,7 @@ def get_state(table, pk, sk):
 
 
 # ===== per-strategy runner (SHORT) =====
-def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode):
+def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=None):
     sname = strat['name']
     tag = f"{sym}_{sname}"                       # e.g. ZB_RSI2SHORT, ZN_BBANDSHORT
     state = get_state(dynamo, f"POSITION#{tag}", 'current') or {}
@@ -233,6 +234,9 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode):
             print(f">>> {mode} {tag} hold short pos={pos} held={held}d | "
                   f"close {detail['close']:.4f} {strat['label']}")
     elif entry:
+        if control_state(ctrl or {}) != 'RUNNING':
+            print(f">>> {mode} {tag} no entry — control state {control_state(ctrl or {})}")
+            return
         risk = RiskEngine(RiskConfig(risk_budget_usd=BONDFX_RISK_BUDGET))
         allowed, why = risk.can_enter()
         if not allowed:
@@ -283,6 +287,18 @@ def main():
         return
 
     try:
+        # 3. control plane — honour kill/pause/flatten BEFORE any order
+        ctrl = get_control(dynamo)
+        if wants_flatten(ctrl):
+            all_tags = [f"{c['symbol']}_{s['name']}" for c in CONTRACTS for s in STRATEGIES]
+            flatten_ibkr(ib, [c['symbol'] for c in CONTRACTS], dynamo, all_tags, today, mode)
+            clear_flatten(dynamo)
+        if control_state(ctrl) == 'KILLED':
+            print(f"[{today}] {mode} KILLED — all trading halted (positions flattened)")
+            return
+        if control_state(ctrl) == 'PAUSED':
+            print(f"[{today}] {mode} PAUSED — no new entries; managing exits only")
+
         for c in CONTRACTS:
             sym = c['symbol']
             df = data[sym]
@@ -291,7 +307,7 @@ def main():
                 continue
             detail = compute(df)
 
-            # 3. qualify contract (front-month, dynamic roll) — once per symbol
+            # 4. qualify contract (front-month, dynamic roll) — once per symbol
             try:
                 con = ib.qualifyContracts(Future(sym, front_month(), c['exchange']))[0]
             except Exception as e:
@@ -300,7 +316,7 @@ def main():
                 continue
 
             for strat in STRATEGIES:
-                run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode)
+                run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl)
     finally:
         ib.disconnect()
 

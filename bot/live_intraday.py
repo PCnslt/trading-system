@@ -47,6 +47,7 @@ from ib_insync import IB, Future, MarketOrder, StopOrder
 
 from risk import RiskEngine, RiskConfig
 from intraday_scan import load_ibkr_bars, prep_rth
+from control import get_control, control_state, wants_flatten, clear_flatten, flatten_ibkr
 
 load_dotenv()
 
@@ -230,6 +231,20 @@ def _other_open(dynamo, exclude, today):
     return False, None
 
 
+# The DAILY index bot (live.py, clientId 70) holds MES overnight in the SAME
+# paper account. Its tags:
+DAILY_MES_TAGS = ['MES_DONCHIAN', 'MES_RSI2']
+
+
+def _daily_mes_held(dynamo):
+    """True if the daily bot currently holds MES (from its DynamoDB state)."""
+    for tag in DAILY_MES_TAGS:
+        st = get_state(dynamo, f'POSITION#{tag}', 'current') or {}
+        if int(st.get('pos', 0)) > 0:
+            return True, tag
+    return False, None
+
+
 # ===== IBKR helpers =====
 def stop_open(ib, sym, side):
     action = 'SELL' if side == 'LONG' else 'BUY'
@@ -250,7 +265,7 @@ def _cancel_stops(ib, sym):
 
 
 # ===== runner =====
-def run_strategy(ib, dynamo, con, strat, df, now, today, mode):
+def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None):
     sname = strat['name']
     tag = f"MES_{sname}"
     detail = strat['detail'](df)
@@ -308,6 +323,9 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode):
     else:
         # flat -> evaluate entry
         if entry_side != 0 and entry_allowed and not eod:
+            if control_state(ctrl or {}) != 'RUNNING':
+                print(f">>> {mode} {tag} no entry — control state {control_state(ctrl or {})}")
+                return
             other, other_name = _other_open(dynamo, sname, today)
             if other:
                 print(f"[{today}] {mode} {tag} no entry — {other_name} already holds MES")
@@ -401,6 +419,26 @@ def main():
         return
 
     try:
+        # control plane — honour kill/pause/flatten BEFORE any order.
+        # flatten_ibkr also resets DAILY MES tags because a global MES flatten
+        # closes the daily bot's shared position too.
+        ctrl = get_control(dynamo)
+        if wants_flatten(ctrl):
+            flatten_ibkr(ib, [CONTRACT['symbol']], dynamo,
+                         [f"MES_{s['name']}" for s in STRATEGIES] + DAILY_MES_TAGS,
+                         today, mode)
+            clear_flatten(dynamo)
+        if control_state(ctrl) == 'KILLED':
+            print(f"[{now.isoformat()}] {mode} KILLED — all trading halted (positions flattened)")
+            return
+
+        # cross-bot guard: never net/flatten the daily bot's MES position
+        daily_held, daily_tag = _daily_mes_held(dynamo)
+        if daily_held:
+            print(f"[{now.isoformat()}] {mode} intraday STAND DOWN — "
+                  f"daily bot holds MES ({daily_tag})")
+            return
+
         bars = {}
         for strat in STRATEGIES:
             df = load_ibkr_bars(ib, con, duration=DURATION, bar_size=strat['barsize'], rth=True)
@@ -414,7 +452,7 @@ def main():
             if df.empty or len(df) < min_bars:
                 print(f"[{now.isoformat()}] {mode} {strat['name']}: insufficient bars ({len(df)})")
                 continue
-            run_strategy(ib, dynamo, con, strat, df, now, today, mode)
+            run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl)
     finally:
         ib.disconnect()
 
