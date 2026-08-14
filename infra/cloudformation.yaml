@@ -221,6 +221,7 @@ Resources:
           */10 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/crypto_tick.py >> /home/ubuntu/trading-system/data/crypto.log 2>&1
           0 21 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/ingest.py >> /home/ubuntu/trading-system/data/ingest.log 2>&1
           5 21 * * * cd /home/ubuntu/trading-system/bot && /home/ubuntu/trading-system/venv/bin/python live.py >> /home/ubuntu/trading-system/bot/live.log 2>&1
+          10 21 * * * cd /home/ubuntu/trading-system/bot && /home/ubuntu/trading-system/venv/bin/python live_bondsfx.py >> /home/ubuntu/trading-system/bot/live_bondsfx.log 2>&1
           CRON
           ) | crontab -
 
