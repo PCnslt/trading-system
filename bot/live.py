@@ -1,14 +1,23 @@
-"""Live trading bot — daily MES trend breakout, VPS-ready (24/7).
+"""Live trading bot — Donchian/ATR LONG-ONLY breakout, MES + MNQ (paper forward-test).
 
-Strategy (matches backtest: long-only + trailing + ADX>25, PF 2.73):
-  Entry  : close > 20-day high AND close > SMA200 AND ADX > 25
-  Stop   : trailing 2*ATR (moved up daily, never down)
-  Exit   : close < SMA200 (trend broken) -> close position
+Strategy (exact port of bot/futures_scan.py `sig_donchian` long-only — the
+VALIDATED edge: full-period PF 2.23/1.80, walk-forward OOS PF 2.08/2.14 on
+ES/NQ, ~155 trades/ticker, MaxDD -7%/-8.5%):
 
-Data: yfinance ES=F (free). Execution: IBKR (paper MES, micro).
-Logging: DynamoDB (signals + trades + position state). S3 archive.
+  Entry : close > prior 20-day high   (h.rolling(20).max().shift(1))
+          Long only. NO SMA200, NO ADX (those were the over-selective ADX
+          variant — dropped; short and long-short legs collapse — dropped).
+  Stop  : FIXED 2*ATR below entry, placed as GTC stop order. NOT trailed —
+          trailing is NOT part of the backtested edge.
+  Exits (checked in this order, close-based):
+          1) 5-day time stop
+          2) close <= 2*ATR stop
+          3) close < prior 20-day low (opposite breakout -> exit, do not flip)
 
-Run daily via cron. Portable: IBKR_HOST/PORT via env.
+Data: yfinance ES=F / NQ=F daily (same % action as MES/MNQ).
+Execution: IBKR paper (DUR193467) MES + MNQ, front-month, dynamic roll.
+Logging: DynamoDB SIGNAL#<contract> / TRADE#<contract> / POSITION#<contract>.
+Run daily via cron 23:00 UTC.
 """
 import os
 import time
@@ -28,65 +37,72 @@ load_dotenv()
 IBKR_HOST = os.getenv('IBKR_HOST', '127.0.0.1')
 IBKR_PORT = int(os.getenv('IBKR_PORT', '4002'))
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
-S3_BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
 RISK_BUDGET = float(os.getenv('RISK_BUDGET', '50000'))
 LIVE = os.getenv('LIVE', 'false').lower() == 'true'   # flip to true for real money
 
-TICKER = 'ES=F'          # data ticker (same price action as MES)
-TRADE_SYMBOL = 'MES'     # execution (micro E-mini)
-POINT_VALUE = 5.0        # $5 / point for MES
+LOOKBACK = 20
 STOP_ATR = 2.0
-ADX_MIN = 25
+MAX_HOLD = 5
+
+# data ticker -> execution contract. MES/MNQ are 1/10 size; % returns identical.
+CONTRACTS = [
+    {'data': 'ES=F', 'symbol': 'MES', 'point_value': 5.0},
+    {'data': 'NQ=F', 'symbol': 'MNQ', 'point_value': 2.0},
+]
 
 
 # ===== indicators =====
-def compute(df):
-    h, l, c = df['High'], df['Low'], df['Close']
-    sma200 = c.rolling(200).mean()
-    don_hi = h.rolling(20).max().shift(1)
-    atr = _wilder_atr(h, l, c, 14)
-    adx = _adx(h, l, c, 14)
-    return pd.DataFrame({
-        'close': c, 'sma200': sma200, 'don_hi': don_hi, 'atr': atr, 'adx': adx,
-    }).iloc[-1]
-
-
-def _wilder_atr(h, l, c, n):
+def wilder_atr(h, l, c, n=14):
     tr = pd.concat([h - l, (h - c.shift()).abs(), (l - c.shift()).abs()], axis=1).max(axis=1)
     return tr.ewm(alpha=1 / n, adjust=False).mean()
 
 
-def _adx(h, l, c, n=14):
-    up = h.diff().to_numpy()
-    dn = (-l.diff()).to_numpy()
-    plus_dm = np.where((up > dn) & (up > 0), up, 0.0)
-    minus_dm = np.where((dn > up) & (dn > 0), dn, 0.0)
-    tr = _wilder_atr(h, l, c, n)
-    idx = h.index
-    plus_di = 100 * pd.Series(plus_dm, index=idx).ewm(alpha=1 / n, adjust=False).mean() / tr
-    minus_di = 100 * pd.Series(minus_dm, index=idx).ewm(alpha=1 / n, adjust=False).mean() / tr
-    dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di)
-    return dx.ewm(alpha=1 / n, adjust=False).mean()
+def compute(df):
+    """Last bar's indicator values. don_hi/don_lo are PRIOR 20-day extremes
+    (shift(1) — today excluded), matching futures_scan.py exactly."""
+    h, l, c = df['High'], df['Low'], df['Close']
+    don_hi = h.rolling(LOOKBACK).max().shift(1)
+    don_lo = l.rolling(LOOKBACK).min().shift(1)
+    atr = wilder_atr(h, l, c, 14)
+    return pd.DataFrame({'close': c, 'don_hi': don_hi, 'don_lo': don_lo, 'atr': atr}).iloc[-1]
 
 
 def entry_signal(detail):
-    if detail['close'] > detail['don_hi'] and detail['close'] > detail['sma200'] and detail['adx'] > ADX_MIN:
-        return True, f"breakout {round(detail['close'],1)} > {round(detail['don_hi'],1)} & ADX {detail['adx']:.1f}>25"
-    return False, f"close {round(detail['close'],1)} | ADX {detail['adx']:.1f} | don_hi {round(detail['don_hi'],1)}"
+    if not np.isnan(detail['don_hi']) and detail['close'] > detail['don_hi']:
+        return True, f"close {detail['close']:.1f} > 20d-high {detail['don_hi']:.1f}"
+    return False, f"close {detail['close']:.1f} <= 20d-high {detail['don_hi']:.1f}"
 
 
-def exit_signal(detail):
-    return detail['close'] < detail['sma200'], f"close {round(detail['close'],1)} < SMA200 {round(detail['sma200'],1)}"
+def exit_signal(detail, stop, held_days):
+    """Close-based exits, in backtest order: time stop -> ATR stop -> breakout."""
+    if held_days >= MAX_HOLD:
+        return True, f"time stop ({held_days}d >= {MAX_HOLD}d)"
+    if stop is not None and detail['close'] <= stop:
+        return True, f"close {detail['close']:.1f} <= stop {stop:.1f}"
+    if not np.isnan(detail['don_lo']) and detail['close'] < detail['don_lo']:
+        return True, f"close {detail['close']:.1f} < 20d-low {detail['don_lo']:.1f}"
+    return False, "hold"
 
 
 # ===== contract =====
 def front_month(now=None):
-    """Front-month MES contract (YYYYMM). Rolls quarterly Mar/Jun/Sep/Dec."""
+    """Front-month contract (YYYYMM), quarterly Mar/Jun/Sep/Dec. MES & MNQ share it."""
     now = now or dt.date.today()
     for m in (3, 6, 9, 12):
         if now.month <= m:
             return f"{now.year}{m:02d}"
     return f"{now.year + 1}03"
+
+
+def held_days(df, entry_date):
+    """Number of trading bars strictly after entry date."""
+    if not entry_date:
+        return 0
+    e = pd.Timestamp(entry_date)
+    idx = df.index
+    if getattr(idx, 'tz', None) is not None:
+        e = e.tz_localize(idx.tz)
+    return int((idx > e).sum())
 
 
 # ===== DynamoDB helpers =====
@@ -102,16 +118,16 @@ def get_state(table, pk, sk):
 # ===== main =====
 def main():
     dynamo = boto3.resource('dynamodb', region_name='us-east-1').Table(DYNAMO_TABLE)
-
-    # 1. data
-    df = yf.download(TICKER, period='2y', interval='1d', progress=False, auto_adjust=True)
-    if isinstance(df.columns, pd.MultiIndex):
-        df.columns = df.columns.get_level_values(0)
-    if df.empty:
-        print("no data"); return
-    detail = compute(df)
     today = dt.date.today().isoformat()
     mode = 'LIVE' if LIVE else 'PAPER'
+
+    # 1. data (fetch before IBKR so we can still log signals if connect fails)
+    data = {}
+    for c in CONTRACTS:
+        df = yf.download(c['data'], period='2y', interval='1d', progress=False, auto_adjust=True)
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        data[c['symbol']] = df
 
     # 2. connect IBKR
     from ib_insync import IB, Future, MarketOrder, StopOrder
@@ -121,74 +137,92 @@ def main():
     except Exception as e:
         print(f"[{today}] {mode} IBKR connect failed: {e}")
         return
+
     try:
-        mes = ib.qualifyContracts(Future(TRADE_SYMBOL, front_month(), 'CME'))[0]
-    except Exception as e:
-        print(f"[{today}] contract qualify failed: {e}"); ib.disconnect(); return
+        for c in CONTRACTS:
+            sym = c['symbol']
+            df = data[sym]
+            if df.empty or len(df) < LOOKBACK + 5:
+                print(f"[{today}] {sym}: insufficient data ({len(df)} bars)")
+                continue
+            detail = compute(df)
 
-    # 3. current position (source of truth)
-    pos = next((p.position for p in ib.positions() if p.contract.symbol == TRADE_SYMBOL), 0)
-    state = get_state(dynamo, f"POSITION#{TRADE_SYMBOL}", 'current')
-    stop_level = float(state['stop']) if state and state.get('stop') else None
+            # 3. qualify contract (front-month, dynamic roll)
+            try:
+                con = ib.qualifyContracts(Future(sym, front_month(), 'CME'))[0]
+            except Exception as e:
+                print(f"[{today}] {sym}: contract qualify failed: {e}")
+                continue
 
-    print(f"[{today}] {mode} pos={pos} stop={stop_level} | {detail['close']:.1f} ADX {detail['adx']:.1f}")
+            # 4. position + state
+            pos = next((p.position for p in ib.positions() if p.contract.symbol == sym), 0)
+            state = get_state(dynamo, f"POSITION#{sym}", 'current') or {}
+            was_long = int(state.get('pos', 0)) > 0
+            stop = float(state['stop']) if state.get('stop') else None
+            entry_date = state.get('entry_date')
+            held = held_days(df, entry_date)
 
-    # log signal
-    entry, reason = entry_signal(detail)
-    log_dynamo(dynamo, f"SIGNAL#{TICKER}", today, {
-        'signal': 'LONG' if entry else 'NONE', 'close': str(round(detail['close'], 2)),
-        'adx': str(round(detail['adx'], 2)), 'reason': reason, 'ts': int(time.time()),
-    })
+            entry, ereason = entry_signal(detail)
+            log_dynamo(dynamo, f"SIGNAL#{sym}", today, {
+                'signal': 'LONG' if entry else ('EXIT' if was_long else 'NONE'),
+                'close': str(round(detail['close'], 2)),
+                'don_hi': str(round(detail['don_hi'], 2)) if not np.isnan(detail['don_hi']) else '',
+                'don_lo': str(round(detail['don_lo'], 2)) if not np.isnan(detail['don_lo']) else '',
+                'atr': str(round(detail['atr'], 2)),
+                'pos': pos, 'held_days': held, 'reason': ereason, 'ts': int(time.time()),
+            })
 
-    # 4. manage open position
-    if pos > 0:
-        exit_sig, ereason = exit_signal(detail)
-        if exit_sig:
-            # close position + cancel stop
-            ib.placeOrder(mes, MarketOrder('SELL', pos, tif='DAY'))
-            for o in ib.openOrders():
-                if o.order.action == 'SELL' and o.order.orderType == 'STP':
-                    ib.cancelOrder(o.order)
-            ib.sleep(2)
-            log_dynamo(dynamo, f"TRADE#{TRADE_SYMBOL}", today, {
-                'side': 'EXIT', 'qty': pos, 'reason': ereason, 'ts': int(time.time())})
-            log_dynamo(dynamo, f"POSITION#{TRADE_SYMBOL}", 'current', {
-                'pos': 0, 'stop': '0', 'entry': '0', 'ts': int(time.time())})
-            print(f">>> {mode} EXIT {pos} MES ({ereason})")
-        else:
-            # trail stop up: new = max(current, close - 2*ATR)
-            new_stop = detail['close'] - STOP_ATR * detail['atr']
-            if stop_level is None or new_stop > stop_level:
-                for o in ib.openOrders():
-                    if o.order.action == 'SELL' and o.order.orderType == 'STP':
-                        ib.cancelOrder(o.order)
-                ib.placeOrder(mes, StopOrder('SELL', pos, new_stop, tif='GTC'))
-                log_dynamo(dynamo, f"POSITION#{TRADE_SYMBOL}", 'current', {
-                    'pos': pos, 'stop': str(round(new_stop, 2)), 'ts': int(time.time())})
-                print(f">>> {mode} trailing stop -> {round(new_stop,1)}")
+            if pos > 0:
+                should_exit, xreason = exit_signal(detail, stop, held)
+                if should_exit:
+                    ib.placeOrder(con, MarketOrder('SELL', pos, tif='DAY'))
+                    for o in ib.openOrders():
+                        if o.contract.symbol == sym and o.order.action == 'SELL' and o.order.orderType == 'STP':
+                            ib.cancelOrder(o)
+                    ib.sleep(1)
+                    log_dynamo(dynamo, f"TRADE#{sym}", f"{today}#{int(time.time())}", {
+                        'side': 'EXIT', 'qty': pos, 'reason': xreason, 'ts': int(time.time())})
+                    log_dynamo(dynamo, f"POSITION#{sym}", 'current', {
+                        'pos': 0, 'stop': '0', 'entry': '0', 'entry_date': '', 'ts': int(time.time())})
+                    print(f">>> {mode} {sym} EXIT {pos} ({xreason})")
+                else:
+                    print(f">>> {mode} {sym} hold pos={pos} held={held}d stop={stop} | "
+                          f"close {detail['close']:.1f} 20d-hi {detail['don_hi']:.1f} 20d-lo {detail['don_lo']:.1f}")
+
+            elif was_long and pos == 0:
+                # state says long but IBKR is flat -> protective stop filled intraday
+                log_dynamo(dynamo, f"TRADE#{sym}", f"{today}#{int(time.time())}", {
+                    'side': 'EXIT', 'qty': 0, 'reason': 'stop-filled (intraday)', 'ts': int(time.time())})
+                log_dynamo(dynamo, f"POSITION#{sym}", 'current', {
+                    'pos': 0, 'stop': '0', 'entry': '0', 'entry_date': '', 'ts': int(time.time())})
+                print(f">>> {mode} {sym} EXIT via protective stop (intraday fill)")
+
+            elif entry:
+                risk = RiskEngine(RiskConfig(risk_budget_usd=RISK_BUDGET))
+                allowed, why = risk.can_enter()
+                if not allowed:
+                    print(f">>> {mode} {sym} blocked by risk: {why}")
+                    continue
+                stop = detail['close'] - STOP_ATR * detail['atr']
+                size = risk.position_size(detail['close'] - stop, point_value=c['point_value'])
+                if size > 0:
+                    ib.placeOrder(con, MarketOrder('BUY', size, tif='DAY'))
+                    ib.sleep(1)
+                    ib.placeOrder(con, StopOrder('SELL', size, stop, tif='GTC'))
+                    log_dynamo(dynamo, f"TRADE#{sym}", f"{today}#{int(time.time())}", {
+                        'side': 'BUY', 'qty': size, 'entry': str(round(detail['close'], 2)),
+                        'stop': str(round(stop, 2)), 'contract': front_month(), 'ts': int(time.time())})
+                    log_dynamo(dynamo, f"POSITION#{sym}", 'current', {
+                        'pos': size, 'stop': str(round(stop, 2)),
+                        'entry': str(round(detail['close'], 2)),
+                        'entry_date': today, 'contract': front_month(), 'ts': int(time.time())})
+                    print(f">>> {mode} {sym} ENTRY: BUY {size} @ market, stop {round(stop,1)} ({ereason})")
+                else:
+                    print(f">>> {mode} {sym} size=0 (stop too wide for budget), skip")
             else:
-                print(f">>> {mode} hold, stop unchanged @ {round(stop_level,1)}")
-    # 5. entry
-    elif entry:
-        risk = RiskEngine(RiskConfig(risk_budget_usd=RISK_BUDGET))
-        allowed, why = risk.can_enter()
-        if not allowed:
-            print(f">>> blocked by risk: {why}"); ib.disconnect(); return
-        stop = detail['close'] - STOP_ATR * detail['atr']
-        size = risk.position_size(detail['close'] - stop, point_value=POINT_VALUE)
-        if size > 0:
-            ib.placeOrder(mes, MarketOrder('BUY', size, tif='DAY'))
-            ib.sleep(2)
-            ib.placeOrder(mes, StopOrder('SELL', size, stop, tif='GTC'))
-            log_dynamo(dynamo, f"TRADE#{TRADE_SYMBOL}", today, {
-                'side': 'BUY', 'qty': size, 'entry': str(round(detail['close'], 2)),
-                'stop': str(round(stop, 2)), 'ts': int(time.time())})
-            log_dynamo(dynamo, f"POSITION#{TRADE_SYMBOL}", 'current', {
-                'pos': size, 'stop': str(round(stop, 2)), 'entry': str(round(detail['close'], 2)),
-                'ts': int(time.time())})
-            print(f">>> {mode} ENTRY: BUY {size} MES @ market, stop {round(stop,1)} ({reason})")
-
-    ib.disconnect()
+                print(f"[{today}] {mode} {sym} flat, no entry ({ereason})")
+    finally:
+        ib.disconnect()
 
 
 if __name__ == '__main__':
