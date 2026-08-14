@@ -1,5 +1,12 @@
 # GATE-1 VALIDATION REPORT — promote/kill decision + new-strategy screen
 
+> **FINAL DECISION (2026-08-14, confirmed by S3 re-run):**
+> - BONDS fade-SHORT = **KILL** (approved + final) — dies at 1-tick slippage.
+>   `live_bondsfx.py` disarmed (no-op), Hermes cron `paper_bonds.sh` paused.
+> - INDEX-LONG = **PROMOTE** (final) — `live.py` is the live-capital candidate.
+> - BBAND_INDEX_LONG = **SKIP** — redundant with RSI2-LONG (corr 0.69, 73% overlap).
+> - Strategy screening **CLOSED** — weekly scan paused; no new screening.
+
 Source: yfinance daily (2010–2026, auto_adjust). Re-run on IBKR S3 bars once the
 backfill completes (`research/validate_edges.py --source s3`).
 Cost model: fee 1.3 bps round-trip of notional + slippage 0/1/2/3 ticks PER SIDE
