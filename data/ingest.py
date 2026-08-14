@@ -74,6 +74,11 @@ def ingest_equity_daily(symbols):
             time.sleep(16)  # AlphaVantage free tier: ~5 req/min
         print(f"Ingesting {sym} daily...")
         series = fetch_alphavantage_daily(sym)
+        if not series:
+            # AlphaVantage rate-limit / bad ticker returns {} — do NOT write a
+            # 2-byte "{}" object to S3 (or empty OHLCV rows to DynamoDB).
+            print(f"  [skip] {sym}: empty series (rate-limit?) — not written/archived")
+            continue
         for date_str, bar in series.items():
             entity = f"OHLCV#{sym}"
             # sk = date (ISO sortable)
