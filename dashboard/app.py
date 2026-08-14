@@ -93,6 +93,19 @@ with tab_live:
             st.metric("Stop", pos.get("stop"))
 
     st.divider()
+    st.subheader("📰 Market research — latest headlines")
+    _day = dt.datetime.now(dt.UTC).strftime('%Y-%m-%d')
+    _news = latest(f'NEWS#{_day}', 8)
+    if _news:
+        for _n in _news:
+            _lbl = _n.get('sentiment', 'neutral')
+            _emoji = {'positive': '🟢', 'negative': '🔴', 'neutral': '⚪️'}.get(_lbl, '⚪️')
+            _sc = _n.get('score', '0')
+            st.markdown(f"{_emoji} **{_lbl}** ({_sc}) — {_n.get('title','')} · `{_n.get('source','')}`")
+    else:
+        st.caption("No headlines yet — first research run pending.")
+
+    st.divider()
     st.subheader("🕹️ Controls")
     st.caption("Safe controls only — no order entry here. These set flags the bot reads.")
     c1, c2, c3 = st.columns(3)
