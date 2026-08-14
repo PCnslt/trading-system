@@ -13,6 +13,8 @@
 */10 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/crypto_tick.py >> /home/ubuntu/trading-system/data/crypto.log 2>&1
 0 21 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/ingest.py >> /home/ubuntu/trading-system/data/ingest.log 2>&1
 */30 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/market_research.py >> /home/ubuntu/trading-system/data/research.log 2>&1
+15 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/fmp_ingest.py >> /home/ubuntu/trading-system/data/fmp.log 2>&1
+45 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/newsapi_ingest.py >> /home/ubuntu/trading-system/data/newsapi.log 2>&1
 
 # ---- bot execution (Hermes cron — NOT here) ----
 #   "Paper signals — index futures"    script paper_index_futures.sh   @ 0 23 * * *

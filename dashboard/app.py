@@ -317,8 +317,20 @@ with tab_road:
 | Crypto | user distrust — deferred |
 | Live futures | needs capital + proven edge |
 | Options (Robinhood L2) | defer until futures edge trusted |
-| Schwab API | dropped (not needed) |
+| Schwab API | ON HOLD (pending API approval — re-evaluate when it arrives) |
 | Discount-broker day-margin | rejected (wipeout risk) |
+""")
+
+    st.markdown("#### 🔬 Research enhancement (FUTURE)")
+    st.markdown("""\
+| # | Item | Depends on | Status |
+|---|---|---|---|
+| R1 | FinBERT sentiment layer over NewsAPI/Serper/X headlines | `HF_TOKEN` | FUTURE |
+| R2 | finance-embeddings → Pinecone semantic search / RAG | `PINECONE_API_KEY` | FUTURE |
+| R3 | FinGPT (LLM sentiment) | HF token / GPU | FUTURE (later) |
+| R4 | X/Twitter v2 social sentiment | X API key | FUTURE |
+| R5 | Options flow (Robinhood L2) + SEC EDGAR filings | Robinhood MCP + EDGAR | FUTURE |
+| R6 | HF datasets for research/backtest | `HF_TOKEN` | FUTURE |
 """)
 
     st.markdown("#### 🗺️ Roadmap (phased)")
