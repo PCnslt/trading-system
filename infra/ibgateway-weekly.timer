@@ -1,0 +1,10 @@
+[Unit]
+Description=IB Gateway weekly cold restart timer (Sunday 13:00 UTC)
+
+[Timer]
+OnCalendar=Sun *-*-* 13:00:00
+Persistent=true
+Unit=ibgateway-weekly.service
+
+[Install]
+WantedBy=timers.target

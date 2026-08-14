@@ -22,3 +22,4 @@ __pycache__/
 # Local infra state
 infra/*.pem
 infra/terraform.tfstate*
+ibgateway-creds.env

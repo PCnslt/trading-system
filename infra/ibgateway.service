@@ -1,11 +1,11 @@
 [Unit]
-Description=IB Gateway (headless paper trading)
+Description=IB Gateway (headless paper trading, native auto-restart)
 After=network.target
 
 [Service]
 User=ubuntu
 Environment=DISPLAY=:99
-ExecStart=/home/ubuntu/ibgateway-start.sh
+ExecStart=/home/ubuntu/ibgateway-native-start.sh
 Restart=on-failure
 RestartSec=15
 

@@ -1,0 +1,6 @@
+[Unit]
+Description=IB Gateway weekly cold restart (Sunday 13:00 UTC, triggers 2FA re-login)
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/systemctl restart ibgateway
