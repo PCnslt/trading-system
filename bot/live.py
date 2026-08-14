@@ -25,6 +25,7 @@ Logging: DynamoDB pk tagged per strategy —
 Run daily via cron 23:00 UTC.
 """
 import os
+import sys
 import time
 import datetime as dt
 
@@ -34,6 +35,9 @@ import pandas as pd
 import boto3
 from dotenv import load_dotenv
 from ib_insync import IB, Future, MarketOrder, StopOrder
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from data.s3_archive import archive_daily_bar
 
 from risk import RiskEngine, RiskConfig, realized_pnl
 from execution import confirm_fill
@@ -172,6 +176,25 @@ def get_state(table, pk, sk):
     return r.get('Item')
 
 
+def _archive_daily_bar(c, df):
+    """Archive the latest daily bar under the DATA ticker (ES/NQ for MES/MNQ)."""
+    if df is None or df.empty:
+        return
+    try:
+        data_sym = c['data'].replace('=F', '')      # ES=F -> ES, NQ=F -> NQ
+        last = df.iloc[-1]
+        bar = {
+            'date': df.index[-1].strftime('%Y-%m-%d'),
+            'symbol': data_sym,
+            'open': float(last['Open']), 'high': float(last['High']),
+            'low': float(last['Low']), 'close': float(last['Close']),
+            'volume': float(last['Volume']) if 'Volume' in df.columns else None,
+        }
+        archive_daily_bar(data_sym, bar)
+    except Exception as e:
+        print(f"[{c['symbol']}] daily bar archive failed: {e}")
+
+
 def stop_open(ib, sym):
     """True if a GTC SELL stop order for sym is still resting."""
     return any(o.contract.symbol == sym and o.order.action == 'SELL'
@@ -301,6 +324,7 @@ def main():
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = df.columns.get_level_values(0)
         data[c['symbol']] = df
+        _archive_daily_bar(c, df)
 
     # 2. connect IBKR
     ib = IB()
