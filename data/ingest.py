@@ -5,7 +5,6 @@ Reads secrets from .env (never committed).
 """
 import os
 import time
-import datetime as dt
 from decimal import Decimal
 
 import boto3
@@ -95,32 +94,11 @@ def ingest_equity_daily(symbols):
         print(f"  {len(series)} bars written for {sym}")
 
 
-def fetch_binance_ticker(symbols):
-    """Current price from Binance.US (public, no auth needed)."""
-    out = {}
-    for sym in symbols:
-        r = requests.get(
-            "https://api.binance.us/api/v3/ticker/price",
-            params={"symbol": sym},
-            timeout=15,
-        )
-        if r.status_code == 200:
-            out[sym] = r.json()
-    return out
-
-
 if __name__ == "__main__":
     # Symbols to track (expandable). Start small.
     EQUITIES = ["AAPL", "MSFT", "SPY", "MCD"]
-    CRYPTO = ["BTCUSDT", "ETHUSDT"]
 
     print("=== Equity daily (AlphaVantage) ===")
     ingest_equity_daily(EQUITIES)
-
-    print("=== Crypto tickers (Binance.US) ===")
-    tickers = fetch_binance_ticker(CRYPTO)
-    for sym, t in tickers.items():
-        put_item(f"QUOTE#{sym}", dt.datetime.now(dt.timezone.utc).isoformat(), {"price": t.get("price")})
-        print(f"  {sym}: {t.get('price')}")
 
     print("Done.")
