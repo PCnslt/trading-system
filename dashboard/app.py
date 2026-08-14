@@ -357,7 +357,7 @@ with tab_road:
     st.markdown("#### 🗺️ Roadmap (refocused — Gate-1 decision, 2026-08-14)")
     st.markdown("""
 **Strategy question CLOSED — one independent edge:**
-- **INDEX LONG = PROMOTED** ✅ — Donchian + RSI2-LONG (live.py) is the live-capital candidate.
+- **INDEX LONG = PROMOTED** ✅ — Donchian + RSI2-LONG (live.py) is the live-capital candidate. Honest numbers: Donchian PF 1.56 full / 1.52 OOS / 1.43 @3t; RSI2-LONG 1.99 / 2.57 / 1.88 @3t (corr 0.002 → independent bets).
 - **BONDS fade-SHORT = KILLED** 🛑 — dies at 1-tick slippage (S3 re-run + validate_edges.py agree); live_bondsfx.py disarmed, cron paused.
 - **BBAND_INDEX_LONG = SKIPPED** — redundant with RSI2-LONG (corr 0.69, 73% trade overlap); revisit only if RSI2-LONG underperforms live.
 - **Screening CLOSED** — weekly scan paused; no new strategy screening.

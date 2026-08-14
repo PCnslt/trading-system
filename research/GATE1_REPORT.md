@@ -7,8 +7,8 @@
 > - BBAND_INDEX_LONG = **SKIP** — redundant with RSI2-LONG (corr 0.69, 73% overlap).
 > - Strategy screening **CLOSED** — weekly scan paused; no new screening.
 
-Source: yfinance daily (2010–2026, auto_adjust). Re-run on IBKR S3 bars once the
-backfill completes (`research/validate_edges.py --source s3`).
+Source: yfinance daily (2010–2026, auto_adjust) — decision dataset. IBKR S3 re-run
+(`research/validate_edges.py --source s3`) DONE 2026-08-14 — see "S3 re-run" section.
 Cost model: fee 1.3 bps round-trip of notional + slippage 0/1/2/3 ticks PER SIDE
 (round-trip = 2× the stress level). 0-slippage is the ideal reference.
 Fill model: entry at signal close + adverse slippage; Donchian GTC stop modelled
@@ -93,3 +93,30 @@ No double-fill (one entry/exit per bar). Slippage per side is conservative.
 4. Execution-layer hardening (fill-verify + reconciliation) remains top roadmap
    priority: the index edge has enough margin to absorb realistic fills; the
    bonds edge does not.
+
+## TASK 4 — IBKR S3 re-run (clean dataset) — delta vs yfinance
+
+Re-ran `validate_edges.py --source s3` on the finished backfill (ES 745 daily bars
+2023-08→2026-08; NQ 603; ZB/ZN 342 bars 2025-04→2026-08 — ~3y index / ~16mo rates,
+the documented non-pro entitlement depth).
+
+**Critical caveat — S3 daily depth is ~3 years, not yfinance's 16.** Trade counts
+collapse (DONCHIAN 224→49, RSI2LONG 199→43, RSI2SHORT 238→13, BBANDSHORT 94→8), so
+the automated n≥30-OOS-trade promote bar flags index-LONG as "KILL" purely on sample
+thinness — NOT a strategy failure. The S3 run is a consistency check; the yfinance
+full-sample carries the statistical power for the promote/kill decision.
+
+| sleeve | yfinance full / OOS PF | S3 full / OOS PF | S3 PF @3t | reading |
+|---|---|---|---|---|
+| DONCHIAN | 1.56 / 1.52 | 1.45 / 1.22 (n=19) | 1.39 | survives, weaker |
+| RSI2LONG | 1.99 / 2.57 | 3.76 / 4.29 (n=17) | 3.63 | stronger on 2023-26 |
+| RSI2SHORT | 1.05 / 1.31 | 0.84 / 1.93 (n=3) | 0.45 | CONFIRMS KILL (dies 1t) |
+| BBANDSHORT | 0.99 / 1.01 | 2.42 / 8.30 (n=2) | 1.55 | noise (n=8) — do NOT resurrect |
+
+- Index-LONG: both sleeves stay cost-robust >1.0 on clean broker data. DONCHIAN dips
+  (validate fold PF 0.59, n=6 — small sample) but 3-tick PF 1.39 > 1.0. RSI2LONG is
+  the stronger sleeve on clean data. PROMOTE holds.
+- Bonds fade-SHORT: RSI2SHORT PF 0.68 @1-tick on clean data — KILL confirmed.
+  BBANDSHORT's 2.42 is n=8 / OOS n=2 → statistical noise, not a resurrection.
+- Corr: DONCHIAN vs RSI2LONG = -0.003 (S3) vs 0.002 (yf) → independent. Cross-edge
+  index-LONG vs bonds-SHORT = -0.019 (S3) vs 0.085 (yf) → genuinely uncorrelated.

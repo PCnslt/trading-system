@@ -19,11 +19,11 @@
 
 # ---- bot execution (Hermes cron — NOT here) ----
 #   "Paper signals — index futures"    script paper_index_futures.sh   @ 0 23 * * *
-#   "Paper signals — bonds"            script paper_bonds.sh           @ 5 23 * * *   [PAUSED 2026-08-14 — Gate-1 KILL]
+#   "Paper signals — bonds"            script paper_bonds.sh           @ 5 23 * * *   ⛔ PAUSED 2026-08-14 (Gate-1 KILL)
 #   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 13-20 * * 1-5
 #   "Daily trading summary"            prompt (status_report.py)       @ 45 23 * * *
 #   "IB Gateway health watchdog"       script ibgw_health.sh           @ */30 * * * *
-#   "Weekly strategy scan + refine"    prompt (strategy_scan.py)       @ 0 18 * * 0    [PAUSED 2026-08-14 — screening CLOSED]
+#   "Weekly strategy scan + refine"    prompt (strategy_scan.py)       @ 0 18 * * 0    ⛔ PAUSED 2026-08-14 (screening CLOSED)
 #
 # The intraday bot (live_intraday.py) self-gates internally:
 #   entries 13:30-19:30 UTC, EOD flatten 19:45 UTC, skip outside RTH.
