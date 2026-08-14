@@ -50,12 +50,14 @@ def _wilder_atr(h, l, c, n):
 
 
 def _adx(h, l, c, n=14):
-    up = h.diff(); dn = -l.diff()
+    up = h.diff().to_numpy()
+    dn = (-l.diff()).to_numpy()
     plus_dm = np.where((up > dn) & (up > 0), up, 0.0)
     minus_dm = np.where((dn > up) & (dn > 0), dn, 0.0)
     tr = _wilder_atr(h, l, c, n)
-    plus_di = 100 * pd.Series(plus_dm, index=h.index).ewm(alpha=1 / n, adjust=False).mean() / tr
-    minus_di = 100 * pd.Series(minus_dm, index=h.index).ewm(alpha=1 / n, adjust=False).mean() / tr
+    idx = h.index
+    plus_di = 100 * pd.Series(plus_dm, index=idx).ewm(alpha=1 / n, adjust=False).mean() / tr
+    minus_di = 100 * pd.Series(minus_dm, index=idx).ewm(alpha=1 / n, adjust=False).mean() / tr
     dx = 100 * (plus_di - minus_di).abs() / (plus_di + minus_di)
     return dx.ewm(alpha=1 / n, adjust=False).mean()
 
