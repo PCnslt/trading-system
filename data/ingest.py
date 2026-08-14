@@ -4,7 +4,6 @@ $0 data lake core. Run on a schedule (cron) or ad-hoc.
 Reads secrets from .env (never committed).
 """
 import os
-import json
 import time
 import datetime as dt
 from decimal import Decimal
@@ -13,15 +12,15 @@ import boto3
 import requests
 from dotenv import load_dotenv
 
+from s3_archive import archive_json
+
 load_dotenv()
 
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 DYNAMO_TABLE = os.getenv("DYNAMODB_TABLE", "trading-data")
-S3_BUCKET = os.getenv("S3_BUCKET", "trading-datalake-920641308584")
 ALPHAVANTAGE_KEY = os.getenv("ALPHAVANTAGE_API_KEY", "")
 
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
-s3 = boto3.client("s3", region_name=AWS_REGION)
 table = dynamodb.Table(DYNAMO_TABLE)
 
 
@@ -48,14 +47,6 @@ def put_item(entity: str, key: str, payload: dict):
             item[k] = str(v)
     table.put_item(Item=item)
     return item
-
-
-def archive_parquet(obj, symbol, kind):
-    """Save a JSON blob to S3 (cold archive). Parquet conversion can come later."""
-    today = dt.datetime.now(dt.timezone.utc).strftime("%Y/%m/%d")
-    key = f"{kind}/{symbol}/{today}/{int(time.time())}.json"
-    s3.put_object(Bucket=S3_BUCKET, Key=key, Body=json.dumps(obj))
-    return f"s3://{S3_BUCKET}/{key}"
 
 
 def fetch_alphavantage_daily(symbol: str) -> dict:
@@ -95,7 +86,7 @@ def ingest_equity_daily(symbols):
                 "volume": int(bar["5. volume"]),
             }
             put_item(entity, date_str, payload)
-        archive_parquet(series, sym, "ohlcv-daily")
+        archive_json(series, sym, "ohlcv-daily")
         print(f"  {len(series)} bars written for {sym}")
 
 
