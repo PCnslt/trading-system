@@ -308,8 +308,8 @@ with tab_road:
 | Bots | datetime.utcnow() → timezone-aware | done (614a47b) |
 | Bots | pytest suite (47 safety-invariant + regression tests) | done (fc99d8f) |
 | Bots | Dashboard crash: lazy-import ib_insync in control.py | done (e68ee33) |
-| Risk | Persistent risk state (survive restart) | next phase |
-| Risk | Daily loss cap fully functional end-to-end | next phase |
+| Risk | Persistent risk state (survive restart) — RISK#&lt;date&gt;/&lt;scope&gt; ledger, load-on-start, fail-closed | done |
+| Risk | Daily loss cap fully functional end-to-end (persisted accounting, checked before every entry, survives restart) | done |
 | Strategy | ES breakout backtest PF 2.73, MaxDD -7.9% | done |
 | Strategy | Walk-forward/OOS: Donchian long PF 2.08/2.16 (ES/NQ n=59/53), ADX 2.55/1.77 (thin) | done |
 | Strategy | First paper signals fired (index 23:00 + bonds 23:05 UTC — flat, no entry, expected) | done |
@@ -363,8 +363,8 @@ with tab_road:
 - **Screening CLOSED** — weekly scan paused; no new strategy screening.
 
 **Path to live capital (in order):**
-1. Execution-layer hardening — broker reconciliation + execution manager (fill-verify already done).
-2. Persistent risk ledger — restart-safe daily P&L + loss cap.
+1. Execution-layer hardening — broker reconciliation + execution manager (fill-verify already done). ← Phase 2/3 next.
+2. Persistent risk ledger — restart-safe daily P&L + loss cap. ✅ DONE (Phase 1)
 3. Paper-forward the index edge (live.py) until Gate 5 (paper validation) passes.
 4. Micro-live — min size, hard loss limit, tested kill.
 """)

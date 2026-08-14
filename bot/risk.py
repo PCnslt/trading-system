@@ -4,10 +4,23 @@ Incorporates the proven patterns from the odte-spy-bot:
 - Risk BUDGET (trading sleeve), not full NetLiq — a huge paper account would
   otherwise make %-based sizing inert (always hit max contracts).
 - Daily-loss halt, consecutive-loss brake, time stop, anomaly/staleness guard.
+
+PERSISTENCE (execution-hardening Phase 1):
+- Pass a `hardening.risk_ledger.RiskLedger` to survive restarts. Every
+  record_fill / record_close / emergency_halt / set_open_positions persists
+  the accounting to DynamoDB RISK#<date>/<scope>.
+- `RiskEngine.load(config, ledger)` loads persisted state (or a fresh-zero
+  day when absent) and RAISES RiskStateUnavailable on an unreadable state —
+  the caller must HALT new entries (fail-closed).
+- A save failure sets `_persist_error`, which blocks all subsequent entries
+  for the rest of the run (fail-closed) rather than silently continuing on
+  an unpatchable ledger.
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import time
+
+from hardening.risk_ledger import RiskStateUnavailable
 
 
 @dataclass
@@ -41,10 +54,16 @@ def realized_pnl(side, entry, exit_px, point_value, qty):
 
 
 class RiskEngine:
-    """Stateful risk gate. One instance per trading session/day."""
+    """Stateful risk gate. One instance per trading session/day.
 
-    def __init__(self, config: RiskConfig):
+    With a ledger attached, state is persisted to DynamoDB so a crash or
+    re-run does NOT reset the daily-loss cap / consecutive-loss brake to zero.
+    """
+
+    def __init__(self, config: RiskConfig, ledger=None):
         self.cfg = config
+        self._ledger = ledger               # hardening.risk_ledger.RiskLedger or None
+        self._persist_error = False         # save failed -> block new entries (fail-closed)
         self.daily_pnl = 0.0
         self.daily_trades = 0
         self.consecutive_losses = 0
@@ -53,6 +72,48 @@ class RiskEngine:
         self.halt_reason = None
         self.open_positions = 0
         self._last_data_ts = time.time()
+
+    # ---- persistence ----
+    @classmethod
+    def load(cls, config: RiskConfig, ledger):
+        """Build an engine and load persisted accounting for today (UTC).
+
+        Raises RiskStateUnavailable if the ledger is unreadable — callers MUST
+        HALT new entries. A clean "absent" item yields a fresh-zero day.
+        """
+        e = cls(config, ledger=ledger)
+        state = ledger.load(e._day.isoformat())
+        e.apply_state(state)
+        return e
+
+    def apply_state(self, state: dict):
+        """Restore accounting from a persisted dict (empty dict -> fresh day)."""
+        self.daily_pnl = float(state.get('daily_pnl', 0.0))
+        self.daily_trades = int(state.get('daily_trades', 0))
+        self.consecutive_losses = int(state.get('consecutive_losses', 0))
+        self.halted = bool(state.get('halted', False))
+        self.halt_reason = state.get('halt_reason') or None
+        self.open_positions = int(state.get('open_positions', 0))
+
+    def to_state(self) -> dict:
+        return {
+            'daily_pnl': round(self.daily_pnl, 2),
+            'daily_trades': self.daily_trades,
+            'consecutive_losses': self.consecutive_losses,
+            'halted': self.halted,
+            'halt_reason': self.halt_reason,
+            'open_positions': self.open_positions,
+        }
+
+    def _persist(self):
+        """Persist current accounting. A failure sets _persist_error (fail-closed)."""
+        if self._ledger is None:
+            return
+        try:
+            self._ledger.save(self._day.isoformat(), self.to_state())
+        except RiskStateUnavailable as e:
+            self._persist_error = True
+            print(f"[risk] persist failed — blocking new entries (fail-closed): {e}")
 
     # ---- rollover ----
     def _rollover_if_new_day(self):
@@ -64,11 +125,15 @@ class RiskEngine:
             self.consecutive_losses = 0
             self.halted = False
             self.halt_reason = None
+            self._persist_error = False
+            self._persist()
 
     # ---- gates ----
     def can_enter(self) -> tuple[bool, str]:
         """Fail-closed: return (allowed, reason)."""
         self._rollover_if_new_day()
+        if self._persist_error:
+            return False, "risk state persistence failure"
         if self.halted:
             return False, f"halted: {self.halt_reason}"
         if self.daily_trades >= self.cfg.max_trades_per_day:
@@ -92,6 +157,7 @@ class RiskEngine:
     def set_open_positions(self, n: int):
         """Seed open_positions from authoritative state (existing open positions)."""
         self.open_positions = int(n)
+        self._persist()
 
     # ---- sizing ----
     def position_size(self, stop_distance: float, point_value: float) -> int:
@@ -119,6 +185,7 @@ class RiskEngine:
     def record_fill(self):
         self.daily_trades += 1
         self.open_positions += 1
+        self._persist()
 
     def record_close(self, pnl: float):
         self.open_positions = max(0, self.open_positions - 1)
@@ -131,10 +198,12 @@ class RiskEngine:
         if self.daily_pnl <= -self.cfg.risk_budget_usd * self.cfg.max_daily_loss_pct:
             self.halted = True
             self.halt_reason = "daily loss halt"
+        self._persist()
 
     def emergency_halt(self, reason: str):
         self.halted = True
         self.halt_reason = reason
+        self._persist()
 
     def status(self) -> dict:
         return {

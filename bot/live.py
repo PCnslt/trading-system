@@ -41,6 +41,7 @@ from data.s3_archive import archive_daily_bar
 
 from risk import RiskEngine, RiskConfig, realized_pnl
 from execution import confirm_fill
+from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, already_ran_today,
                      mark_ran_today, ControlUnavailable, account_mode_ok)
@@ -364,8 +365,16 @@ def main():
         # 5. persistent risk engine — ONE instance for the whole run so
         #    daily_pnl / daily_trades / consecutive_losses accumulate across
         #    strategies (not re-instantiated per symbol x strategy).
-        risk = RiskEngine(RiskConfig(risk_budget_usd=RISK_BUDGET,
-                                     max_concurrent_positions=len(CONTRACTS) * len(STRATEGIES)))
+        #    Loaded from the ledger so a crash/re-run does NOT reset the
+        #    daily-loss cap / consecutive-loss brake to zero. Fail-closed:
+        #    an unreadable ledger HALTS the run (no new entries).
+        risk_cfg = RiskConfig(risk_budget_usd=RISK_BUDGET,
+                              max_concurrent_positions=len(CONTRACTS) * len(STRATEGIES))
+        try:
+            risk = RiskEngine.load(risk_cfg, RiskLedger(dynamo, scope='live'))
+        except RiskStateUnavailable as e:
+            print(f"[{today}] {mode} HALT — risk state unreadable (fail-closed): {e}")
+            return
         open_n = 0
         for c in CONTRACTS:
             for s in STRATEGIES:

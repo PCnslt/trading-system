@@ -3,7 +3,7 @@
 24/7 multi-market automated trading system. Futures → stocks → options → crypto.
 
 ## Architecture
-- **Data lake:** DynamoDB `trading-data` (hot) + S3 `trading-datalake-…` JSON (cold) — the compounding asset. Futures: `futures-bars/` (12 sym historical) · `futures-ticks/` (L1) · `contracts/` · `sessions/`; hot keys `CONTRACT#` `SESSION#` `QUOTE#`.
+- **Data lake:** DynamoDB `trading-data` (hot) + S3 `trading-datalake-…` JSON (cold) — the compounding asset. Futures: `futures-bars/` (12 sym historical) · `futures-ticks/` (L1) · `contracts/` · `sessions/`; hot keys `CONTRACT#` `SESSION#` `QUOTE#` `RISK#`.
 - **Strategy engine:** per-market Python modules + Pine Script research on TradingView
 - **Execution:** IBKR (futures) · Robinhood (options)
 - **Dashboard:** Streamlit, read-only cockpit + 3 safe controls (pause/flatten/kill)
@@ -13,6 +13,7 @@
 ```
 infra/       AWS setup scripts (idempotent)
 bot/         strategy + risk + execution
+hardening/   execution/risk hardening layers (ledger, reconciler, exec manager)
 data/        ingestion pipeline (APIs/brokers → DynamoDB + S3)
 dashboard/   Streamlit app
 ```

@@ -51,6 +51,7 @@ from data.s3_archive import archive_intraday_bars
 
 from risk import RiskEngine, RiskConfig, realized_pnl
 from execution import confirm_fill
+from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
 from intraday_scan import load_ibkr_bars, prep_rth
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, ControlUnavailable,
@@ -514,9 +515,17 @@ def main():
                   f"daily bot holds MES ({daily_tag})")
             return
 
-        # persistent risk engine — ONE instance for the whole run.
-        risk = RiskEngine(RiskConfig(risk_budget_usd=INTRA_RISK_BUDGET,
-                                     max_concurrent_positions=1))
+        # persistent risk engine — ONE instance for the whole run, loaded from
+        # the ledger so the intraday daily-loss cap / consecutive-loss brake
+        # survive the every-15-min process restarts. Fail-closed: an unreadable
+        # ledger HALTS the run (no new entries).
+        try:
+            risk = RiskEngine.load(RiskConfig(risk_budget_usd=INTRA_RISK_BUDGET,
+                                              max_concurrent_positions=1),
+                                   RiskLedger(dynamo, scope='live_intraday'))
+        except RiskStateUnavailable as e:
+            print(f"[{now.isoformat()}] {mode} HALT — risk state unreadable (fail-closed): {e}")
+            return
         open_n = 0
         for sname in ('FADESHORT', 'DONCH15'):
             st = _read_state(dynamo, sname, today)
