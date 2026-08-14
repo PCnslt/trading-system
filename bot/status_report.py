@@ -191,6 +191,17 @@ def report_health():
         lines.append(f"  crypto ticker: last QUOTE#BTCUSDT ({_age_str(q.get('ts'))} ago)")
     else:
         lines.append('  crypto ticker: no data')
+    # broker reconciliation (RECONCILE/system written by the reconcile daemon)
+    try:
+        rec = table.get_item(Key={'pk': 'RECONCILE', 'sk': 'system'}).get('Item')
+    except Exception:
+        rec = None
+    if rec:
+        st = rec.get('status', '?')
+        flag = 'ok' if st == 'MATCH' else f'⚠ {st}'
+        lines.append(f"  broker reconcile: {flag} ({_age_str(rec.get('ts'))} ago) — {rec.get('reason', '')}")
+    else:
+        lines.append('  broker reconcile: no state yet')
     return lines
 
 

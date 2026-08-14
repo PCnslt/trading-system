@@ -27,6 +27,16 @@ class FakeTable:
         self.items[(item.get('pk'), item.get('sk'))] = item
         return item
 
+    def scan(self, FilterExpression=None, ExpressionAttributeValues=None, **kwargs):
+        """Minimal scan: supports the reconciler's single 'begins_with(pk, :p)'
+        filter. Returns {'Items': [...]} for matching rows."""
+        prefix = (ExpressionAttributeValues or {}).get(':p')
+        items = []
+        for (pk, sk), item in self.items.items():
+            if prefix is None or str(pk).startswith(prefix):
+                items.append(dict(item))
+        return {'Items': items}
+
 
 @pytest.fixture
 def fake_table():

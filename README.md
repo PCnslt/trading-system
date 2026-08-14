@@ -27,4 +27,6 @@ dashboard/   Streamlit app
 BUILDING — futures phase (paper forward-test). 2 bots live on cron:
 `live.py` (index, 23:00 UTC — PROMOTED) · `live_intraday.py` (MES, 15-min RTH).
 `live_bondsfx.py` (bonds ZB/ZN) KILLED at Gate-1 (dies at 1-tick slippage) — disarmed.
-Kill-switch + dashboard live. See `.hermes/plans/trading-system-checklist.md`.
+Execution hardening live: persistent risk ledger (`RISK#`) + broker reconciliation
+(`reconcile-daemon` systemd, 45s → `RECONCILE/system`). Kill-switch + dashboard live.
+See `.hermes/plans/trading-system-checklist.md`.

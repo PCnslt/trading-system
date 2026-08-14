@@ -63,53 +63,78 @@ def test_invariant_paper_account_live_mode_no_orders():
     assert control.account_mode_ok('LIVE', ['DUR193467'])[0] is False
 
 
-# ---- UNKNOWN POSITION -> no entries (reconciliation stand-down) ----
+# ---- UNKNOWN POSITION -> no entries (reconciliation is read-only + fail-closed) ----
 def _pos(symbol, position):
     return type('Pos', (), {'contract': type('C', (), {'symbol': symbol})(),
                             'position': position})()
 
 
 class _ReconcileIB:
-    def __init__(self, positions):
-        self._positions = positions
-        self.orders = []
+    """Read-only broker double for the shared reconciler (never places orders)."""
+
+    def __init__(self, positions=None, orders=None):
+        self._positions = positions or []
+        self._orders = orders or []
+        self.order_calls = []
 
     def positions(self):
         return list(self._positions)
 
-    def sleep(self, s):
-        pass
+    def openOrders(self):
+        return list(self._orders)
+
+    def executions(self):
+        return []
+
+    def fills(self):
+        return []
 
     def placeOrder(self, con, order):
-        self.orders.append((con, order))
+        self.order_calls.append((con, order))
 
 
-def test_invariant_reconcile_does_not_flatten_daily_mes(fake_table):
-    # Daily bot holds MES (authoritative state) — reconcile must stand down, not flatten.
-    from live_intraday import _reconcile, DAILY_MES_TAGS
+def _stop_order(symbol, action, qty):
+    return type('O', (), {'contract': type('C', (), {'symbol': symbol})(),
+                          'order': type('D', (), {'action': action, 'orderType': 'STP',
+                                                  'totalQuantity': qty})()})()
+
+
+def test_invariant_reconcile_readonly_and_matches_daily_mes(fake_table):
+    # Daily bot holds MES; account IS consistent -> reconcile MATCHes and never
+    # places an order (reconciliation is strictly read-only, never flattens).
+    from hardening.reconciler import reconcile
     fake_table.items[('POSITION#MES_DONCHIAN', 'current')] = {
-        'pos': 1, 'side': 'LONG', 'session_date': TODAY, 'ts': 0}
+        'pk': 'POSITION#MES_DONCHIAN', 'sk': 'current', 'pos': 1, 'ts': 0}
+    ib = _ReconcileIB([_pos('MES', 1)], orders=[_stop_order('MES', 'SELL', 1)])
+    r = reconcile(ib, fake_table, today_iso=TODAY)
+    assert r.status == 'MATCH'
+    assert ib.order_calls == []
+
+
+def test_invariant_reconcile_unknown_position_mismatch(fake_table):
+    # Broker holds MES but no internal state accounts for it -> MISMATCH (halt).
+    from hardening.reconciler import reconcile
     ib = _ReconcileIB([_pos('MES', 1)])
-    result = _reconcile(ib, fake_table, None, TODAY, 'PAPER')
-    assert result is False
-    assert ib.orders == []   # nothing flattened
+    r = reconcile(ib, fake_table, today_iso=TODAY)
+    assert r.status == 'MISMATCH'
+    assert ib.order_calls == []   # fail-closed: detect, never flatten
 
 
-def test_invariant_reconcile_unknown_position_stands_down(fake_table):
-    # IBKR shows MES but no strategy (intraday or daily) state accounts for it.
-    from live_intraday import _reconcile
-    ib = _ReconcileIB([_pos('MES', 1)])
-    result = _reconcile(ib, fake_table, None, TODAY, 'PAPER')
-    assert result is False
-    assert ib.orders == []   # fail-closed: no flatten off stale/unknown truth
-
-
-def test_invariant_reconcile_consistent_proceeds(fake_table):
-    from live_intraday import _reconcile
+def test_invariant_reconcile_consistent_matches(fake_table):
+    from hardening.reconciler import reconcile
     fake_table.items[('POSITION#MES_DONCH15', 'current')] = {
-        'pos': 1, 'side': 'LONG', 'session_date': TODAY, 'ts': 0}
-    ib = _ReconcileIB([_pos('MES', 1)])
-    assert _reconcile(ib, fake_table, None, TODAY, 'PAPER') is True
+        'pk': 'POSITION#MES_DONCH15', 'sk': 'current', 'pos': 1, 'side': 'LONG', 'ts': 0}
+    ib = _ReconcileIB([_pos('MES', 1)], orders=[_stop_order('MES', 'SELL', 1)])
+    r = reconcile(ib, fake_table, today_iso=TODAY)
+    assert r.status == 'MATCH'
+
+
+def test_invariant_daily_mes_hold_stands_down_intraday(fake_table):
+    # Cross-bot guard: the intraday bot stands down when the daily bot holds MES.
+    from live_intraday import _daily_mes_held
+    fake_table.items[('POSITION#MES_DONCHIAN', 'current')] = {'pos': 1, 'ts': 0}
+    held, tag = _daily_mes_held(fake_table)
+    assert held is True and tag == 'MES_DONCHIAN'
 
 
 # ---- flatten requested -> never declare FLAT until broker confirms ----

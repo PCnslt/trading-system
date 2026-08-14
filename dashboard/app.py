@@ -318,12 +318,13 @@ with tab_road:
 | Data | S3 cold-archive (7 gaps closed) | done |
 | Data | Research ingest (FMP/NewsAPI/crypto → S3) | done |
 | Data | Data-lake build-out (contract metadata + rollover, session calendar, L1 tick recorder) | done |
-| Data | Broker reconciliation (startup + periodic + reconnect) | next phase |
+| Data | Broker reconciliation (startup + periodic 45s daemon) — positions/orders/fills vs DynamoDB, halt+alert on mismatch/UNKNOWN | done |
 | Data | Data-health gate + stale-signal gate | next phase |
 | Obs | Streamlit dashboard :8501 (Live + Architecture + Roadmap) | done |
 | Obs | Telegram group (user visibility) | done |
 | Obs | Daily summary 23:45, health watchdog */30, weekly scan | done |
 | Obs | Health watchdog fixed — native GWClient + :4002 check (was checking removed IBC) | done |
+| Obs | Reconcile daemon (clientId 76, 45s → RECONCILE/system) + */5 watchdog → Telegram | done |
 | Obs | Heartbeats, severity levels, correlation IDs, daily report | next phase |
 | Ops | Cron split (data=crontab, bots=Hermes cron) | done |
 | Ops | Verify ideas online before proposing/implementing | standing rule |
@@ -363,7 +364,7 @@ with tab_road:
 - **Screening CLOSED** — weekly scan paused; no new strategy screening.
 
 **Path to live capital (in order):**
-1. Execution-layer hardening — broker reconciliation + execution manager (fill-verify already done). ← Phase 2/3 next.
+1. Execution-layer hardening — broker reconciliation ✅ DONE (Phase 2) + execution manager (Phase 3, next).
 2. Persistent risk ledger — restart-safe daily P&L + loss cap. ✅ DONE (Phase 1)
 3. Paper-forward the index edge (live.py) until Gate 5 (paper validation) passes.
 4. Micro-live — min size, hard loss limit, tested kill.

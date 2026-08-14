@@ -23,6 +23,7 @@
 #   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 13-20 * * 1-5
 #   "Daily trading summary"            prompt (status_report.py)       @ 45 23 * * *
 #   "IB Gateway health watchdog"       script ibgw_health.sh           @ */30 * * * *
+#   "Broker reconcile watchdog"        script reconcile_watchdog.sh    @ */5 * * * *
 #   "Weekly strategy scan + refine"    prompt (strategy_scan.py)       @ 0 18 * * 0    ⛔ PAUSED 2026-08-14 (screening CLOSED)
 #
 # The intraday bot (live_intraday.py) self-gates internally:
@@ -33,6 +34,9 @@
 #   trading-dashboard.service    Streamlit dashboard :8501
 #   futures-tick-recorder.service L1 tick recorder (clientId 74) -> S3 futures-ticks + QUOTE#
 #                                 RTH-gated 13:30-20:00 UTC Mon-Fri; reconnects on gateway restart.
+#   reconcile-daemon.service     broker reconciliation (clientId 76) every 45s -> RECONCILE/system
+#                                 (MATCH/MISMATCH/UNKNOWN) + CRITICAL on non-MATCH. Read-only,
+#                                 never places orders or mutates CONTROL.
 
 # ---- one-time / on-demand data-lake jobs (not scheduled) ----
 #   bot/futures_contracts.py  contract resolver + rollover  -> CONTRACT#<sym> + S3 contracts/*

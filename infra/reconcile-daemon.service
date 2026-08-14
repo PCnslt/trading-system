@@ -1,0 +1,14 @@
+[Unit]
+Description=Broker reconciliation daemon (IBKR paper vs DynamoDB, 45s)
+After=network.target ibgateway.service
+Wants=ibgateway.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+ExecStart=/home/ubuntu/trading-system/venv/bin/python -u bot/reconcile_daemon.py
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target

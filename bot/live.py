@@ -42,6 +42,7 @@ from data.s3_archive import archive_daily_bar
 from risk import RiskEngine, RiskConfig, realized_pnl
 from execution import confirm_fill
 from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
+from hardening.reconciler import reconcile
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, already_ran_today,
                      mark_ran_today, ControlUnavailable, account_mode_ok)
@@ -383,6 +384,14 @@ def main():
                     open_n += 1
         risk.set_open_positions(open_n)
         risk.touch_data()
+
+        # 6. broker reconciliation — halt on any mismatch/unknown (fail-closed).
+        #    Never assume success: a timeout is UNKNOWN, not a rejection.
+        r = reconcile(ib, dynamo, today_iso=today)
+        if not r.ok:
+            print(f"[{today}] {mode} HALT — reconciliation {r.status}: {r.reason}")
+            risk.emergency_halt(f"reconciliation {r.status}: {r.reason}")
+            return
 
         for c in CONTRACTS:
             sym = c['symbol']

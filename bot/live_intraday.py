@@ -52,6 +52,7 @@ from data.s3_archive import archive_intraday_bars
 from risk import RiskEngine, RiskConfig, realized_pnl
 from execution import confirm_fill
 from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
+from hardening.reconciler import reconcile
 from intraday_scan import load_ibkr_bars, prep_rth
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, ControlUnavailable,
@@ -421,43 +422,6 @@ def _exit(dynamo, ib, con, tag, sname, side, pos, reason, exit_px, today, mode, 
     print(f">>> {mode} {tag} EXIT {side} {pos} @ {exit_px:.2f} ({reason})")
 
 
-def _reconcile(ib, dynamo, con, today, mode, risk=None):
-    """Detect unaccounted MES positions. NEVER flatten the daily bot's MES and
-    never flatten off stale IBKR truth — when in doubt, stand down (fail-closed).
-
-    Returns True if safe to proceed, False if an unknown/unaccounted MES position
-    was found (caller must halt new entries and alert an operator).
-    """
-    net = sum(int(p.position) for p in ib.positions() if p.contract.symbol == 'MES')
-    expected_intra = 0
-    for sname in ('FADESHORT', 'DONCH15'):
-        st = _read_state(dynamo, sname, today)
-        if int(st.get('pos', 0)) > 0:
-            q = int(st['pos'])
-            expected_intra += q if st.get('side') == 'LONG' else -q
-
-    # Daily index bot (live.py) holds MES overnight in the SAME paper account.
-    # Its position is authoritative — intraday must never reconcile/flatten it.
-    expected_daily = 0
-    for tag in DAILY_MES_TAGS:
-        st = get_state(dynamo, f'POSITION#{tag}', 'current') or {}
-        expected_daily += int(st.get('pos', 0))
-    if expected_daily != 0:
-        print(f"[{today}] {mode} reconcile: daily bot holds MES ({expected_daily}) — "
-              f"skip reconcile (stand down, do NOT flatten)")
-        return False
-
-    if net != expected_intra:
-        # Unaccounted MES — could be an orphaned intraday fill OR a daily bot
-        # position whose state is stale. DO NOT flatten off IBKR alone.
-        print(f"CRITICAL {mode}: MES net {net} != intraday expected {expected_intra} — "
-              f"unknown position; standing down (no flatten, no entries)")
-        if risk is not None:
-            risk.emergency_halt("reconciliation mismatch")
-        return False
-    return True
-
-
 # ===== main =====
 def main():
     dynamo = boto3.resource('dynamodb', region_name='us-east-1').Table(DYNAMO_TABLE)
@@ -540,8 +504,10 @@ def main():
             bars[strat['name']] = prep_rth(df) if not df.empty else df
             _archive_bars(strat['name'], strat['barsize'], bars[strat['name']])
 
-        if not _reconcile(ib, dynamo, con, today, mode, risk):
-            print(f"[{now.isoformat()}] {mode} STAND DOWN — reconciliation failed / unknown MES position")
+        r = reconcile(ib, dynamo, today_iso=today)
+        if not r.ok:
+            print(f"CRITICAL {mode} reconcile {r.status}: {r.reason}")
+            risk.emergency_halt(f"reconciliation {r.status}: {r.reason}")
             return
 
         for strat in STRATEGIES:
