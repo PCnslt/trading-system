@@ -42,6 +42,30 @@ def wants_flatten(ctrl):
     return ctrl.get('flatten', 'false') == 'true' or control_state(ctrl) == 'KILLED'
 
 
+def already_ran_today(table, key, today):
+    """Once-per-day dedupe guard. True if RUN#<key>/<today> already exists.
+
+    Protects against double-scheduling (two schedulers firing the same bot the
+    same day), which would otherwise double-log signals and race order entry.
+    Fail-open on DynamoDB read error so a transient read failure never blocks
+    trading.
+    """
+    try:
+        return bool(table.get_item(Key={'pk': f'RUN#{key}', 'sk': today}).get('Item'))
+    except Exception as e:
+        print(f"[control] already_ran_today read failed (fail-open): {e}")
+        return False
+
+
+def mark_ran_today(table, key, today):
+    """Write the RUN#<key>/<today> marker so a same-day re-run is skipped."""
+    try:
+        table.put_item(Item={'pk': f'RUN#{key}', 'sk': today,
+                             'ts': int(time.time()), 'bot': key})
+    except Exception as e:
+        print(f"[control] mark_ran_today failed (non-fatal): {e}")
+
+
 def clear_flatten(table):
     """One-shot: reset the flatten flag after a bot honours it. Preserves state."""
     try:

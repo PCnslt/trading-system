@@ -50,7 +50,7 @@ import boto3
 from dotenv import load_dotenv
 
 from risk import RiskEngine, RiskConfig
-from control import get_control, control_state, wants_flatten, clear_flatten, flatten_ibkr
+from control import get_control, control_state, wants_flatten, clear_flatten, flatten_ibkr, already_ran_today, mark_ran_today
 
 load_dotenv()
 
@@ -268,6 +268,12 @@ def main():
     dynamo = boto3.resource('dynamodb', region_name='us-east-1').Table(DYNAMO_TABLE)
     today = dt.date.today().isoformat()
     mode = 'LIVE' if LIVE else 'PAPER'
+
+    # Dedupe guard: skip if this bot already ran today (double-schedule defence).
+    if already_ran_today(dynamo, 'live_bondsfx', today):
+        print(f"[{today}] {mode} already ran today (RUN#live_bondsfx) — skip (dedupe guard)")
+        return
+    mark_ran_today(dynamo, 'live_bondsfx', today)
 
     # 1. data (fetch before IBKR so we can still log signals if connect fails)
     data = {}
