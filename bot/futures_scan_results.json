@@ -1,0 +1,337 @@
+{
+  "cost": 0.00013,
+  "tickers": [
+    "ES=F",
+    "NQ=F"
+  ],
+  "rank": [
+    [
+      "adx",
+      "long"
+    ],
+    [
+      "donchian",
+      "long"
+    ],
+    [
+      "bollinger",
+      "long"
+    ],
+    [
+      "rsi2",
+      "long"
+    ],
+    [
+      "ma_cross",
+      "long"
+    ],
+    [
+      "bollinger",
+      "both"
+    ],
+    [
+      "donchian",
+      "both"
+    ],
+    [
+      "ma_cross",
+      "both"
+    ],
+    [
+      "rsi2",
+      "both"
+    ],
+    [
+      "adx",
+      "both"
+    ]
+  ],
+  "rows": [
+    {
+      "strategy": "donchian",
+      "ticker": "ES=F",
+      "direction": "long",
+      "trades": 154,
+      "winrate": 62.98701298701299,
+      "pf": 2.2270109945335483,
+      "cagr": 0.05243867772727939,
+      "maxdd": -0.06977249182181533,
+      "avg_days": 4.928571428571429,
+      "final": 1.8087443361398376
+    },
+    {
+      "strategy": "donchian",
+      "ticker": "NQ=F",
+      "direction": "long",
+      "trades": 157,
+      "winrate": 59.87261146496815,
+      "pf": 1.8016420223216036,
+      "cagr": 0.05560928799037623,
+      "maxdd": -0.0854097967309323,
+      "avg_days": 4.8789808917197455,
+      "final": 1.8729458974320496
+    },
+    {
+      "strategy": "donchian",
+      "ticker": "ES=F",
+      "direction": "both",
+      "trades": 206,
+      "winrate": 55.33980582524272,
+      "pf": 1.1415185997481385,
+      "cagr": 0.010092669659418574,
+      "maxdd": -0.20472090963416534,
+      "avg_days": 4.888349514563107,
+      "final": 1.1234904298519617
+    },
+    {
+      "strategy": "donchian",
+      "ticker": "NQ=F",
+      "direction": "both",
+      "trades": 210,
+      "winrate": 54.285714285714285,
+      "pf": 1.1659039641466584,
+      "cagr": 0.011416261081075518,
+      "maxdd": -0.28564739539532924,
+      "avg_days": 4.8428571428571425,
+      "final": 1.1406797513672744
+    },
+    {
+      "strategy": "rsi2",
+      "ticker": "ES=F",
+      "direction": "long",
+      "trades": 143,
+      "winrate": 73.42657342657343,
+      "pf": 1.6585085463369307,
+      "cagr": 0.04900684560549218,
+      "maxdd": -0.27408031808284394,
+      "avg_days": 3.6153846153846154,
+      "final": 1.741524523954591
+    },
+    {
+      "strategy": "rsi2",
+      "ticker": "NQ=F",
+      "direction": "long",
+      "trades": 132,
+      "winrate": 65.15151515151516,
+      "pf": 1.4021390391913031,
+      "cagr": 0.0360486839368539,
+      "maxdd": -0.22057642417777645,
+      "avg_days": 3.7196969696969697,
+      "final": 1.5077754108312935
+    },
+    {
+      "strategy": "rsi2",
+      "ticker": "ES=F",
+      "direction": "both",
+      "trades": 341,
+      "winrate": 59.530791788856305,
+      "pf": 1.1460048353920322,
+      "cagr": 0.021659413809268502,
+      "maxdd": -0.3279139741211664,
+      "avg_days": 3.93841642228739,
+      "final": 1.2820557806264552
+    },
+    {
+      "strategy": "rsi2",
+      "ticker": "NQ=F",
+      "direction": "both",
+      "trades": 330,
+      "winrate": 54.24242424242424,
+      "pf": 0.966168166983428,
+      "cagr": -0.015528937137287202,
+      "maxdd": -0.44264439601096095,
+      "avg_days": 3.9454545454545453,
+      "final": 0.8340395534123456
+    },
+    {
+      "strategy": "ma_cross",
+      "ticker": "ES=F",
+      "direction": "long",
+      "trades": 359,
+      "winrate": 61.00278551532033,
+      "pf": 1.449225315136758,
+      "cagr": 0.06970031108280472,
+      "maxdd": -0.1734776327453067,
+      "avg_days": 4.548746518105849,
+      "final": 2.1842446113279026
+    },
+    {
+      "strategy": "ma_cross",
+      "ticker": "NQ=F",
+      "direction": "long",
+      "trades": 353,
+      "winrate": 58.640226628895185,
+      "pf": 1.4304909715809861,
+      "cagr": 0.091171500156211,
+      "maxdd": -0.23891893700933464,
+      "avg_days": 4.603399433427762,
+      "final": 2.750290210903013
+    },
+    {
+      "strategy": "ma_cross",
+      "ticker": "ES=F",
+      "direction": "both",
+      "trades": 557,
+      "winrate": 52.782764811490125,
+      "pf": 1.055095714754721,
+      "cagr": 0.005697025550758461,
+      "maxdd": -0.3648806227612089,
+      "avg_days": 4.434470377019749,
+      "final": 1.0680888299794762
+    },
+    {
+      "strategy": "ma_cross",
+      "ticker": "NQ=F",
+      "direction": "both",
+      "trades": 557,
+      "winrate": 51.34649910233393,
+      "pf": 1.0915877650518997,
+      "cagr": 0.017584109367819956,
+      "maxdd": -0.4785015667920459,
+      "avg_days": 4.443447037701975,
+      "final": 1.223994936207973
+    },
+    {
+      "strategy": "bollinger",
+      "ticker": "ES=F",
+      "direction": "long",
+      "trades": 57,
+      "winrate": 63.1578947368421,
+      "pf": 1.3522123713782057,
+      "cagr": 0.015056199635678613,
+      "maxdd": -0.24271135092924212,
+      "avg_days": 4.614035087719298,
+      "final": 1.189197853193744
+    },
+    {
+      "strategy": "bollinger",
+      "ticker": "NQ=F",
+      "direction": "long",
+      "trades": 62,
+      "winrate": 61.29032258064516,
+      "pf": 1.8626646155899504,
+      "cagr": 0.04114023043101933,
+      "maxdd": -0.17800597063203938,
+      "avg_days": 4.709677419354839,
+      "final": 1.5959661306011863
+    },
+    {
+      "strategy": "bollinger",
+      "ticker": "ES=F",
+      "direction": "both",
+      "trades": 121,
+      "winrate": 53.71900826446281,
+      "pf": 1.0724423655764068,
+      "cagr": 0.002874421906518654,
+      "maxdd": -0.29061102169971054,
+      "avg_days": 4.743801652892562,
+      "final": 1.0338418310126187
+    },
+    {
+      "strategy": "bollinger",
+      "ticker": "NQ=F",
+      "direction": "both",
+      "trades": 128,
+      "winrate": 50.0,
+      "pf": 1.3047640092253705,
+      "cagr": 0.026092468139863767,
+      "maxdd": -0.2413338737469224,
+      "avg_days": 4.78125,
+      "final": 1.3480628114266135
+    },
+    {
+      "strategy": "adx",
+      "ticker": "ES=F",
+      "direction": "long",
+      "trades": 28,
+      "winrate": 39.285714285714285,
+      "pf": 1.9363353912568828,
+      "cagr": 0.013103851611728334,
+      "maxdd": -0.08388554765581835,
+      "avg_days": 16.107142857142858,
+      "final": 1.1629447628325436
+    },
+    {
+      "strategy": "adx",
+      "ticker": "NQ=F",
+      "direction": "long",
+      "trades": 30,
+      "winrate": 43.333333333333336,
+      "pf": 2.151510637534923,
+      "cagr": 0.02562722879170476,
+      "maxdd": -0.10558713512551832,
+      "avg_days": 13.933333333333334,
+      "final": 1.3409925279281683
+    },
+    {
+      "strategy": "adx",
+      "ticker": "ES=F",
+      "direction": "both",
+      "trades": 43,
+      "winrate": 37.2093023255814,
+      "pf": 0.9024985799249088,
+      "cagr": -0.012298523901062897,
+      "maxdd": -0.29716054260650526,
+      "avg_days": 13.348837209302326,
+      "final": 0.8663307794679956
+    },
+    {
+      "strategy": "adx",
+      "ticker": "NQ=F",
+      "direction": "both",
+      "trades": 46,
+      "winrate": 32.608695652173914,
+      "pf": 0.7361251182788999,
+      "cagr": -0.030106432754344103,
+      "maxdd": -0.4055217027830875,
+      "avg_days": 11.91304347826087,
+      "final": 0.7015563082146694
+    }
+  ],
+  "walk_forward": [
+    {
+      "strategy": "adx",
+      "direction": "long",
+      "ticker": "ES=F",
+      "in_pf": 1.7544113807960053,
+      "in_trades": 17,
+      "out_pf": 2.550200615753495,
+      "out_trades": 10,
+      "out_cagr": 0.02162469335438022,
+      "out_maxdd": -0.08388554765581857
+    },
+    {
+      "strategy": "adx",
+      "direction": "long",
+      "ticker": "NQ=F",
+      "in_pf": 2.7846273737571616,
+      "in_trades": 18,
+      "out_pf": 1.7690197151617717,
+      "out_trades": 11,
+      "out_cagr": 0.021155120777988534,
+      "out_maxdd": -0.10558713512551854
+    },
+    {
+      "strategy": "donchian",
+      "direction": "long",
+      "ticker": "ES=F",
+      "in_pf": 2.314689886407193,
+      "in_trades": 94,
+      "out_pf": 2.084882975839045,
+      "out_trades": 59,
+      "out_cagr": 0.04456427317355249,
+      "out_maxdd": -0.06977249182181544
+    },
+    {
+      "strategy": "donchian",
+      "direction": "long",
+      "ticker": "NQ=F",
+      "in_pf": 1.6434739189553054,
+      "in_trades": 103,
+      "out_pf": 2.1432277438403102,
+      "out_trades": 53,
+      "out_cagr": 0.0672130286029331,
+      "out_maxdd": -0.08124387025057811
+    }
+  ]
+}
