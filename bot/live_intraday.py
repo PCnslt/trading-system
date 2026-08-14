@@ -36,6 +36,7 @@ re-gates internally: entries 13:30-19:30 UTC, flatten from 19:45 UTC.
 Paper only — LIVE env var stays false.
 """
 import os
+import sys
 import time
 import datetime as dt
 
@@ -44,6 +45,9 @@ import pandas as pd
 import boto3
 from dotenv import load_dotenv
 from ib_insync import IB, Future, MarketOrder, StopOrder
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from data.s3_archive import archive_intraday_bars
 
 from risk import RiskEngine, RiskConfig, realized_pnl
 from execution import confirm_fill
@@ -215,6 +219,28 @@ def log_dynamo(table, pk, sk, data):
 def get_state(table, pk, sk):
     r = table.get_item(Key={'pk': pk, 'sk': sk})
     return r.get('Item')
+
+
+def _archive_bars(sname, barsize, df):
+    """Persist this run's RTH bars to S3 before they're discarded.
+
+    One object per (barsize, session_date), overwritten each run so the key
+    always holds the latest full window (bounded: 1 object/day/barsize).
+    """
+    if df is None or df.empty:
+        return
+    try:
+        slug = barsize.replace(' mins', 'min')       # '5 mins' -> '5min'
+        date = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d')
+        records = [{'date': idx.isoformat(), 'open': float(r['Open']),
+                    'high': float(r['High']), 'low': float(r['Low']),
+                    'close': float(r['Close']), 'volume': float(r['Volume'])}
+                   for idx, r in df.iterrows()]
+        archive_intraday_bars(CONTRACT['symbol'], slug, date, records)
+        print(f"[{sname}] archived {len(records)} {slug} bars -> "
+              f"futures-bars/intraday/{CONTRACT['symbol']}/{slug}/{date}.json")
+    except Exception as e:
+        print(f"[{sname}] intraday bars archive failed: {e}")
 
 
 def _read_state(dynamo, sname, today):
@@ -503,6 +529,7 @@ def main():
         for strat in STRATEGIES:
             df = load_ibkr_bars(ib, con, duration=DURATION, bar_size=strat['barsize'], rth=True)
             bars[strat['name']] = prep_rth(df) if not df.empty else df
+            _archive_bars(strat['name'], strat['barsize'], bars[strat['name']])
 
         if not _reconcile(ib, dynamo, con, today, mode, risk):
             print(f"[{now.isoformat()}] {mode} STAND DOWN — reconciliation failed / unknown MES position")
