@@ -164,12 +164,17 @@ with tab_arch:
     st.caption("This is the target layered design, NOT the as-built state. Layers 2–7 are the hardening "
                "being added — current code skips straight from strategy → IBKR.")
 
-    st.code("""                        RESEARCH / DATA
-        ┌───────────────────────────────────────────────┐
-        │  TradingView (charts / Pine)                  │
-        │  yfinance ES=F · AlphaVantage · Binance.US    │
-        │  Serper (news) · S3 research datasets         │
-        └──────────────────────┬────────────────────────┘
+    st.code("""                        RESEARCH / DATA LAKE
+        ┌──────────────────────────────────────────────────────┐
+        │  TradingView (charts/Pine) · yfinance ES=F           │
+        │  AlphaVantage · Binance.US · Serper (news)           │
+        │  IBKR historical bars → S3 futures-bars/*            │
+        │  IBKR L1 tick recorder (clientId 74, RTH)            │
+        │    → S3 futures-ticks/* + DynamoDB QUOTE#<sym>       │
+        │  Contract resolver → CONTRACT#<sym> + S3 contracts/  │
+        │    (full chain + rollover schedule)                  │
+        │  Session calendar → SESSION#<sym> + S3 sessions/     │
+        └──────────────────────────┬───────────────────────────┘
                                │ data / signals
                                ▼
                      ┌─────────────────────┐
@@ -300,6 +305,10 @@ with tab_road:
 | Strategy | ES breakout backtest PF 2.73, MaxDD -7.9% | done |
 | Strategy | Walk-forward/OOS: Donchian long PF 2.08/2.16 (ES/NQ n=59/53), ADX 2.55/1.77 (thin) | done |
 | Strategy | Paper forward-testing (first signals 23:00/23:05 UTC; intraday Mon) | in progress |
+| Data | IBKR historical-bar backfill → S3 futures-bars (12 sym, daily + intraday) | done |
+| Data | Contract resolver + rollover → CONTRACT#<sym> + S3 contracts/* | done |
+| Data | Session calendar + trading hours → SESSION#<sym> + S3 sessions/* | done |
+| Data | L1 tick recorder → S3 futures-ticks + QUOTE#<sym> (systemd, RTH-gated) | done |
 | Data | Broker reconciliation (startup + periodic + reconnect) | next phase |
 | Data | Data-health gate + stale-signal gate | next phase |
 | Obs | Streamlit dashboard :8501 (Live + Architecture + Roadmap) | done |
@@ -339,7 +348,7 @@ with tab_road:
 - **Phase 1** — Persistent risk ledger: restart-safe daily P&L, loss limits, persistent risk state.
 - **Phase 2** — Execution manager + idempotent TradeIntent: strategy → intent → risk → execution → broker; deterministic IDs; timeout=UNKNOWN.
 - **Phase 3** — Broker reconciliation: broker = truth for positions/orders/fills; startup + periodic + post-reconnect.
-- **Phase 4** — Contract/session/data layer: contract resolver, rollover, session calendar, data-health + stale-signal gates.
+- **Phase 4** — Contract/session/data layer: contract resolver + rollover + session calendar + L1 tick recorder + historical-bar backfill ✅ DONE; data-health + stale-signal gates remain.
 - **Phase 5** — Portfolio-level risk: net/gross exposure, per-instrument/strategy limits.
 - **Phase 6** — Observability: heartbeats, health states, incident severity, daily report, correlation IDs.
 - **Phase 7** — Chaos tests: break gateway/network/DB/market-data/orders; verify safe state.

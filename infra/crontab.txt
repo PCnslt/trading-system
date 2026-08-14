@@ -15,6 +15,7 @@
 */30 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/market_research.py >> /home/ubuntu/trading-system/data/research.log 2>&1
 15 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/fmp_ingest.py >> /home/ubuntu/trading-system/data/fmp.log 2>&1
 45 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/newsapi_ingest.py >> /home/ubuntu/trading-system/data/newsapi.log 2>&1
+20 23 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/daily_collect.py >> /home/ubuntu/trading-system/data/daily_collect.log 2>&1
 
 # ---- bot execution (Hermes cron — NOT here) ----
 #   "Paper signals — index futures"    script paper_index_futures.sh   @ 0 23 * * *
@@ -26,3 +27,19 @@
 #
 # The intraday bot (live_intraday.py) self-gates internally:
 #   entries 13:30-19:30 UTC, EOD flatten 19:45 UTC, skip outside RTH.
+
+# ---- systemd services (persistent, NOT cron) ----
+#   ibgateway.service            IB Gateway (headless paper :4002, native auto-restart)
+#   trading-dashboard.service    Streamlit dashboard :8501
+#   futures-tick-recorder.service L1 tick recorder (clientId 74) -> S3 futures-ticks + QUOTE#
+#                                 RTH-gated 13:30-20:00 UTC Mon-Fri; reconnects on gateway restart.
+
+# ---- one-time / on-demand data-lake jobs (not scheduled) ----
+#   bot/futures_contracts.py  contract resolver + rollover  -> CONTRACT#<sym> + S3 contracts/*
+#   bot/session_calendar.py   session calendar + RTH hours  -> SESSION#<sym> + S3 sessions/*
+#   bot/backfill_bars.py      historical-bar backfill (12 sym, daily+intraday) -> S3 futures-bars/*
+#
+# ---- recurring bar collection (daily delta; system crontab, above) ----
+#   data/daily_collect.py     daily + 15m/5m bars, all 12 symbols -> S3 futures-bars/*
+#                             clientId 75; idempotent date-keyed writes; self-heals missed days.
+
