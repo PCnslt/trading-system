@@ -95,12 +95,18 @@ class RiskEngine:
 
     # ---- sizing ----
     def position_size(self, stop_distance: float, point_value: float) -> int:
-        """Contracts = risk_pct * budget / (stop_distance * point_value), capped."""
+        """Contracts = risk_pct * budget / (stop_distance * point_value), capped.
+
+        Fail-closed: if the stop is so wide that even one contract would exceed
+        the 2% risk budget, return 0 (reject) — never force >= min_contracts.
+        """
         if stop_distance <= 0:
             return 0
         risk_amount = self.cfg.risk_pct * self.cfg.risk_budget_usd
         contracts = int(risk_amount / (stop_distance * point_value))
-        return max(self.cfg.min_contracts, min(contracts, self.cfg.max_contracts))
+        if contracts < self.cfg.min_contracts:
+            return 0   # stop too wide for budget — reject rather than over-risk
+        return min(contracts, self.cfg.max_contracts)
 
     def stop_target(self, entry: float, atr: float, side: int) -> tuple[float, float]:
         """side=+1 long, -1 short. Returns (stop, target)."""
