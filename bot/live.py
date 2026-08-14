@@ -209,11 +209,13 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
         should_exit, xreason = strat['exit'](detail, stop, held)
         if should_exit:
             exit_px = detail['close']
-            ib.placeOrder(con, MarketOrder('SELL', pos, tif='DAY'))
+            # Cancel the resting GTC stop BEFORE the market close so the two
+            # orders can't race (stop fill vs exit fill) and double-fill.
             if strat['has_stop_order']:
                 for o in ib.openOrders():
                     if o.contract.symbol == sym and o.order.action == 'SELL' and o.order.orderType == 'STP':
                         ib.cancelOrder(o)
+            ib.placeOrder(con, MarketOrder('SELL', pos, tif='DAY'))
             ib.sleep(1)
             if risk is not None and entry_px is not None:
                 risk.record_close(realized_pnl('LONG', entry_px, exit_px, c['point_value'], pos))
