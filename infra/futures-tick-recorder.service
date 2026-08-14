@@ -1,0 +1,14 @@
+[Unit]
+Description=Futures L1 tick recorder (IBKR paper -> S3 futures-ticks + DynamoDB QUOTE#)
+After=network.target ibgateway.service
+Wants=ibgateway.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+ExecStart=/home/ubuntu/trading-system/venv/bin/python -u bot/tick_recorder.py
+Restart=on-failure
+RestartSec=15
+
+[Install]
+WantedBy=multi-user.target
