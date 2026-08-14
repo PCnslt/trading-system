@@ -1,0 +1,114 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >
+  Multi-market trading system infrastructure (24/7 VPS + data lake).
+  $0 free-tier stack: EC2 t3.micro + DynamoDB + S3 + Elastic IP.
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPairName
+    Description: Existing EC2 key pair (create via console/CLI first; CF cannot create key material)
+    Default: trading-system
+  InstanceType:
+    Type: String
+    Description: EC2 instance type (resize in place to scale up)
+    Default: t3.micro
+    AllowedValues: [t3.micro, t3.small, t3.medium, t3.large]
+  ImageId:
+    Type: AWS::EC2::Image::Id
+    Description: Ubuntu 24.04 LTS AMI (us-east-1)
+    Default: ami-052355af2a014bd2c
+  SshCidr:
+    Type: String
+    Description: CIDR allowed to SSH (restrict to your IP)
+    Default: 0.0.0.0/0
+  BucketName:
+    Type: String
+    Description: S3 bucket name (globally unique)
+    Default: trading-datalake-920641308584
+
+Resources:
+  # --- Security Group ---
+  TradingSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Trading system VPS (SSH only; dashboard via Cloudflare Tunnel)
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: !Ref SshCidr
+      Tags:
+        - Key: Name
+          Value: trading-system-sg
+
+  # --- EC2 instance (disposable compute; data lives in DynamoDB + S3) ---
+  TradingInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      SecurityGroupIds: [!Ref TradingSecurityGroup]
+      ImageId: !Ref ImageId
+      BlockDeviceMappings:
+        - DeviceName: /dev/sda1
+          Ebs:
+            VolumeSize: 30
+            VolumeType: gp3
+      Tags:
+        - Key: Name
+          Value: trading-system
+
+  # --- Elastic IP (stable address for dashboard/webhooks) ---
+  TradingEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      InstanceId: !Ref TradingInstance
+      Tags:
+        - Key: Name
+          Value: trading-system-eip
+
+  # --- DynamoDB (hot data: ticks, orders, signals) ---
+  TradingDataTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: trading-data
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      Tags:
+        - Key: Name
+          Value: trading-data
+
+  # --- S3 (cold data lake: parquet archives) ---
+  TradingDataLake:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Ref BucketName
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Name
+          Value: trading-datalake
+
+Outputs:
+  InstanceId:
+    Description: EC2 instance ID
+    Value: !Ref TradingInstance
+  PublicIP:
+    Description: Elastic IP (stable)
+    Value: !Ref TradingEIP
+  DynamoDBTable:
+    Description: Hot data table
+    Value: !Ref TradingDataTable
+  S3Bucket:
+    Description: Cold data lake bucket
+    Value: !Ref TradingDataLake

@@ -1,0 +1,13 @@
+[Unit]
+Description=Trading system dashboard (Streamlit)
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+ExecStart=/home/ubuntu/trading-system/venv/bin/streamlit run dashboard/app.py --server.port 8501 --server.address 0.0.0.0 --server.headless true
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
