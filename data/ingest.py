@@ -52,7 +52,7 @@ def put_item(entity: str, key: str, payload: dict):
 
 def archive_parquet(obj, symbol, kind):
     """Save a JSON blob to S3 (cold archive). Parquet conversion can come later."""
-    today = dt.datetime.utcnow().strftime("%Y/%m/%d")
+    today = dt.datetime.now(dt.timezone.utc).strftime("%Y/%m/%d")
     key = f"{kind}/{symbol}/{today}/{int(time.time())}.json"
     s3.put_object(Bucket=S3_BUCKET, Key=key, Body=json.dumps(obj))
     return f"s3://{S3_BUCKET}/{key}"
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     print("=== Crypto tickers (Binance.US) ===")
     tickers = fetch_binance_ticker(CRYPTO)
     for sym, t in tickers.items():
-        put_item(f"QUOTE#{sym}", dt.datetime.utcnow().isoformat(), {"price": t.get("price")})
+        put_item(f"QUOTE#{sym}", dt.datetime.now(dt.timezone.utc).isoformat(), {"price": t.get("price")})
         print(f"  {sym}: {t.get('price')}")
 
     print("Done.")
