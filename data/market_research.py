@@ -10,6 +10,7 @@ Sources: Serper news + NewsAPI. Logs to DynamoDB pk NEWS#<YYYY-MM-DD>.
 import os
 import time
 import json
+import hashlib
 import datetime as dt
 import urllib.request
 
@@ -111,7 +112,7 @@ def main():
     for (topic, title, source, date, link), s in zip(articles, scores):
         table.put_item(Item={
             'pk': f'NEWS#{day}',
-            'sk': f'{now}#{topic}#{abs(hash(title)) % 100000}',
+            'sk': f'{now}#{topic}#{hashlib.md5(title.encode()).hexdigest()}',
             'topic': topic, 'title': title, 'source': source, 'date': date,
             'link': link, 'sentiment': s['label'], 'score': str(s['score']), 'ts': now,
         })
