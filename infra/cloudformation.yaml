@@ -1,114 +1,257 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  Multi-market trading system infrastructure (24/7 VPS + data lake).
-  $0 free-tier stack: EC2 t3.micro + DynamoDB + S3 + Elastic IP.
+  24/7 multi-market trading system — VPS worker.
+  EC2 (t3.small) running IB Gateway + IBC (auto-login, auto-restart, API enabled),
+  the Python trading bot (yfinance data + IBKR execution), and the DynamoDB/S3 data lake.
+  Secrets (IBKR creds, API keys) live in SSM Parameter Store — never in this file.
 
 Parameters:
-  KeyName:
-    Type: AWS::EC2::KeyPairName
-    Description: Existing EC2 key pair (create via console/CLI first; CF cannot create key material)
-    Default: trading-system
   InstanceType:
     Type: String
-    Description: EC2 instance type (resize in place to scale up)
-    Default: t3.micro
-    AllowedValues: [t3.micro, t3.small, t3.medium, t3.large]
-  ImageId:
-    Type: AWS::EC2::Image::Id
-    Description: Ubuntu 24.04 LTS AMI (us-east-1)
-    Default: ami-052355af2a014bd2c
+    Default: t3.small
+    AllowedValues: [t3.small, t3.medium, t3.micro]
+    Description: EC2 instance type. t3.small (2GB) recommended for IB Gateway JVM.
+
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Default: trading-system
+    Description: SSH key pair for admin access.
+
   SshCidr:
     Type: String
-    Description: CIDR allowed to SSH (restrict to your IP)
     Default: 0.0.0.0/0
-  BucketName:
+    Description: CIDR allowed to SSH in (restrict to your home IP in prod).
+
+  IbcVersion:
     Type: String
-    Description: S3 bucket name (globally unique)
+    Default: 3.24.1
+    Description: IBC release version.
+
+  IbcTwsMajorVrsn:
+    Type: String
+    Default: '1045'
+    Description: IB Gateway major version (no dots), e.g. 10.45 -> 1045.
+
+  DataLakeBucket:
+    Type: String
     Default: trading-datalake-920641308584
+    Description: S3 bucket for the data lake.
+
+  DynamoTable:
+    Type: String
+    Default: trading-data
+    Description: DynamoDB table for signals/ticks/trades.
 
 Resources:
-  # --- Security Group ---
+
+  # ---------- IAM ----------
+  TradingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Policies:
+        - PolicyName: ssm-trading-secrets
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/trading/*
+
+  TradingInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles: [!Ref TradingRole]
+
+  # ---------- Network ----------
   TradingSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Trading system VPS (SSH only; dashboard via Cloudflare Tunnel)
+      GroupDescription: Trading VPS — SSH + Streamlit dashboard
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
           CidrIp: !Ref SshCidr
-      Tags:
-        - Key: Name
-          Value: trading-system-sg
+        - IpProtocol: tcp
+          FromPort: 8501
+          ToPort: 8501
+          CidrIp: 0.0.0.0/0
 
-  # --- EC2 instance (disposable compute; data lives in DynamoDB + S3) ---
+  # ---------- Compute ----------
   TradingInstance:
     Type: AWS::EC2::Instance
     Properties:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
+      ImageId: '{{resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id}}'
+      IamInstanceProfile: !Ref TradingInstanceProfile
       SecurityGroupIds: [!Ref TradingSecurityGroup]
-      ImageId: !Ref ImageId
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
-          Ebs:
-            VolumeSize: 30
-            VolumeType: gp3
-      Tags:
-        - Key: Name
-          Value: trading-system
+          Ebs: { VolumeSize: 20, VolumeType: gp3 }
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          set -euo pipefail
+          exec > /var/log/trading-bootstrap.log 2>&1
+          echo "=== bootstrap start $(date) ==="
 
-  # --- Elastic IP (stable address for dashboard/webhooks) ---
+          # --- 1. system packages ---
+          apt-get update -y
+          DEBIAN_FRONTEND=noninteractive apt-get install -y \
+            openjdk-17-jre-headless xvfb openbox xdotool imagemagick tesseract-ocr \
+            unzip git python3-venv python3-pip curl
+
+          # --- 2. swap (2GB — the IB Gateway JVM needs headroom) ---
+          if [ ! -f /swapfile ]; then
+            fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
+            chmod 600 /swapfile
+            mkswap /swapfile
+            swapon /swapfile
+            grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
+            echo "swap created"
+          fi
+
+          # --- 3. IB Gateway (standalone installer) ---
+          cd /tmp
+          curl -sL -o ibgateway.sh "https://download2.interactivebrokers.com/installers/ibgateway/stable-standalone/ibgateway-stable-standalone-linux-x64.sh"
+          chmod +x ibgateway.sh
+          ./ibgateway.sh -q -dir /home/ubuntu/ibgateway || echo "ibgateway installer returned non-zero (may still have installed)"
+
+          # --- 4. IBC (automates login + daily restart + API enable) ---
+          curl -sL -o /tmp/ibc.zip "https://github.com/IbcAlpha/IBC/releases/download/${IbcVersion}/IBCLinux-${IbcVersion}.zip"
+          unzip -oq /tmp/ibc.zip -d /home/ubuntu/ibc
+
+          # symlink so IBC finds the jars in its expected ~/Jts/ibgateway/<vrsn>/ layout
+          mkdir -p /home/ubuntu/Jts/ibgateway/${IbcTwsMajorVrsn} /home/ubuntu/ibc/logs
+          ln -sfn /home/ubuntu/ibgateway/jars /home/ubuntu/Jts/ibgateway/${IbcTwsMajorVrsn}/jars
+          ln -sfn /home/ubuntu/ibgateway/ibgateway.vmoptions /home/ubuntu/Jts/ibgateway/${IbcTwsMajorVrsn}/ibgateway.vmoptions
+          ln -sfn /home/ubuntu/ibgateway/.install4j /home/ubuntu/Jts/ibgateway/${IbcTwsMajorVrsn}/.install4j
+
+          # --- 5. IBC config (creds pulled from SSM Parameter Store) ---
+          IBKR_USERNAME=$(aws ssm get-parameter --name /trading/ibkr/username --with-decryption --query Parameter.Value --output text --region ${AWS::Region} 2>/dev/null || echo "")
+          IBKR_PASSWORD=$(aws ssm get-parameter --name /trading/ibkr/password --with-decryption --query Parameter.Value --output text --region ${AWS::Region} 2>/dev/null || echo "")
+          if [ -z "$IBKR_USERNAME" ]; then
+            echo "WARNING: SSM params /trading/ibkr/{username,password} missing — create them, then write /home/ubuntu/ibc/config.ini"
+          else
+            cat > /home/ubuntu/ibc/config.ini <<EOF
+          IbLoginId=${!IBKR_USERNAME}
+          IbPassword=${!IBKR_PASSWORD}
+          TradingMode=paper
+          AcceptIncomingConnectionAction=accept
+          ReadOnlyApi=no
+          AutoRestartTime=04:00 AM
+          ColdRestartTime=13:00
+          ReloginAfterSecondFactorAuthenticationTimeout=yes
+          SecondFactorAuthenticationTimeout=180
+          AcceptNonBrokerageAccountWarning=yes
+          DismissNSEComplianceNotice=yes
+          SuppressInfoMessages=yes
+          MinimizeMainWindow=yes
+          ExistingSessionDetectedAction=primary
+          StoreSettingsOnServer=no
+          EOF
+            echo "config.ini written"
+          fi
+
+          # --- 6. IBC launch script paths ---
+          sed -i "s/^TWS_MAJOR_VRSN=.*/TWS_MAJOR_VRSN=${IbcTwsMajorVrsn}/" /home/ubuntu/ibc/gatewaystart.sh
+          sed -i 's|^IBC_PATH=.*|IBC_PATH=/home/ubuntu/ibc|' /home/ubuntu/ibc/gatewaystart.sh
+          sed -i 's/^TWOFA_TIMEOUT_ACTION=.*/TWOFA_TIMEOUT_ACTION=restart/' /home/ubuntu/ibc/gatewaystart.sh
+          chmod +x /home/ubuntu/ibc/scripts/*.sh /home/ubuntu/ibc/*.sh
+
+          # --- 7. launcher wrapper (Xvfb + openbox + IBC) ---
+          cat > /home/ubuntu/ibgateway-start.sh <<'WRAP'
+          #!/bin/bash
+          export DISPLAY=:99
+          if ! pgrep -x Xvfb > /dev/null; then
+              Xvfb :99 -screen 0 1280x800x24 -ac +extension GLX +render -noreset &>/dev/null &
+              sleep 3
+          fi
+          if ! pgrep -x openbox > /dev/null; then
+              openbox &>/dev/null &
+              sleep 1
+          fi
+          exec /home/ubuntu/ibc/gatewaystart.sh -inline
+          WRAP
+          chmod +x /home/ubuntu/ibgateway-start.sh
+
+          # --- 8. systemd service ---
+          cat > /etc/systemd/system/ibgateway.service <<'SVC'
+          [Unit]
+          Description=IB Gateway (headless paper trading, IBC)
+          After=network.target
+
+          [Service]
+          User=ubuntu
+          Environment=DISPLAY=:99
+          ExecStart=/home/ubuntu/ibgateway-start.sh
+          Restart=on-failure
+          RestartSec=15
+
+          [Install]
+          WantedBy=multi-user.target
+          SVC
+          systemctl daemon-reload
+          systemctl enable ibgateway
+
+          # --- 9. trading-system repo + venv ---
+          cd /home/ubuntu
+          if [ ! -d /home/ubuntu/trading-system/.git ]; then
+            git clone https://github.com/PCnslt/trading-system.git /home/ubuntu/trading-system || true
+          fi
+          cd /home/ubuntu/trading-system 2>/dev/null && git pull --ff-only || true
+          python3 -m venv /home/ubuntu/trading-system/venv
+          /home/ubuntu/trading-system/venv/bin/pip install -q --upgrade pip
+          /home/ubuntu/trading-system/venv/bin/pip install -q ib_insync yfinance boto3 python-dotenv pandas numpy
+
+          # --- 10. cron (data ingest + bot) ---
+          (crontab -l 2>/dev/null || true; cat <<'CRON'
+          */10 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/crypto_tick.py >> /home/ubuntu/trading-system/data/crypto.log 2>&1
+          0 21 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/ingest.py >> /home/ubuntu/trading-system/data/ingest.log 2>&1
+          5 21 * * * cd /home/ubuntu/trading-system/bot && /home/ubuntu/trading-system/venv/bin/python live.py >> /home/ubuntu/trading-system/bot/live.log 2>&1
+          CRON
+          ) | crontab -
+
+          # --- 11. start gateway (IBC auto-login; approve 2FA push on phone) ---
+          systemctl start ibgateway || true
+
+          echo "=== bootstrap complete $(date) ==="
+
+  # ---------- Elastic IP ----------
   TradingEIP:
     Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
+
+  TradingEIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    Properties:
       InstanceId: !Ref TradingInstance
-      Tags:
-        - Key: Name
-          Value: trading-system-eip
-
-  # --- DynamoDB (hot data: ticks, orders, signals) ---
-  TradingDataTable:
-    Type: AWS::DynamoDB::Table
-    Properties:
-      TableName: trading-data
-      BillingMode: PAY_PER_REQUEST
-      AttributeDefinitions:
-        - AttributeName: pk
-          AttributeType: S
-        - AttributeName: sk
-          AttributeType: S
-      KeySchema:
-        - AttributeName: pk
-          KeyType: HASH
-        - AttributeName: sk
-          KeyType: RANGE
-      Tags:
-        - Key: Name
-          Value: trading-data
-
-  # --- S3 (cold data lake: parquet archives) ---
-  TradingDataLake:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Ref BucketName
-      VersioningConfiguration:
-        Status: Enabled
-      Tags:
-        - Key: Name
-          Value: trading-datalake
+      AllocationId: !GetAtt TradingEIP.AllocationId
 
 Outputs:
   InstanceId:
-    Description: EC2 instance ID
     Value: !Ref TradingInstance
-  PublicIP:
-    Description: Elastic IP (stable)
+  PublicIp:
     Value: !Ref TradingEIP
-  DynamoDBTable:
-    Description: Hot data table
-    Value: !Ref TradingDataTable
-  S3Bucket:
-    Description: Cold data lake bucket
-    Value: !Ref TradingDataLake
+  SshCommand:
+    Value: !Sub ssh -i ${KeyName}.pem ubuntu@${TradingEIP}
+  BootstrapLog:
+    Value: ssh ubuntu@<ip> 'sudo cat /var/log/trading-bootstrap.log'
+  NextSteps:
+    Value: >
+      1) Create SSM secrets: aws ssm put-parameter --name /trading/ibkr/username --type SecureString --value <user>
+      (and /trading/ibkr/password). 2) Approve the IBKR 2FA push on your phone after first boot.
+      3) Verify: ssh in, 'ss -tln | grep 4002' should show the API port listening.
