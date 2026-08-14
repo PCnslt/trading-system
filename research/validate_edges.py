@@ -703,9 +703,10 @@ def main():
               f"{cc:.3f} (n={len(both)} days)  " + ("-> genuine diversifier" if cc is not None and abs(cc) < 0.3 else
               "-> same bet" if cc is not None and cc > 0.5 else "-> modest") if cc is not None else "n/a")
 
-    with open(RESULTS_FILE, 'w') as f:
+    outfile = os.path.join(HERE, f'validate_edges_results_{args.source}.json')
+    with open(outfile, 'w') as f:
         json.dump(report, f, indent=2, default=float)
-    print(f"\nSaved -> {RESULTS_FILE}")
+    print(f"\nSaved -> {outfile}")
 
     try:
         from data.s3_archive import archive_scan_results
