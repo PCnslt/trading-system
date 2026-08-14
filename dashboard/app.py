@@ -4,12 +4,16 @@ Reads live data from DynamoDB. Controls write flags to DynamoDB that the
 bot reads. No arbitrary order entry here.
 """
 import os
+import sys
 import datetime as dt
 
 import boto3
 import streamlit as st
 from boto3.dynamodb.conditions import Key, Attr
 from dotenv import load_dotenv
+
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from bot.control import set_control as control_set_control
 
 load_dotenv()
 
@@ -39,9 +43,8 @@ def get_control():
 
 
 def set_control(**fields):
-    item = {"pk": "CONTROL", "sk": "system", "ts": int(dt.datetime.now(dt.UTC).timestamp())}
-    item.update(fields)
-    table.put_item(Item=item)
+    # Read-modify-write via the shared control module (preserves existing flags).
+    control_set_control(table, **fields)
     st.cache_data.clear()
 
 
@@ -65,13 +68,15 @@ st.title("📈 Trading System")
 
 # --- Control state banner ---
 ctrl = get_control()
-state = ctrl.get("state", "RUNNING")
+state = ctrl.get("state")
 if state == "PAUSED":
     st.warning("⚠️ Bot is PAUSED")
 elif state == "KILLED":
     st.error("🛑 Bot is KILLED — all trading halted")
-else:
+elif state == "RUNNING":
     st.success("✅ Bot is RUNNING (paper mode)")
+else:
+    st.warning("⚠️ Control state UNKNOWN — bots are fail-closed (no trading until set)")
 
 tab_live, tab_arch, tab_road = st.tabs(["📊 Live", "🗺️ Architecture", "📋 Roadmap"])
 

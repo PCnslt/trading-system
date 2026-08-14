@@ -99,6 +99,25 @@ def mark_ran_today(table, key, today):
         print(f"[control] mark_ran_today failed (non-fatal): {e}")
 
 
+def set_control(table, **fields):
+    """Read-modify-write CONTROL/system, PRESERVING existing flags.
+
+    Fixes the dashboard bug where a `Pause` click wiped a pending `flatten`
+    flag (or vice-versa): only the supplied fields change, everything else
+    (state, flatten, acked set, ts) is carried over.
+    """
+    try:
+        existing = table.get_item(Key={'pk': CONTROL_PK, 'sk': CONTROL_SK}).get('Item') or {}
+    except Exception as e:
+        existing = {}
+        print(f"[control] set_control read failed (non-fatal, will overwrite): {e}")
+    item = {'pk': CONTROL_PK, 'sk': CONTROL_SK, 'ts': int(time.time())}
+    item.update({k: v for k, v in existing.items() if k not in ('pk', 'sk', 'ts')})
+    item.update(fields)
+    table.put_item(Item=item)
+    return item
+
+
 def clear_flatten(table):
     """One-shot: reset the flatten flag after a bot honours it. Preserves state."""
     try:
