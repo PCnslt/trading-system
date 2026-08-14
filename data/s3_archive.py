@@ -47,8 +47,16 @@ def _utcnow():
     return dt.datetime.now(dt.timezone.utc)
 
 
+def _json_default(o):
+    """Serialize numpy numerics as floats; fall back to str for the rest."""
+    try:
+        return float(o)
+    except (TypeError, ValueError):
+        return str(o)
+
+
 def put_json(obj, key):
-    s3().put_object(Bucket=S3_BUCKET, Key=key, Body=json.dumps(obj, default=str))
+    s3().put_object(Bucket=S3_BUCKET, Key=key, Body=json.dumps(obj, default=_json_default))
     return f's3://{S3_BUCKET}/{key}'
 
 
