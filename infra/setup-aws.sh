@@ -38,9 +38,9 @@ fi
 AMI_ID=$(aws ssm get-parameters --names /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id --query 'Parameters[0].Value' --output text --region "$REGION")
 echo "AMI: $AMI_ID"
 
-# 4. EC2 instance (t3.micro, 30GB gp3)
+# 4. EC2 instance (t3.small, 30GB gp3)
 INSTANCE_ID=$(aws ec2 run-instances \
-  --image-id "$AMI_ID" --instance-type t3.micro --key-name "$KEY_NAME" \
+  --image-id "$AMI_ID" --instance-type t3.small --key-name "$KEY_NAME" \
   --security-group-ids "$SG_ID" \
   --block-device-mappings '[{"DeviceName":"/dev/sda1","Ebs":{"VolumeSize":30,"VolumeType":"gp3"}}]' \
   --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=$INSTANCE_TAG}]" \
