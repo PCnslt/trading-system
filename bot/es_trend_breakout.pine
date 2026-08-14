@@ -1,0 +1,38 @@
+//@version=6
+indicator("ES Trend Breakout (long-only)", shorttitle="ES Trend", overlay=true)
+
+// ===== INPUTS =====
+smaLen    = input.int(200, "SMA Length", minval=20)
+donLen    = input.int(20, "Donchian Length", minval=5)
+adxLen    = input.int(14, "ADX Length", minval=5)
+adxThresh = input.float(25.0, "ADX Threshold (trend filter)", minval=0)
+
+// ===== INDICATORS =====
+sma200 = ta.sma(close, smaLen)
+donHi  = ta.highest(high, donLen)[1]   // prior 20-bar high (breakout level)
+donLo  = ta.lowest(low, donLen)[1]
+atr    = ta.atr(14)
+[_, _, adxv] = ta.dmi(adxLen, adxLen)
+
+// ===== SIGNALS =====
+trendUp  = close > sma200
+trending = adxv > adxThresh
+breakout = close > donHi and close[1] <= donHi[1]
+
+longSignal  = trendUp and trending and breakout
+shortSignal = not trendUp and trending and close < donLo and close[1] >= donLo[1]
+
+// ===== PLOTS =====
+plot(sma200, "200 SMA", color=color.new(color.blue, 0), linewidth=2)
+plot(donHi,  "20-bar High (breakout)", color=color.new(color.orange, 0), style=plot.style_linebr)
+plot(donLo,  "20-bar Low", color=color.new(color.orange, 0), style=plot.style_linebr)
+
+plotshape(longSignal,  "Long",  shape.labelup,   location.belowbar, color=color.new(color.green, 0), size=size.small, text="LONG")
+plotshape(shortSignal, "Short", shape.labeldown, location.abovebar, color=color.new(color.red, 0),   size=size.small, text="SHORT")
+
+// Background tint when regime filter is active (trending)
+bgcolor(trending ? color.new(color.green, 95) : color.new(color.gray, 97))
+
+// ===== ALERTS =====
+alertcondition(longSignal,  "ES Long Breakout",  "Long breakout signal (trend + ADX confirm)")
+alertcondition(shortSignal, "ES Short Breakout", "Short breakout signal")
