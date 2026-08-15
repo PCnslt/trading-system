@@ -3,6 +3,15 @@
 > **index-LONG** (`live.py`: MES/MNQ Donchian + RSI2 buy-dip) → the sole live-capital candidate.
 > Gate on **execution-correctness per fired signal/cycle**, NOT signal count (index edge is low-frequency, ~12 signals/yr).
 
+> **⚠ Stop-adjusted strategy under validation.** The live bots rest a **2×ATR hard
+> protective stop** on every entry (Never-Lose-Money rule 1): the index Donchian
+> already carried a 2×ATR GTC stop; the RSI2 buy-dip and intraday FADESHORT
+> previously rested **NO stop** in the original backtest and now rest their 2×ATR
+> distance as a real protective order. Gate 5 therefore validates the
+> **stop-adjusted** version — a deliberate behavior change vs the no-stop
+> backtest. Backtest-vs-live differences attributable to the stop are EXPECTED
+> and are not, by themselves, execution defects.
+
 ## Criteria — ALL must hold over 10 RTH sessions
 
 | # | Criterion | Measure |
