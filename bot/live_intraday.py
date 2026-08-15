@@ -9,8 +9,7 @@ flattened by end of session (no overnight risk):
      close > upper band). On 5m bars, RSI(2) > 90 alone fires on every 2-bar
      pop, so the entry requires BOTH:
        Entry : RSI(2) > 90  AND  close > upper Bollinger band (20-bar, 2.0 sd)
-       Exit  : close <= mid band (reversion done), or EOD flatten. NO stop
-               (the daily fade-rally backtest has none; 2*ATR used for sizing).
+       Exit  : close <= mid band (reversion done), 2*ATR hard stop, or EOD flatten.
      HONEST: this is an intraday HYPOTHESIS, not a validated intraday edge —
      the daily fade-rally was validated on bonds/FX, not intraday MES.
 
@@ -157,7 +156,7 @@ def fadeshort_exit(d, side):
 
 
 def fadeshort_stop(d, side):
-    return d['close'] + FADE_STOP_ATR * d['atr']   # above entry (sizing proxy, no order)
+    return d['close'] + FADE_STOP_ATR * d['atr']   # above entry (hard stop, never-lose-money)
 
 
 def donch15_entry(d):
@@ -188,12 +187,10 @@ def donch15_stop(d, side):
 
 STRATEGIES = [
     {'name': 'FADESHORT', 'barsize': '5 mins', 'label': 'intraday fade-rally short',
-     'has_stop_order': False,
      'detail': fadeshort_detail, 'entry': fadeshort_entry,
      'exit': fadeshort_exit, 'stop': fadeshort_stop,
      'sig_keys': ['rsi2', 'boll_upper', 'boll_mid', 'atr']},
     {'name': 'DONCH15', 'barsize': '15 mins', 'label': '15m Donchian/ATR breakout',
-     'has_stop_order': True,
      'detail': donch15_detail, 'entry': donch15_entry,
      'exit': donch15_exit, 'stop': donch15_stop,
      'sig_keys': ['don_hi', 'don_lo', 'mid', 'atr']},
@@ -323,7 +320,7 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
         if should_exit:
             _exit(dynamo, ib, con, tag, sname, side, pos, xreason,
                   detail['close'], today, mode, risk, entry_px, exec_mgr)
-        elif strat['has_stop_order'] and not exec_mgr.is_stop_open('MES', side):
+        elif not exec_mgr.is_stop_open('MES', side):
             # protective stop no longer resting -> filled intraday
             exit_px = stop if stop is not None else detail['close']
             if risk is not None and entry_px is not None:
@@ -365,8 +362,7 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
                                  side=nside, qty=size, order_type='MKT',
                                  stop_price=float(stop_px), contract_month=front_month(),
                                  bar_time=now.isoformat(), signal_reason=ereason)
-            res = exec_mgr.submit_entry(intent, con, has_stop=strat['has_stop_order'],
-                                        stop_tif='DAY')
+            res = exec_mgr.submit_entry(intent, con, stop_tif='DAY')
             if res.status == 'DUPLICATE':
                 print(f">>> {mode} {tag} duplicate signal {res.signal_id} — skip (idempotent)")
                 return

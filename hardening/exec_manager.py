@@ -142,14 +142,15 @@ class ExecutionManager:
         self.intents = IntentStore(table)
 
     # ---- entry ----
-    def submit_entry(self, intent: TradeIntent, contract, has_stop=True,
-                     stop_tif='GTC', fill_timeout=8.0) -> ExecutionResult:
+    def submit_entry(self, intent: TradeIntent, contract, stop_tif='GTC',
+                     fill_timeout=8.0) -> ExecutionResult:
         """Idempotently enter: BUY (long) or SELL (short) `intent.qty`.
 
         1. Conditional-write the intent; DUPLICATE if the signal was accepted.
-        2. Place a market order.
-        3. Verify the fill (partial-fill aware).
-        4. On fill, place the protective stop (when has_stop and stop_price>0).
+        2. Refuse an unprotected entry (stop_price <= 0) — NEVER-LOSE-MONEY.
+        3. Place a market order.
+        4. Verify the fill (partial-fill aware).
+        5. On fill, place the protective stop (unconditionally).
         A fill timeout -> UNKNOWN (never assume rejected).
         """
         if not self.intents.accept(intent):
@@ -157,14 +158,20 @@ class ExecutionManager:
                                    intent_id=intent.intent_id,
                                    detail='signal already accepted (idempotent)')
 
+        # NEVER-LOSE-MONEY: no unprotected position, ever. Refuse fail-closed.
+        if intent.stop_price <= 0:
+            return ExecutionResult('REJECTED', signal_id=intent.signal_id,
+                                   intent_id=intent.intent_id,
+                                   detail='no protective stop supplied '
+                                          '(never-lose-money: refuse unprotected entry)')
+
         from ib_insync import MarketOrder
         trade = self.ib.placeOrder(contract, MarketOrder(intent.action, intent.qty, tif='DAY'))
         res = self._confirm(trade, intent, fill_timeout)
         if res.status in ('REJECTED', 'UNKNOWN') or res.filled_qty <= 0:
             return res
-        if has_stop and intent.stop_price > 0:
-            self._place_stop(contract, intent.side, res.filled_qty,
-                             intent.stop_price, stop_tif)
+        self._place_stop(contract, intent.side, res.filled_qty,
+                         intent.stop_price, stop_tif)
         return res
 
     # ---- exit ----

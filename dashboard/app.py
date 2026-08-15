@@ -475,6 +475,22 @@ signal count — the intraday MES lane supplies execution-volume validation.
 
 Tracking: **`docs/GATE5_LOG.md`** · counter resets on any (a)–(d) failure.
 """)
+
+    st.markdown("#### 🚧 Micro-live blockers (checklist — do NOT resolve unilaterally)")
+    st.markdown("""\
+    | # | Blocker | Owner | Status |
+    |---|---|---|---|
+    | 1 | Live account funding ≥ ~$1.3k (1 MES initial margin + buffer) | OWNER | ⬜ |
+    | 2 | Live futures + order-type permissions (MKT + GTC STP) | OWNER | ⬜ |
+    | 3 | Live CME L1 real-time entitlement | OWNER | ⬜ |
+    | 4 | Gateway/credential swap smoke-test (one live round-trip) | VPS prep | ⬜ |
+    | 5 | No flip during backfill / Sun 2FA window (13:00 UTC) | VPS prep | ⬜ |
+
+    > #1–#3 are OWNER actions; #4–#5 are VPS preps. This is a **visibility checklist**,
+    > not an execution plan — nothing here is resolved unilaterally. Micro-live stays
+    > OFF until all five are cleared AND Gate 5 passes. See `docs/MICRO-LIVE-PLAN.md`.
+    """)
+
     _recon = latest("RECONCILE", 1)
     _r = _recon[0] if _recon else {}
     _rst = _r.get("status", "no-data")

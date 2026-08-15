@@ -13,8 +13,8 @@ Strategies (each tracked INDEPENDENTLY, tagged in DynamoDB pk):
      `sig_rsi2` long-only — the validated buy-dip edge: OOS PF 2.69/2.21/1.79
      on ES/NQ/YM):
        Entry : RSI(2) < 10   (buy the dip)
-       Exit  : RSI(2) > 70, or 5-day time stop. NO stop order (backtest has none;
-               2*ATR used for position sizing only).
+       Exit  : RSI(2) > 70, or 5-day time stop, or 2*ATR hard stop
+               (never-lose-money: no unprotected position, ever).
 
 Data: yfinance ES=F / NQ=F daily (same % action as MES/MNQ).
 Execution: IBKR paper (DUR193467) MES + MNQ, front-month, dynamic roll.
@@ -95,8 +95,8 @@ def compute(df):
                          'atr': atr, 'rsi2': r2}).iloc[-1]
 
 
-# ===== strategy interface: entry/detail -> (bool, reason); exit -> (bool, reason);
-#      stop(detail) -> stop price (or sizing proxy). has_stop_order -> place GTC. =====
+# ===== strategy interface: entry -> (bool, reason); exit -> (bool, reason);
+#      stop(detail) -> protective stop price (hard stop, never-lose-money). =====
 def donchian_entry(detail):
     if not np.isnan(detail['don_hi']) and detail['close'] > detail['don_hi']:
         return True, f"close {detail['close']:.1f} > 20d-high {detail['don_hi']:.1f}"
@@ -133,17 +133,16 @@ def rsi2_exit(detail, stop, held):
 
 
 def rsi2_stop(detail):
-    # no GTC stop in the backtest; 2*ATR distance used for position sizing only.
+    # NEVER-LOSE-MONEY: rest the 2*ATR distance as a hard protective stop
+    # (previously 'sizing only, no order' — now the same number IS the stop).
     return detail['close'] - STOP_ATR * detail['atr']
 
 
 STRATEGIES = [
     {'name': 'DONCHIAN', 'label': 'Donchian/ATR long',
-     'entry': donchian_entry, 'exit': donchian_exit, 'stop': donchian_stop,
-     'has_stop_order': True},
+     'entry': donchian_entry, 'exit': donchian_exit, 'stop': donchian_stop},
     {'name': 'RSI2', 'label': 'RSI(2) buy-dip long',
-     'entry': rsi2_entry, 'exit': rsi2_exit, 'stop': rsi2_stop,
-     'has_stop_order': False},
+     'entry': rsi2_entry, 'exit': rsi2_exit, 'stop': rsi2_stop},
 ]
 
 
@@ -236,7 +235,7 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
                                       side='LONG', qty=pos, order_type='MKT', stop_price=0.0,
                                       contract_month=front_month(), bar_time=today,
                                       signal_reason=xreason)
-            res = exec_mgr.submit_exit(exit_intent, con, cancel_stop=strat['has_stop_order'])
+            res = exec_mgr.submit_exit(exit_intent, con, cancel_stop=True)
             if res.status == 'DUPLICATE':
                 print(f">>> {mode} {tag} duplicate exit signal — skip (idempotent)")
                 return
@@ -253,7 +252,7 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
             log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
                 'pos': 0, 'stop': '0', 'entry': '0', 'entry_date': '', 'ts': int(time.time())})
             print(f">>> {mode} {tag} EXIT {pos} ({xreason})")
-        elif strat['has_stop_order'] and not exec_mgr.is_stop_open(sym, 'LONG'):
+        elif not exec_mgr.is_stop_open(sym, 'LONG'):
             # state long but GTC stop no longer resting -> filled intraday
             exit_px = stop if stop is not None else detail['close']
             if risk is not None and entry_px is not None:
@@ -284,7 +283,7 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
                                  side='LONG', qty=size, order_type='MKT',
                                  stop_price=float(stop_price), contract_month=front_month(),
                                  bar_time=today, signal_reason=ereason)
-            res = exec_mgr.submit_entry(intent, con, has_stop=strat['has_stop_order'])
+            res = exec_mgr.submit_entry(intent, con)
             if res.status == 'DUPLICATE':
                 print(f">>> {mode} {tag} duplicate signal {res.signal_id} — skip (idempotent)")
                 return

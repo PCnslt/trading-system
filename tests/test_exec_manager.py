@@ -126,7 +126,7 @@ def test_submit_entry_filled_places_stop(fake_table):
     ib = FakeIB(fill_status='Filled', fill_shares=2, fill_price=101.0)
     mgr = make_manager(ib, fake_table)
     intent = make_intent(qty=2, stop_price=95.0)
-    res = mgr.submit_entry(intent, contract=None, has_stop=True, fill_timeout=8.0)
+    res = mgr.submit_entry(intent, contract=None, fill_timeout=8.0)
     assert res.status == 'FILLED'
     assert res.filled_qty == 2
     assert res.avg_px == pytest.approx(101.0)
@@ -139,7 +139,7 @@ def test_submit_entry_filled_places_stop(fake_table):
 def test_submit_entry_partial_fill(fake_table):
     ib = FakeIB(fill_status='Filled', fill_shares=1, fill_price=100.0)
     mgr = make_manager(ib, fake_table)
-    res = mgr.submit_entry(make_intent(qty=3, stop_price=90.0), None, has_stop=True)
+    res = mgr.submit_entry(make_intent(qty=3, stop_price=90.0), None)
     assert res.status == 'PARTIAL'
     assert res.filled_qty == 1
 
@@ -148,8 +148,8 @@ def test_submit_entry_duplicate_is_idempotent(fake_table):
     ib = FakeIB()
     mgr = make_manager(ib, fake_table)
     intent = make_intent(qty=1, stop_price=90.0)
-    first = mgr.submit_entry(intent, None, has_stop=True)
-    second = mgr.submit_entry(intent, None, has_stop=True)
+    first = mgr.submit_entry(intent, None)
+    second = mgr.submit_entry(intent, None)
     assert first.status == 'FILLED'
     assert second.status == 'DUPLICATE'
     # only ONE entry order ever placed (the duplicate placed nothing)
@@ -159,7 +159,7 @@ def test_submit_entry_duplicate_is_idempotent(fake_table):
 def test_submit_entry_rejected(fake_table):
     ib = FakeIB(fill_status='Rejected')
     mgr = make_manager(ib, fake_table)
-    res = mgr.submit_entry(make_intent(qty=1, stop_price=90.0), None, has_stop=True)
+    res = mgr.submit_entry(make_intent(qty=1, stop_price=90.0), None)
     assert res.status == 'REJECTED'
     assert res.filled_qty == 0
 
@@ -168,16 +168,26 @@ def test_submit_entry_timeout_is_unknown_not_rejected(fake_table):
     ib = FakeIB(fill_status='Submitted')   # stays open -> timeout
     mgr = make_manager(ib, fake_table)
     res = mgr.submit_entry(make_intent(qty=1, stop_price=90.0), None,
-                           has_stop=True, fill_timeout=0.01)
+                           fill_timeout=0.01)
     assert res.status == 'UNKNOWN'          # timeout is UNKNOWN, never "rejected"
 
 
-def test_submit_entry_no_stop_when_has_stop_false(fake_table):
+def test_submit_entry_rejects_no_stop(fake_table):
+    # NEVER-LOSE-MONEY: an entry with no protective stop is refused fail-closed.
     ib = FakeIB(fill_status='Filled', fill_shares=1, fill_price=100.0)
     mgr = make_manager(ib, fake_table)
-    res = mgr.submit_entry(make_intent(qty=1, stop_price=90.0), None, has_stop=False)
+    res = mgr.submit_entry(make_intent(qty=1, stop_price=0.0), None)
+    assert res.status == 'REJECTED'
+    assert all(o.orderType != 'MKT' for o in ib.placed)   # nothing sent to broker
+
+
+def test_submit_entry_always_places_stop(fake_table):
+    # The stop is rested unconditionally (no has_stop opt-out anymore).
+    ib = FakeIB(fill_status='Filled', fill_shares=1, fill_price=100.0)
+    mgr = make_manager(ib, fake_table)
+    res = mgr.submit_entry(make_intent(qty=1, stop_price=90.0), None)
     assert res.status == 'FILLED'
-    assert all(o.orderType != 'STP' for o in ib.placed)
+    assert any(o.orderType == 'STP' for o in ib.placed)
 
 
 # ---- submit_exit ----

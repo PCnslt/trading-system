@@ -30,5 +30,8 @@ BUILDING — futures phase (paper forward-test). 2 bots live on cron:
 Execution hardening live: persistent risk ledger (`RISK#`) · broker reconciliation
 (`reconcile-daemon` systemd, 45s → `RECONCILE/system`) · execution manager +
 idempotent `TradeIntent` (`INTENT#` conditional writes — no strategy calls IBKR).
+Never-lose-money: every entry rests a hard protective stop; reconciler halts on a
+missing stop on any open position. Crypto deep history (`crypto-hist/`, 6.9y) +
+futures-options chain scaffold landed (both research-grade, 0 crypto promotes).
 Kill-switch + dashboard live.
 See `.hermes/plans/trading-system-checklist.md`.

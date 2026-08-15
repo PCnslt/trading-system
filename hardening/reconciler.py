@@ -37,14 +37,11 @@ TRACKED_TAGS = {
     'ZN_RSI2SHORT': 'SHORT', 'ZN_BBANDSHORT': 'SHORT',
 }
 
-# Per-tag: does the strategy rest a protective STOP order at the broker?
-HAS_STOP_ORDER = {
-    'MES_DONCHIAN': True, 'MES_RSI2': False,
-    'MNQ_DONCHIAN': True, 'MNQ_RSI2': False,
-    'MES_FADESHORT': False, 'MES_DONCH15': True,
-    'ZB_RSI2SHORT': False, 'ZB_BBANDSHORT': False,
-    'ZN_RSI2SHORT': False, 'ZN_BBANDSHORT': False,
-}
+# NEVER-LOSE-MONEY: every open position MUST rest a protective STOP order at the
+# broker. There is no per-tag opt-out anymore — the RSI2 buy-dip and intraday
+# FADESHORT previously rested no stop (backtest had none); they now rest their
+# 2xATR distance as a hard stop. `expected_stops` therefore expects a stop on
+# EVERY open position regardless of tag.
 
 
 class ReconcileQueryError(Exception):
@@ -178,11 +175,15 @@ def expected_positions(rows) -> dict:
 
 
 def expected_stops(rows) -> dict:
-    """symbol -> list of (action, qty) protective STP orders expected to be resting."""
+    """symbol -> list of (action, qty) protective STP orders expected to be resting.
+
+    NEVER-LOSE-MONEY: EVERY open position must rest a protective stop. A missing
+    stop on any open position = MISMATCH -> halt.
+    """
     out = {}
     for tag, state in rows:
         pos = int(state.get('pos', 0) or 0)
-        if pos <= 0 or not HAS_STOP_ORDER.get(tag, False):
+        if pos <= 0:
             continue
         side = state.get('side') or TRACKED_TAGS.get(tag)
         action = 'SELL' if side == 'LONG' else 'BUY'   # the stop CLOSES the position

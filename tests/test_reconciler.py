@@ -1,7 +1,8 @@
 """Broker reconciliation tests (execution-hardening Phase 2).
 
 Covers MATCH / MISMATCH / UNKNOWN semantics, position drift (both directions),
-protective-stop symmetry, unaccounted fills, and fail-closed broker queries.
+protective-stop EXISTENCE on every open position, unaccounted fills, and
+fail-closed broker queries.
 """
 import datetime as dt
 
@@ -117,17 +118,28 @@ def test_reconcile_match_open_long_with_stop(fake_table):
 
 def test_reconcile_match_short_position(fake_table):
     pos_row(fake_table, 'MES_FADESHORT', 1, side='SHORT')
-    ib = FakeIB(positions=[FakePos('MES', -1)])   # no stop order expected (fade has none)
+    # NEVER-LOSE-MONEY: a short rests a BUY (cover) stop.
+    ib = FakeIB(positions=[FakePos('MES', -1)],
+                orders=[FakeOrder('MES', 'BUY', 'STP', 1)])
     r = reconcile(ib, fake_table, today_iso=TODAY)
     assert r.status == 'MATCH', r.reason
 
 
-def test_reconcile_match_rsi2_no_stop_expected(fake_table):
-    # RSI2 has no protective stop -> no STP at broker is CORRECT (not a mismatch)
+def test_reconcile_match_rsi2_with_stop(fake_table):
+    # NEVER-LOSE-MONEY: RSI2 now rests a hard stop too.
     pos_row(fake_table, 'MES_RSI2', 1)
-    ib = FakeIB(positions=[FakePos('MES', 1)])   # flat orders
+    ib = FakeIB(positions=[FakePos('MES', 1)],
+                orders=[FakeOrder('MES', 'SELL', 'STP', 1)])
     r = reconcile(ib, fake_table, today_iso=TODAY)
     assert r.status == 'MATCH', r.reason
+
+
+def test_reconcile_mismatch_rsi2_missing_stop(fake_table):
+    pos_row(fake_table, 'MES_RSI2', 1)
+    ib = FakeIB(positions=[FakePos('MES', 1)])   # no stop -> missing -> MISMATCH
+    r = reconcile(ib, fake_table, today_iso=TODAY)
+    assert r.status == 'MISMATCH'
+    assert 'stop mismatch' in r.reason
 
 
 # ---- MISMATCH cases ----
