@@ -51,6 +51,18 @@
 #   bot/backfill_bars.py      historical-bar backfill (42-sym registry, daily+intraday) -> S3 futures-bars/*
 #   data/options_chains.py    options-on-futures chain metadata -> OPTCHAIN#<sym> + S3 options/*
 #                             (scheduled daily 21:45; also runnable on demand)
+#   data/ibkr_full_backfill.py  FULL-DEPTH IBKR backfill -> S3 ibkr/* (parquet, quality=BROKER)
+#                             clientId 50. Long-running, resumable (data/ibkr_backfill_state.json).
+#                             Phases: futures daily (CONTFUT+per-contract) -> crypto micros daily ->
+#                             equities daily (~6.9k, 20y+) -> futures 1min (16 liquid) -> crypto 1min ->
+#                             equities 1min (~1k liquid). Runner: ./run_ibkr_full_backfill.sh
+#                             (launched 2026-08-15, off-RTH weekend).
+
+# ---- DATA ENGINE (separate US-equities project) — ⛔ PAUSED 2026-08-15 ----
+#   yfinance US-equities collection PIVOTED to IBKR (owner directive). The 5
+#   data-engine cron jobs are commented out in the LIVE crontab; data_engine/crontab.txt
+#   + the code are KEPT for optionality. Universe/liquid-rank modules remain the
+#   symbol source for the IBKR equities collector (bars come from IBKR now, not yfinance).
 
 # ---- recurring bar collection (daily delta; system crontab, above) ----
 #   data/daily_collect.py     daily + 15m/5m bars, full 42-sym registry -> S3 futures-bars/*

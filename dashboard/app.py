@@ -120,11 +120,12 @@ with tab_sched:
 | **every 30m** | market_research.py → news sentiment (`NEWS#`) | system crontab |
 | **Mon–Fri */15, 13:00–20:00** | intraday MES (FADESHORT + DONCH15); bot self-gates entries 13:30–19:30, flatten 19:45 | Hermes cron |
 | **Mon–Fri 13:30–20:00** | futures L1 tick recorder (clientId 74) → `futures-ticks/` | systemd |
-| 01:15 | data engine: US stocks daily (~6.9k, bounded batch + resume) | system crontab |
-| 02:00 | data engine: liquid rank top-1000 (dollar volume) | system crontab |
-| 02:30 / 02:45 | data engine: 1h (~2y) / 1m (~8d) intraday, liquid subset | system crontab |
+| 01:15 | ~~data engine: US stocks daily (~6.9k)~~ ⛔ PAUSED — pivoted to IBKR | system crontab |
+| 02:00 | ~~data engine: liquid rank top-1000~~ ⛔ PAUSED (list still used by IBKR collector) | system crontab |
+| 02:30 / 02:45 | ~~data engine: 1h/1m intraday~~ ⛔ PAUSED — pivoted to IBKR | system crontab |
+| — (resumable) | **IBKR full-depth backfill** → `ibkr/*` (futures daily → crypto → equities daily 20y+ → 1-min) | `run_ibkr_full_backfill.sh` |
 | 04:00 | IB Gateway native auto-restart (token re-login, no 2FA) | systemd |
-| Sun 12:00 | data engine: universe refresh (~7k common stocks) | system crontab |
+| Sun 12:00 | ~~data engine: universe refresh (~7k)~~ ⛔ PAUSED (universe list still cached + used by IBKR collector) | system crontab |
 | Sun 13:00 | IB Gateway weekly cold restart → 2FA re-login | systemd timer |
 | 21:00 | ingest.py (daily aggregates) | system crontab |
 | 21:45 | options_chains.py (futures options metadata) | system crontab |

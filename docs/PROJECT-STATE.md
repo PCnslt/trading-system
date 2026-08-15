@@ -49,8 +49,8 @@ flag the gap and ask the owner whether to purchase the proper subscription.**
 
 | Source | Tier | What we get | Depth | Where |
 |---|---|---|---|---|
-| IBKR (paper, broker-verified) | **Paid / source of truth** | 42-symbol futures registry (35 resolve) across index/rates/energy/metals/ags/fx: daily + intraday (1h/15m/5m/1m) + L1 real-time ticks | daily ~3y index / ~16mo rates; intraday 1h/15m/5m ~1y; 1m ~30d | `futures-bars/`, `futures-ticks/`, `contracts/`, `sessions/`, `options/` |
-| yfinance | Free / unofficial | ETFs, sectors, futures-continuous (`ES=F` etc), fx (**28 pairs: 7 majors + 21 crosses**), crypto spot + **US equities universe (~6.9k stocks, data engine)** | daily ~10-16y; 1h ~2y; 1m ~8d | `yf/`, `yf/stocks/` |
+| IBKR (paper, broker-verified) | **Paid / source of truth** | **63-symbol** futures registry (56 resolve) + **US equities (~6.9k common stocks, 20y+ daily)** + crypto micros (MBT/MET) + options chains: daily + 1-min + L1 real-time ticks | futures daily ~3-4y (index/energy/metals) / ~16mo (rates); **equities daily 20y+**; 1-min ~1-2y (month-partitioned); 1m futures RTH ~1-2y | `ibkr/` (equities/futures/crypto, parquet `quality=BROKER`), `futures-bars/`, `futures-ticks/`, `contracts/`, `sessions/`, `options/` |
+| yfinance | Free / unofficial | ETFs, sectors, futures-continuous (`ES=F` **16y — the only 20y-class futures depth**), fx (**28 pairs**), crypto spot | daily ~10-16y; 1h ~2y | `yf/` |
 | FRED | Free / public | Macro (DGS10/2/30, DFEDTARU, CPIAUCSL, UNRATE, PAYEMS, T10Y2Y, VIXCLS) | daily/monthly, 60y+ | `macro/` |
 | FMP (free tier) | Free | Quote + company profile | — (QQQ→402 → use profile) | `fmp/` |
 | Binance.US | Free | Crypto spot ticks + daily candles (6.9y deep history) | daily ~6.9y | `crypto-tick/`, `crypto-candles/`, `crypto-hist/` |
@@ -58,26 +58,29 @@ flag the gap and ask the owner whether to purchase the proper subscription.**
 
 ### Gaps (what's needed / flagged)
 
-- **FX futures majors `6E 6J 6B 6A 6C 6S 6N`** — "no security definition" on paper
-  (separate CME FX-futures entitlement). Only `6M` (MXN) resolves. → purchase decision pending.
-- **L1 real-time for NYMEX energy + COMEX/NYMEX metals** — Error 354 (delayed-only)
-  on paper, even though historical BARS work. L1 tick recorder streams CME+CBOT
-  listings only (excludes delayed symbols). → separate real-time energy/metals subscription if needed.
-- **IBKR historical depth is thin** (~3y index, ~16mo rates) — the *depth* gap is
-  filled by yfinance (10-16y) + FRED (60y+). Free sources are research-grade depth,
-  NOT a replacement for the paid archive.
+- **20y futures history is NOT achievable from IBKR paper.** Verified 2026-08-15:
+  `reqContractDetails(includeExpired=True)` returns 0 expired contracts (only the
+  full FUTURE chain), and an expired contract month (`Future('ES','202006','CME')`)
+  → Error 200 "No security definition". IBKR futures daily caps at ~3-4y
+  (CONTfut ~3y index + current-chain far-dated contracts ~4y). The only 20y-class
+  futures depth is yfinance `ES=F` (16y, retained). → no subscription fixes this;
+  it's an IBKR non-professional historical limitation.
+- **US equities real-time streaming (consolidated tape)** — NOT in the futures
+  "CME Group" bundle. Equity bars are historical-only (20y+ daily, 1-min ~1-2y);
+  live stock L1 needs a separate consolidated-tape subscription.
+- **US options real-time + historical BARS** — separate paid subscription. Only
+  chain *metadata* (expiries+strikes) is captured.
+- **Real-time NYMEX energy + COMEX/NYMEX metals L1** — Error 354 (delayed-only)
+  on paper, even though historical BARS work.
+- **CME FX futures majors `6E 6J 6B 6A 6C 6S 6N`** — "no security definition" on paper
+  (separate CME FX-futures entitlement). Only `6M` (MXN) + micros resolve.
+- **Crypto spot (PAXOS BTC/ETH)** — "No market data permissions" (separate
+  subscription). CME micro crypto futures MBT/MET ARE entitled (~9-12mo).
 - **FMP metrics/ratios/treasury = paid-only** (free tier returns `[]`). No substitute → flag.
-- **Options on futures BARS (historical)** — not attempted; separate subscription.
-  Only chain *metadata* (expiries + strikes) is captured.
 - **L2 market depth** — separate paid package; top-of-book L1 only.
 - **Schwab API = ON HOLD** (approval pending, NOT dropped).
 - **Micro silver** (`SIL`) has no separate root — it is SI `tradingClass='SIL'`
   (multiplier 1000). Accessed via the SI chain.
-- **Tick-level US equities data** (every-second) — NOT in the futures subscription;
-  needs a paid real-time consolidated-tape feed. Tagged *"needed only if a future
-  project needs tick-level stock data"* (see `docs/DATA-ENGINE.md` §10). **Do NOT buy.**
-- **Deeper than ~8 days of 1m intraday** — yfinance hard-caps 1m at ~8 days;
-  deeper 1m needs a paid intraday archive (research-grade only for now).
 
 ## Current edge → data requirement
 

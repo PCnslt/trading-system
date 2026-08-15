@@ -15,6 +15,9 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
+# Runtime collector state (resumable checkpoints)
+data/ibkr_backfill_state.json
+
 # OS
 .DS_Store
 *.log

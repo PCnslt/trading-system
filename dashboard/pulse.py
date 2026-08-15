@@ -649,6 +649,38 @@ def _s3_cold_inventory():
     return out
 
 
+@st.cache_data(ttl=600, show_spinner=False)
+def _ibkr_inventory():
+    """Per-prefix counts under ibkr/ (broker-quality archive). Cached 10min."""
+    out = {}
+    try:
+        top = _s3.list_objects_v2(Bucket=S3_BUCKET, Prefix="ibkr/", Delimiter="/")
+        for cp in top.get("CommonPrefixes", []):
+            p = cp["Prefix"]
+            total = 0
+            pages = 0
+            token = None
+            try:
+                while pages < 8:  # bound scan; ibkr/ can be large (1-min month partitions)
+                    kw = dict(Bucket=S3_BUCKET, Prefix=p)
+                    if token:
+                        kw["ContinuationToken"] = token
+                    resp = _s3.list_objects_v2(**kw)
+                    pages += 1
+                    total += len(resp.get("Contents", []))
+                    if resp.get("IsTruncated"):
+                        token = resp.get("NextContinuationToken")
+                    else:
+                        break
+            except Exception:
+                out[p] = {"error": True}
+                continue
+            out[p] = {"total": total}
+    except Exception:
+        pass
+    return out
+
+
 def render_data_cold():
     st.subheader("🧊 Cold archive — S3 `trading-datalake-920641308584`")
     st.caption("Every fetch is persisted here (never discarded). Bounded scan (≤5k objects/prefix) — "
@@ -667,6 +699,20 @@ def render_data_cold():
         ttl = "≥" if d.get("truncated") else ""
         rows.append((name, f"{ttl}{d.get('total', 0)}", last, d.get("last_key") or "—"))
     st.table([("prefix", "objects", "latest write", "latest key")] + rows)
+
+    # Broker-quality /ibkr/ archive sub-breakdown (IBKR-only pivot, quality=BROKER)
+    ibkr = _ibkr_inventory()
+    if ibkr:
+        st.markdown("#### 🏦 IBKR broker archive (`ibkr/`, `quality=BROKER`) — full-depth backfill")
+        st.caption("Source of truth (broker-verified, replacing yfinance for broker-available assets). "
+                   "Equities daily 20y+ · futures CONTFUT ~3-4y (20y NOT achievable on paper — expired "
+                   "contracts don't resolve) · 1-min month-partitioned · crypto micros MBT/MET · options chains.")
+        irows = []
+        for p in sorted(ibkr.keys()):
+            d = ibkr[p]
+            irows.append((p.rstrip("/"), "⚠️ read error" if d.get("error") else str(d.get("total", 0))))
+        st.table([("ibkr/ sub-prefix", "objects")] + irows)
+
     st.warning("`futures-ticks/` = 0 objects — the tick recorder has not yet captured a live RTH session "
                "(deployed after Friday RTH close + IB Gateway down since Sat 06:11 UTC). First real capture: "
                "the next RTH session after the gateway logs back in.")

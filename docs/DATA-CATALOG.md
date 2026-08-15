@@ -51,6 +51,12 @@ fallback; the collectors actually resolve the **active front via reqContractDeta
 | `yf/<class>/<sym>.json` | yfinance | daily (max) + 1h (~2y) OHLCV | `data/yf_collect.py` |
 | `yf/stocks/daily/<sym>.json` | yfinance | **US equities data engine** — full daily history (IPO→), ~6.9k common stocks | `data_engine/collect_daily.py` |
 | `yf/stocks/intraday/<sym>/<interval>/<date>.json` | yfinance | data engine — 1h (~2y) + 1m (~8d rolling) session bars, liquid ~1k subset | `data_engine/collect_intraday.py` |
+| `ibkr/equities/daily/<sym>.parquet` | **IBKR** | full daily history (20y+, `quality=BROKER`) — replaces yfinance for equities | `data/ibkr_full_backfill.py` |
+| `ibkr/equities/1min/<sym>/<yyyy-mm>.parquet` | **IBKR** | 1-min month-partitioned (~2y, liquid ~1k) | `data/ibkr_full_backfill.py` |
+| `ibkr/futures/daily/<sym>_continuous.parquet` | **IBKR** | CONTFUT daily continuous (~3y index / ~16mo rates) | `data/ibkr_full_backfill.py` |
+| `ibkr/futures/daily/<sym>/<expiry>.parquet` | **IBKR** | per-contract daily (current chain, far-dated → up to ~4y) | `data/ibkr_full_backfill.py` |
+| `ibkr/futures/1min/<sym>/<yyyy-mm>.parquet` | **IBKR** | 1-min RTH, front contract (16 liquid) | `data/ibkr_full_backfill.py` |
+| `ibkr/crypto/daily/<sym>.parquet` · `ibkr/crypto/1min/<sym>/<yyyy-mm>.parquet` | **IBKR** | micro BTC/ETH (MBT/MET) daily ~9-12mo + 1-min | `data/ibkr_full_backfill.py` |
 | `data-engine/universe/…` · `data-engine/meta/…` | Nasdaq Trader + yfinance | universe snapshot, liquid rank, collection manifest | `data_engine/universe.py` |
 | `macro/<series>.json` | FRED | daily/monthly macro series | `data/fred_collect.py` |
 | `fmp/<sym>/<Y>/<m>/<d>/<ts>.json` | FMP | quote+profile (fundamentals) | `data/fmp_ingest.py` |
@@ -93,6 +99,7 @@ The **data engine** (`data_engine/`, a separate decoupled project) owns the
 | 76 | `hardening/reconciler.py` | broker reconciliation daemon |
 | 77 | `data/options_chains.py` | options chain metadata |
 | 90 | `data/backfill_futures_bars.py` | legacy backfill (kept) |
+| 50 | `data/ibkr_full_backfill.py` | full-depth IBKR backfill (equities/futures/crypto/options) |
 | 91–94 | ad-hoc probes | one-off gateway probes (not scheduled) |
 
 ---
@@ -104,6 +111,9 @@ The **data engine** (`data_engine/`, a separate decoupled project) owns the
 3. **Options on futures BARS** (historical) — NOT attempted; separate subscription. Only chain *metadata* (expiries+strikes) is captured.
 4. **L2 depth** — separate paid package; we have top-of-book L1 only (no `reqMktDepth`).
 5. **IBKR historical depth caps** (entitlement): daily ~3y index / ~16mo rates, intraday 1h/15m/5m ~1y, 1m ~30d. Free-source depth fills this: `yf/` (10–16y daily) + `macro/` (FRED 60y+).
+6. **20y futures is NOT achievable on paper.** `reqContractDetails(includeExpired=True)` returns 0 expired contracts (only the full FUTURE chain); an expired contract month (`Future('ES','202006','CME')`) → Error 200 "No security definition". Verified 2026-08-15. Deep 20y futures remains yfinance `yf/futures/` only; IBKR futures daily = ~3-4y via CONTFUT + current-chain far-dated contracts.
+7. **US options historical BARS** — separate paid subscription (NOT entitled on paper). Only chain *metadata* (expiries+strikes) is captured; option bars tagged "shallow by design".
+8. **US equities real-time streaming (consolidated tape)** — the futures "CME Group" bundle does NOT cover stock L1. Equity bars are historical-only; real-time stock quotes need a separate subscription.
 
 ---
 

@@ -1,5 +1,14 @@
 # Data Engine — a decoupled market-data collection project
 
+> ⛔ **PAUSED 2026-08-15** — US equities collection **pivoted to IBKR** (owner
+> directive "IBKR is the source, stop yfinance for broker-available assets").
+> The 5 data-engine cron jobs are commented out of the live crontab. The code +
+> `crontab.txt` are KEPT for optionality. The **universe** + **liquid-rank**
+> modules are still used (by `data/ibkr_full_backfill.py`) to pick the ~6.9k
+> common-stock + ~1k liquid symbol lists — but the **bars** now come from IBKR
+> (`S3 ibkr/equities/*`, 20y+ daily + 1-min), not yfinance. Re-enable by
+> un-commenting the jobs and `crontab data_engine/crontab.txt`.
+
 A **separate, self-contained** data-collection engine for US equities, built to be
 **splittable into its own repo later with zero surgery**. It shares only the S3
 bucket with the trading system; it does not import from `bot/`, `data/`, or
