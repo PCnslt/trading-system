@@ -84,9 +84,12 @@ def test_engine_load_fresh_day(fake_table):
 
 def test_engine_load_restores_state(fake_table):
     ledger = RiskLedger(fake_table, scope='live')
-    ledger.save('2026-08-14', {'daily_pnl': -1500.0, 'daily_trades': 3,
-                               'consecutive_losses': 2, 'halted': True,
-                               'halt_reason': 'daily loss halt', 'open_positions': 1})
+    # Persist under the engine's OWN UTC day (RiskEngine.load reads `_day` = today
+    # UTC), never a hardcoded literal — a literal date rots the next calendar day.
+    day = RiskEngine(make_cfg())._day.isoformat()
+    ledger.save(day, {'daily_pnl': -1500.0, 'daily_trades': 3,
+                      'consecutive_losses': 2, 'halted': True,
+                      'halt_reason': 'daily loss halt', 'open_positions': 1})
     e = RiskEngine.load(make_cfg(), ledger)
     assert e.daily_pnl == -1500.0
     assert e.daily_trades == 3
