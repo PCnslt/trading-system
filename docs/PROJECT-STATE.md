@@ -2,7 +2,7 @@
 
 > **Both sides keep this current.** Laptop = research + Robinhood order placement.
 > VPS = build/backtest/deploy/monitor (IBKR paper). Commit every update so the
-> other side picks it up on next pull. Last updated: **2026-08-14**.
+> other side picks it up on next pull. Last updated: **2026-08-15**.
 
 ---
 
@@ -25,11 +25,14 @@ Execution-layer hardening is **done** (3 phases):
 |---|---|---|
 | **index-LONG** (Donchian + RSI2-LONG, `live.py`) | ✅ PROMOTED | Sole live-cap candidate. Donchian PF 1.56/1.52/1.43@3t; RSI2-LONG 1.99/2.57/1.88@3t (corr 0.002). |
 | **intraday MES** (FADESHORT + DONCH15, `live_intraday.py`) | ▶️ paper | RTH entries, EOD flatten 19:45 UTC. |
+| **gold momentum** (GC Donchian L/S + TSMOM, `gc_signals.py`) | ▶️ paper-signal | Promoted (EDGE_SWEEP). Donchian 1.45/1.81 OOS/1.31 IB, 3-tick 1.42; TSMOM 1.37/1.73/1.99, 3-tick 1.35. Signal-only (GC L1 delayed). |
+| **equities RSI2-dip + Donchian(200d)** (`equity_signals.py`) | ▶️ paper-signal | Promoted (EQUITIES_SWEEP). RSI2 champion (both regimes); Donchian gated by close>200d-MA. Robinhood stays manual. |
+| **crypto Donchian-20+200d** (`crypto_paper.py`) | ▶️ paper-signal | Promoted (CRYPTO_SWEEP) but buy-and-hold proxy; LOWEST live-priority. |
 | **bonds fade-SHORT** (ZB/ZN, `live_bondsfx.py`) | 📦 SHELVED | Dies at 1-tick slip. Code kept + disarmed no-op; cron paused. Revisit only if cost/regime materially changes. |
 | **BBAND_INDEX_LONG** | 📦 TABLED | Redundant w/ RSI2-LONG (corr 0.69, PF 1.84 / OOS 1.71). Paper fwd-test candidate if RSI2-LONG underperforms live. |
 | **Screening** | 🔒 CLOSED | Weekly scan paused. |
 | **Wheel (CSP→CC)** | 🔬 evaluating | Backtest: pooled PF 0.72, assignment drag is the killer. Not for real money yet. |
-| **Crypto** | 📦 TABLED | Distrusted; Binance.US ticks collected for cross-check only. |
+| **Crypto** | ▶️ paper-signal | Donchian-20+200d promoted (buy-and-hold proxy, LOWEST live-priority). Mean-reversion KILLED. Binance.US ticks still collected. |
 
 ## Data sources + coverage vs gaps
 

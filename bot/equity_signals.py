@@ -48,10 +48,15 @@ UNIVERSE = {
     'sectors': ['XLF', 'XLK', 'XLE', 'XLV', 'XLP', 'XLY', 'XLI', 'XLB', 'XLU', 'XLRE'],
 }
 
-# Families promoted to "paper-forward" status by the Gate-1 sweep. Empty = ALL
-# candidate (no promotion yet). Fill as {family: [sym, ...]} after the sweep.
-# An entry in a promoted family carries promoted=True; everything else candidate.
-PROMOTED = {}
+# Families promoted to "paper-forward" status by the equities edge sweep
+# (research/EQUITIES_SWEEP.md). A promoted entry carries promoted=True; everything
+# else stays candidate. Execution stays 'NONE' either way (Robinhood manual).
+#   MR_RSI2       = RSI(2)<10 buy-the-dip (the champion — robust in BOTH regimes)
+#   MOM_DONCHIAN  = 20d breakout, gated by close > 200d MA (regime-conditional)
+PROMOTED = {
+    'MR_RSI2': ['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'XLF', 'XLK', 'XLV', 'XLP', 'XLI'],
+    'MOM_DONCHIAN': ['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'XLF', 'XLK', 'XLY', 'XLI'],
+}
 
 # thresholds
 REV5_THRESHOLD = -0.05     # 5-day return below this -> reversal LONG
@@ -146,9 +151,19 @@ def analyze(df):
     don_hi, don_lo, ma50, ma200, bb_lower = (fin(x) for x in (don_hi, don_lo, ma50, ma200, bb_lower))
 
     # ---- entry candidates ----
+    # Donchian breakout is regime-conditional: the edge only lives when
+    # close > 200d MA (the 2009+ bull regime; it LOST money pre-2009). Gate is
+    # mandatory — a breakout below the 200d MA is a no-trade, not a LONG.
     if not np.isnan(don_hi) and last_close > don_hi:
-        out.append(('MOM_DONCHIAN', 'LONG', f'close {last_close:.2f} > 20d-high {don_hi:.2f}',
-                    {'don_hi': _s(don_hi), 'atr': _s(atr14), 'stop': _s(last_close - 2 * atr14)}))
+        if not np.isnan(ma200) and last_close > ma200:
+            out.append(('MOM_DONCHIAN', 'LONG',
+                        f'close {last_close:.2f} > 20d-high {don_hi:.2f} AND > 200d-MA {ma200:.2f}',
+                        {'don_hi': _s(don_hi), 'ma200': _s(ma200), 'atr': _s(atr14),
+                         'stop': _s(last_close - 2 * atr14)}))
+        else:
+            out.append(('MOM_DONCHIAN', 'NONE',
+                        f'close {last_close:.2f} > 20d-high {don_hi:.2f} but <= 200d-MA {_s(ma200)} (regime gate)',
+                        {'don_hi': _s(don_hi), 'ma200': _s(ma200), 'atr': _s(atr14)}))
     else:
         out.append(('MOM_DONCHIAN', 'NONE', f'close {last_close:.2f} <= 20d-high {_s(don_hi)}',
                     {'don_hi': _s(don_hi), 'atr': _s(atr14)}))
