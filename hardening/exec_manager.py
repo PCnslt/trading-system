@@ -171,7 +171,7 @@ class ExecutionManager:
         if res.status in ('REJECTED', 'UNKNOWN') or res.filled_qty <= 0:
             return res
         self._place_stop(contract, intent.side, res.filled_qty,
-                         intent.stop_price, stop_tif)
+                         intent.stop_price, stop_tif, ref=intent.tag)
         return res
 
     # ---- exit ----
@@ -189,30 +189,107 @@ class ExecutionManager:
 
         sym = symbol or intent.symbol
         if cancel_stop:
-            self.cancel_stop(sym)
+            self.cancel_stop(sym, ref=intent.tag)
         from ib_insync import MarketOrder
         trade = self.ib.placeOrder(contract, MarketOrder(intent.action, intent.qty, tif='DAY'))
         return self._confirm(trade, intent, fill_timeout)
 
     # ---- protective stop ----
-    def _place_stop(self, contract, side, qty, stop_price, tif):
+    def _place_stop(self, contract, side, qty, stop_price, tif, ref=None):
         from ib_insync import StopOrder
         action = 'SELL' if side == 'LONG' else 'BUY'   # stop closes the position
-        self.ib.placeOrder(contract, StopOrder(action, qty, stop_price, tif=tif))
+        order = StopOrder(action, qty, stop_price, tif=tif)
+        if ref:
+            order.orderRef = ref                      # tag: targeted trail/exit
+        self.ib.placeOrder(contract, order)
 
-    def cancel_stop(self, symbol: str):
+    def cancel_stop(self, symbol: str, ref: str = None):
+        """Cancel protective STP orders for `symbol`.
+
+        ref=None -> cancel every STP order for the symbol (global flatten path).
+        ref set  -> cancel only THIS strategy's stop (orderRef == ref), plus any
+                    legacy UNTAGGED stop (empty orderRef) so a pre-tagging
+                    position still gets its stop cancelled on exit.
+        """
         for o in list(self.ib.openOrders()):
-            if o.contract.symbol == symbol and o.order.orderType == 'STP':
+            if o.contract.symbol != symbol or o.order.orderType != 'STP':
+                continue
+            oref = getattr(o.order, 'orderRef', '')
+            if ref is not None and oref not in ('', ref):
+                continue
+            try:
+                self.ib.cancelOrder(o)
+            except Exception as e:  # noqa: BLE001
+                print(f"[exec] cancel stop failed ({symbol}): {e}")
+
+    def replace_stop(self, contract, symbol: str, side: str, qty, stop_price,
+                     ref: str, tif='GTC') -> None:
+        """Raise an existing protective stop (trailing): cancel the OLD stop for
+        this strategy, then place a NEW one at `stop_price`, tagged with `ref`.
+
+        Caller must guarantee stop_price > current (ratchet-up only). Only this
+        strategy's own stop (orderRef == ref, or a legacy untagged stop) is
+        cancelled — a co-held strategy's stop on the same symbol is untouched.
+        """
+        self.cancel_stop(symbol, ref=ref)
+        self._place_stop(contract, side, qty, stop_price, tif, ref=ref)
+
+    def is_stop_open(self, symbol: str, side: str, ref: str = None) -> bool:
+        """True if a protective stop for `symbol` is still resting.
+
+        ref set -> only this strategy's stop counts (orderRef == ref, or a
+        legacy untagged stop)."""
+        action = 'SELL' if side == 'LONG' else 'BUY'
+        return any(
+            o.contract.symbol == symbol and o.order.action == action
+            and o.order.orderType == 'STP'
+            and (ref is None or getattr(o.order, 'orderRef', '') in ('', ref))
+            for o in self.ib.openOrders())
+
+    def current_stop_price(self, symbol: str, side: str):
+        """The tightest resting protective-stop price for `symbol`+`side`,
+        or None if no stop is resting. (Long stop = SELL stop; short = BUY.)"""
+        action = 'SELL' if side == 'LONG' else 'BUY'
+        prices = []
+        for o in self.ib.openOrders():
+            if (o.contract.symbol == symbol and o.order.orderType == 'STP'
+                    and o.order.action == action):
+                px = getattr(o.order, 'auxPrice', None)
+                if px is not None:
+                    prices.append(float(px))
+        if not prices:
+            return None
+        # tightest = highest for a long, lowest for a short
+        return max(prices) if side == 'LONG' else min(prices)
+
+    def trail_stop(self, contract, symbol, side, qty, new_stop, tif='GTC') -> ExecutionResult:
+        """Tighten a resting protective stop: cancel + re-place at `new_stop`.
+
+        TIGHTEN-ONLY GUARD: a long stop may only move UP, a short stop only
+        DOWN. If `new_stop` is not an improvement over the currently resting
+        stop (or no stop is resting), this is a NOOP — it never loosens a stop
+        and never rests a brand-new stop on a position whose stop vanished
+        (a missing stop is the reconciler's job to catch, not to silently heal).
+        """
+        from ib_insync import StopOrder
+        cur = self.current_stop_price(symbol, side)
+        if cur is None:
+            return ExecutionResult('NOOP', detail=(
+                f'no resting {side} stop for {symbol} to tighten — reconciler owns this'))
+        tighter = (new_stop > cur) if side == 'LONG' else (new_stop < cur)
+        if not tighter:
+            return ExecutionResult('NOOP', detail=(
+                f'trail {new_stop:.2f} not tighter than resting {cur:.2f} (tighten-only)'))
+        action = 'SELL' if side == 'LONG' else 'BUY'
+        for o in list(self.ib.openOrders()):
+            if (o.contract.symbol == symbol and o.order.orderType == 'STP'
+                    and o.order.action == action):
                 try:
                     self.ib.cancelOrder(o)
                 except Exception as e:  # noqa: BLE001
                     print(f"[exec] cancel stop failed ({symbol}): {e}")
-
-    def is_stop_open(self, symbol: str, side: str) -> bool:
-        """True if a protective stop for `symbol` is still resting."""
-        action = 'SELL' if side == 'LONG' else 'BUY'
-        return any(o.contract.symbol == symbol and o.order.action == action
-                   and o.order.orderType == 'STP' for o in self.ib.openOrders())
+        self.ib.placeOrder(contract, StopOrder(action, qty, new_stop, tif=tif))
+        return ExecutionResult('TRAILED', detail=f'stop tightened {cur:.2f} -> {new_stop:.2f}')
 
     # ---- fill verification ----
     def _confirm(self, trade, intent: TradeIntent, fill_timeout=8.0) -> ExecutionResult:

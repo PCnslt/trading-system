@@ -41,10 +41,11 @@ class FakeTrade:
 
 
 class _Order:
-    def __init__(self, action, orderType, totalQuantity, symbol='MES'):
+    def __init__(self, action, orderType, totalQuantity, symbol='MES', auxPrice=None):
         self.contract = type('C', (), {'symbol': symbol})()
         self.order = type('O', (), {'action': action, 'orderType': orderType,
-                                    'totalQuantity': totalQuantity})()
+                                    'totalQuantity': totalQuantity,
+                                    'auxPrice': auxPrice})()
 
 
 class FakeIB:
@@ -218,3 +219,80 @@ def test_is_stop_open(fake_table):
     assert mgr.is_stop_open('MES', 'LONG') is False
     ib.open.append(_Order('SELL', 'STP', 1))
     assert mgr.is_stop_open('MES', 'LONG') is True
+
+
+# ---- current_stop_price ----
+def test_current_stop_price_reads_auxprice(fake_table):
+    ib = FakeIB()
+    mgr = make_manager(ib, fake_table)
+    assert mgr.current_stop_price('MES', 'LONG') is None
+    ib.open.append(_Order('SELL', 'STP', 1, auxPrice=95.0))
+    assert mgr.current_stop_price('MES', 'LONG') == pytest.approx(95.0)
+
+
+def test_current_stop_price_tightest(fake_table):
+    # if (erroneously) two stops rest, the tightest binds: highest for a long
+    ib = FakeIB()
+    mgr = make_manager(ib, fake_table)
+    ib.open.append(_Order('SELL', 'STP', 1, auxPrice=95.0))
+    ib.open.append(_Order('SELL', 'STP', 1, auxPrice=97.0))
+    assert mgr.current_stop_price('MES', 'LONG') == pytest.approx(97.0)
+
+
+# ---- trail_stop (tighten-only) ----
+def test_trail_stop_tightens_long(fake_table):
+    ib = FakeIB()
+    old = _Order('SELL', 'STP', 1, auxPrice=95.0)
+    ib.open.append(old)
+    mgr = make_manager(ib, fake_table)
+    res = mgr.trail_stop(None, 'MES', 'LONG', 1, new_stop=97.0)
+    assert res.status == 'TRAILED'
+    assert old in ib.cancelled                       # resting stop cancelled
+    assert old not in ib.open
+    new = ib.placed[-1]                              # new tighter stop placed
+    assert new.orderType == 'STP' and new.action == 'SELL'
+    assert new.auxPrice == pytest.approx(97.0)
+
+
+def test_trail_stop_noop_when_not_tighter(fake_table):
+    ib = FakeIB()
+    old = _Order('SELL', 'STP', 1, auxPrice=95.0)
+    ib.open.append(old)
+    mgr = make_manager(ib, fake_table)
+    res = mgr.trail_stop(None, 'MES', 'LONG', 1, new_stop=94.0)   # would LOOSEN
+    assert res.status == 'NOOP'
+    assert ib.cancelled == []                        # nothing touched
+    assert len(ib.placed) == 0
+    assert old in ib.open
+
+
+def test_trail_stop_noop_when_no_resting_stop(fake_table):
+    ib = FakeIB()                                    # no resting stop
+    mgr = make_manager(ib, fake_table)
+    res = mgr.trail_stop(None, 'MES', 'LONG', 1, new_stop=97.0)
+    assert res.status == 'NOOP'
+    assert len(ib.placed) == 0                       # never rests a brand-new stop
+
+
+def test_trail_stop_short_tightens_down(fake_table):
+    ib = FakeIB()
+    old = _Order('BUY', 'STP', 1, auxPrice=105.0)    # short stop above entry
+    ib.open.append(old)
+    mgr = make_manager(ib, fake_table)
+    res = mgr.trail_stop(None, 'MES', 'SHORT', 1, new_stop=103.0)
+    assert res.status == 'TRAILED'
+    assert old in ib.cancelled
+    new = ib.placed[-1]
+    assert new.orderType == 'STP' and new.action == 'BUY'
+    assert new.auxPrice == pytest.approx(103.0)
+
+
+def test_trail_stop_short_noop_when_loosening(fake_table):
+    ib = FakeIB()
+    old = _Order('BUY', 'STP', 1, auxPrice=105.0)
+    ib.open.append(old)
+    mgr = make_manager(ib, fake_table)
+    res = mgr.trail_stop(None, 'MES', 'SHORT', 1, new_stop=106.0)   # would LOOSEN
+    assert res.status == 'NOOP'
+    assert ib.cancelled == []
+    assert len(ib.placed) == 0
