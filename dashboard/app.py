@@ -79,12 +79,75 @@ elif state == "RUNNING":
 else:
     st.warning("⚠️ Control state UNKNOWN — bots are fail-closed (no trading until set)")
 
-tab_pulse, tab_live, tab_arch, tab_road = st.tabs(
-    ["💓 Live Pulse", "📊 Live", "🗺️ Architecture", "📋 Roadmap"])
+tab_pulse, tab_sched, tab_live, tab_arch, tab_road = st.tabs(
+    ["💓 Live Pulse", "🗓️ 24/7 Schedule", "📊 Live", "🗺️ Architecture", "📋 Roadmap"])
 
 # ============================ LIVE PULSE TAB ============================
 with tab_pulse:
     render_pulse()
+
+# ============================ 24/7 SCHEDULE TAB ============================
+with tab_sched:
+    st.subheader("🗓️ 24/7 Schedule — the machine's rhythm (all times UTC)")
+    st.caption("Source of truth: system crontab (`infra/crontab.txt` + `data_engine/crontab.txt`) "
+               "and Hermes cron (`~/.hermes/cron/jobs.json`). Everything below is live on this VPS.")
+
+    st.markdown("#### 🌍 Market sessions — who's open when")
+    st.markdown("""| Market | Venue | Session | UTC window |
+|---|---|---|---|
+| Crypto | Binance.US | **24/7/365** | always |
+| Forex spot | interbank | 24/5 | Sun **21:00** → Fri **21:00** (reopens Sun ~17:00 ET) |
+| Futures | CME Globex | 24/5 | Sun **22:00** → Fri **21:00** (reopens Sun 17:00 CT / 18:00 ET) |
+| US Equities (RTH) | NYSE/Nasdaq | Mon–Fri | **14:30 → 21:00** (09:30–16:00 ET) |""")
+
+    st.markdown("#### ⏱️ The 24/7 clock — what fires when (UTC)")
+    st.markdown("""| UTC | What runs | Layer |
+|---|---|---|
+| **every 45s** | reconcile-daemon → `RECONCILE/system` (broker vs state) | systemd |
+| **every 5m** | reconcile watchdog → Telegram on non-MATCH | Hermes cron |
+| **every 10m** | crypto_tick.py → Binance.US L1 ticks (`QUOTE#` + `crypto-tick/`) | system crontab |
+| **every 30m** | IB Gateway health watchdog → Telegram | Hermes cron |
+| **every 30m** | crypto signal lanes (sweep + Donch200) — signal-only, local | Hermes cron |
+| **every 30m** | market_research.py → news sentiment (`NEWS#`) | system crontab |
+| **Mon–Fri */15, 13:00–20:00** | intraday MES (FADESHORT + DONCH15); bot self-gates entries 13:30–19:30, flatten 19:45 | Hermes cron |
+| **Mon–Fri 13:30–20:00** | futures L1 tick recorder (clientId 74) → `futures-ticks/` | systemd |
+| 01:15 | data engine: US stocks daily (~6.9k, bounded batch + resume) | system crontab |
+| 02:00 | data engine: liquid rank top-1000 (dollar volume) | system crontab |
+| 02:30 / 02:45 | data engine: 1h (~2y) / 1m (~8d) intraday, liquid subset | system crontab |
+| 04:00 | IB Gateway native auto-restart (token re-login, no 2FA) | systemd |
+| Sun 12:00 | data engine: universe refresh (~7k common stocks) | system crontab |
+| Sun 13:00 | IB Gateway weekly cold restart → 2FA re-login | systemd timer |
+| 21:00 | ingest.py (daily aggregates) | system crontab |
+| 21:45 | options_chains.py (futures options metadata) | system crontab |
+| 22:00 | fred_collect.py (macro) | system crontab |
+| 22:15 | fmp_ingest.py (quote/profile) | system crontab |
+| 22:30 | yf_collect.py (ETFs/sectors/futures/**fx+crosses**/crypto — daily + 1h) | system crontab |
+| 22:45 | newsapi_ingest.py | system crontab |
+| **23:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2) | Hermes cron |
+| 23:10 | gc_signals.py (gold momentum, signal-only) | Hermes cron |
+| 23:15 | equity_signals.py (equities, signal-only) | Hermes cron |
+| 23:20 | daily_collect.py (futures bars) | system crontab |
+| 23:45 | daily trading summary → Telegram | Hermes cron |""")
+
+    st.markdown("#### 🔴 Honest 24/7 gap (stated plainly)")
+    st.warning("""**Saturday = crypto only.** Crypto is the *only* market trading on Saturdays, and
+**crypto has 0 validated edge** (the promoted Donchian-20+200d is a buy-and-hold proxy,
+LOWEST live-priority) **and the owner distrusts it** → it runs as a **paper-only signal
+lane** (execution `NONE`, no live trades). **Everything else reopens Sunday evening** —
+forex ~21:00 UTC, futures Globex 22:00 UTC, equities Monday.
+
+**This is not passivity — it's the market calendar + no-edge.** The machine never stops:
+crypto ticks, news, health watchdogs, and the reconcile daemon run 24/7/365 regardless.""")
+    st.info("""**Sunday-globex correction:** futures are NOT closed until Monday — CME Globex
+**reopens Sunday 22:00 UTC** (17:00 CT / 18:00 ET). `live.py` fires **daily at 23:00 UTC
+(includes Sunday)**, so tonight it evaluates the freshly-reopened Sunday globex session
+(~1h of new price action). It does **not** skip Sunday.""")
+
+    st.markdown("#### ⏸️ Paused (kept, not running)")
+    st.markdown("""| Job | Why |
+|---|---|
+| Paper signals — bonds (23:05) | SHELVED (Gate-1: dies at 1-tick slip) |
+| Weekly strategy scan (Sun 18:00) | screening CLOSED (Gate-1) |""")
 
 # ============================ LIVE TAB ============================
 with tab_live:

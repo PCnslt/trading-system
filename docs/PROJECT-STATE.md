@@ -33,6 +33,7 @@ Execution-layer hardening is **done** (3 phases):
 | **Screening** | 🔒 CLOSED | Weekly scan paused. |
 | **Wheel (CSP→CC)** | 🔬 evaluating | Backtest: pooled PF 0.72, assignment drag is the killer. Not for real money yet. |
 | **Crypto** | ▶️ paper-signal | Donchian-20+200d promoted (buy-and-hold proxy, LOWEST live-priority). Mean-reversion KILLED. Binance.US ticks still collected. |
+| **forex spot** (28 yfinance pairs) | 🔬 data-on only | No edge/broker yet. Daily (max) + 1h (~2y) → `yf/fx/` for future research. Reopens Sun 21:00 UTC. |
 
 ## Data sources + coverage vs gaps
 
@@ -44,7 +45,7 @@ flag the gap and ask the owner whether to purchase the proper subscription.**
 | Source | Tier | What we get | Depth | Where |
 |---|---|---|---|---|
 | IBKR (paper, broker-verified) | **Paid / source of truth** | 42-symbol futures registry (35 resolve) across index/rates/energy/metals/ags/fx: daily + intraday (1h/15m/5m/1m) + L1 real-time ticks | daily ~3y index / ~16mo rates; intraday 1h/15m/5m ~1y; 1m ~30d | `futures-bars/`, `futures-ticks/`, `contracts/`, `sessions/`, `options/` |
-| yfinance | Free / unofficial | ETFs, sectors, futures-continuous (`ES=F` etc), fx, crypto spot + **US equities universe (~6.9k stocks, data engine)** | daily ~10-16y; 1h ~2y; 1m ~8d | `yf/`, `yf/stocks/` |
+| yfinance | Free / unofficial | ETFs, sectors, futures-continuous (`ES=F` etc), fx (**28 pairs: 7 majors + 21 crosses**), crypto spot + **US equities universe (~6.9k stocks, data engine)** | daily ~10-16y; 1h ~2y; 1m ~8d | `yf/`, `yf/stocks/` |
 | FRED | Free / public | Macro (DGS10/2/30, DFEDTARU, CPIAUCSL, UNRATE, PAYEMS, T10Y2Y, VIXCLS) | daily/monthly, 60y+ | `macro/` |
 | FMP (free tier) | Free | Quote + company profile | — (QQQ→402 → use profile) | `fmp/` |
 | Binance.US | Free | Crypto spot ticks + daily candles | — | `crypto-tick/`, `crypto-candles/` |

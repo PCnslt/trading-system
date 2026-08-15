@@ -56,5 +56,12 @@
 #   data/daily_collect.py     daily + 15m/5m bars, full 42-sym registry -> S3 futures-bars/*
 #                             clientId 75; idempotent date-keyed writes; self-heals missed days.
 #   data/yf_collect.py        yfinance daily(max)+1h depth -> S3 yf/<class>/<sym>.json (no IBKR)
+#                              fx class = 28 spot pairs (7 USD majors + 21 G7 crosses), added 2026-08-15.
 #   data/fred_collect.py      FRED macro series -> S3 macro/<series>.json (no IBKR)
+
+# ---- market calendar (corrected 2026-08-15) ----
+#   Futures are NOT closed until Monday. CME Globex reopens Sunday 22:00 UTC
+#   (17:00 CT / 18:00 ET); forex spot reopens Sunday ~21:00 UTC (17:00 ET).
+#   live.py fires daily 23:00 UTC (NO weekend skip) -> evaluates the Sunday globex
+#   session ~1h after reopen. Saturday = crypto only (paper-signal, 0 validated edge).
 

@@ -46,7 +46,13 @@ YF_UNIVERSE = {
     'futures':  ['ES=F', 'NQ=F', 'YM=F', 'RTY=F', 'CL=F', 'GC=F', 'SI=F', 'NG=F',
                  'ZN=F', 'ZB=F', '6E=F', 'ZC=F', 'ZW=F', 'ZS=F'],
     'fx':       ['EURUSD=X', 'GBPUSD=X', 'USDJPY=X', 'AUDUSD=X', 'USDCAD=X',
-                 'USDCHF=X', 'NZDUSD=X'],
+                 'USDCHF=X', 'NZDUSD=X',
+                 # key crosses (non-USD pairs of the G7 majors) — 2026-08-15
+                 'EURGBP=X', 'EURJPY=X', 'EURCHF=X', 'EURAUD=X', 'EURCAD=X', 'EURNZD=X',
+                 'GBPJPY=X', 'GBPCHF=X', 'GBPAUD=X', 'GBPCAD=X', 'GBPNZD=X',
+                 'AUDJPY=X', 'AUDCAD=X', 'AUDCHF=X', 'AUDNZD=X',
+                 'CADJPY=X', 'CADCHF=X', 'CHFJPY=X',
+                 'NZDJPY=X', 'NZDCAD=X', 'NZDCHF=X'],
     'crypto':   ['BTC-USD', 'ETH-USD'],
 }
 

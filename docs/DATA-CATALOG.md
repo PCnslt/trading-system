@@ -59,7 +59,7 @@ fallback; the collectors actually resolve the **active front via reqContractDeta
 | `crypto-candles/<sym>/<date>.json` | Binance.US | daily candle | `data/crypto_tick.py` |
 | `research/scan-results/<name>/…` | — | strategy scan outputs | `bot/*_scan.py` |
 
-`yf/` asset classes: `etfs` `sectors` `futures` `fx` `crypto` (crypto = BTC-USD/ETH-USD spot cross-check).
+`yf/` asset classes: `etfs` `sectors` `futures` `fx` `crypto` (crypto = BTC-USD/ETH-USD spot cross-check). `fx` = **28 yfinance spot pairs** (7 USD majors + 21 G7 crosses, e.g. `EURUSD=X` … `NZDCHF=X`); each object holds `daily` (max history) + `hourly` (730d) — free research-grade FOREX SPOT depth, distinct from the (ungapped) CME FX-*futures* entitlement in §5.
 
 The **data engine** (`data_engine/`, a separate decoupled project) owns the
 `yf/stocks/…` and `data-engine/…` namespaces. See `docs/DATA-ENGINE.md`.
