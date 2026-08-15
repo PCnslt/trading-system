@@ -34,6 +34,16 @@ S3_BUCKET = os.getenv("S3_BUCKET", "trading-datalake-920641308584")
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _GATE5_LOG = os.path.join(_REPO_ROOT, "docs", "GATE5_LOG.md")
 
+import sys as _sys
+if _REPO_ROOT not in _sys.path:
+    _sys.path.insert(0, _REPO_ROOT)
+from data.symbol_registry import L1_LIVE, ASSET_CLASSES, FUTURES, GAPPED_FX
+
+L1_LIVE_SORTED = sorted(L1_LIVE)              # 23 CME/CBOT live-L1 symbols
+DELAYED_L1 = sorted({d["sym"] for d in FUTURES
+                     if d["exchange"] in ("NYMEX", "COMEX")})   # 12 delayed (energy+metals)
+GAPPED_FX_SORTED = sorted(GAPPED_FX)          # 7 no-entitlement FX majors
+
 FUTURES_QUOTE_SYMS = ["MES", "MNQ", "ES", "NQ", "ZB", "ZN"]
 CRYPTO_QUOTE_SYMS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "XRPUSDT"]
 # The 5 data-inflow prefixes the owner watches (task spec).
@@ -112,7 +122,7 @@ def _split_tag(tag, item):
 
 
 # ============================ quotes ============================
-@st.cache_data(ttl=15, show_spinner=False)
+@st.cache_data(ttl=1, show_spinner=False)
 def _futures_quote(sym):
     r = _table.get_item(Key={"pk": f"QUOTE#{sym}", "sk": "latest"})
     return r.get("Item") or {}
@@ -220,7 +230,7 @@ def _s3_inflow():
         pages = 0
         try:
             token = None
-            while pages < 500:  # hard cap ~500k objects — defensive bound
+            while pages < 20:  # bound ~20k objects per prefix — first-load stays fast
                 kw = dict(Bucket=S3_BUCKET, Prefix=p)
                 if token:
                     kw["ContinuationToken"] = token
@@ -477,10 +487,10 @@ def _render_positions():
                     f"· stop {stop if stop is not None else '—'}")
 
 
-@st.fragment(run_every="20s")
+@st.fragment(run_every="5s")
 def render_pulse():
-    """The whole Live Pulse panel, auto-refreshing every 20s."""
-    st.caption(f"Auto-refresh 20s · read-only · "
+    """The whole Live Pulse panel, auto-refreshing every 5s."""
+    st.caption(f"Auto-refresh 5s · read-only · "
                f"updated {now_utc().strftime('%H:%M:%S')} UTC · "
                f"DynamoDB `{DYNAMO_TABLE}` + S3 `{S3_BUCKET}`")
     _render_quotes()
@@ -496,3 +506,167 @@ def render_pulse():
         _render_gate5()
     with c4:
         _render_positions()
+
+
+# ============================ DATA — HOT (live tick/quote) ============================
+def _chunks(lst, n):
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]
+
+
+def _render_l1_tile(sym):
+    q = _futures_quote(sym)
+    bid = _num(q.get("bid"))
+    ask = _num(q.get("ask"))
+    last = _num(q.get("last"))
+    bsz = q.get("bidSize")
+    asz = q.get("askSize")
+    lsz = q.get("lastSize")
+    vol = q.get("volume")
+    price = last if last is not None else ((bid + ask) / 2 if (bid is not None and ask is not None) else None)
+    if price is None:
+        st.metric(sym, "—", help="no L1 snapshot yet (recorder RTH-idle)")
+        st.caption("—")
+        return
+    spread = (ask - bid) if (bid is not None and ask is not None) else None
+    help_txt = "last"
+    if lsz is not None:
+        help_txt += f" · lastSize {lsz}"
+    if vol is not None:
+        help_txt += f" · vol {vol}"
+    st.metric(sym, f"{price:,.2f}", help=help_txt)
+    sub = f"bid {bid:,.2f} · ask {ask:,.2f}" if (bid is not None and ask is not None) else "bid/ask —"
+    if spread is not None:
+        sub += f" · sp {spread:,.2f}"
+    if bsz is not None and asz is not None:
+        sub += f" · {bsz}x{asz}"
+    sub += f" · {_age_str(_ts(q))} ago"
+    st.caption(sub)
+
+
+def _render_honest_limits():
+    st.subheader("⚠️ Honest tick-granularity boundary")
+    st.info("""
+**Second-by-second L1 is available ONLY for the 23 CME+CBOT symbols, RTH Mon–Fri (13:30–20:00 UTC).**
+
+| Coverage | Count | Symbols | Tick granularity |
+|---|---|---|---|
+| 🟢 **Live L1** (CME/CBOT) | 23 | ES NQ MES MNQ RTY M2K YM MYM · ZB ZN ZF ZT UB TN · ZC ZW ZS ZM ZL ZO HE LE · 6M | **second-by-second** (event-driven capture, 1s hot flush) |
+| 🟡 **Delayed only** (NYMEX/COMEX energy+metals) | 12 | CL NG RB HO QM QG · GC SI HG PL PA MGC | Error 354 "not subscribed" → **15-min delayed** |
+| 🔴 **No entitlement** (CME FX majors) | 7 | 6E 6J 6B 6A 6C 6S 6N | "No security definition" → **cannot quote** |
+
+The recorder subscribes to `L1_LIVE` only, so delayed / no-entitlement symbols are **never recorded as
+real-time** — we never fake or pad them. Second-by-second for those needs **separate paid
+subscriptions** (CME energy/metals L1 + CME FX-futures L1).
+""")
+
+
+@st.fragment(run_every="3s")
+def render_data_hot():
+    st.caption(f"Auto-refresh 3s · read-only · DynamoDB `{DYNAMO_TABLE}` · "
+               f"updated {now_utc().strftime('%H:%M:%S')} UTC")
+    _render_honest_limits()
+    st.divider()
+    st.subheader("🟢 Live L1 quotes — all 23 symbols (`QUOTE#<sym>` sk=`latest`)")
+    st.caption("Recorder clientId 74 · RTH-gated · bid / ask / last / size / volume per tile.")
+    groups = {}
+    for sym in L1_LIVE_SORTED:
+        groups.setdefault(ASSET_CLASSES.get(sym, "?"), []).append(sym)
+    for cls in ("index", "rates", "ags", "fx"):
+        syms = groups.pop(cls, None)
+        if not syms:
+            continue
+        st.markdown(f"**{cls.upper()}** ({len(syms)})")
+        for row in _chunks(syms, 6):
+            cols = st.columns(len(row))
+            for col, sym in zip(cols, row):
+                with col:
+                    _render_l1_tile(sym)
+    for cls, syms in sorted(groups.items()):
+        st.markdown(f"**{cls.upper()}** ({len(syms)})")
+        for row in _chunks(syms, 6):
+            cols = st.columns(len(row))
+            for col, sym in zip(cols, row):
+                with col:
+                    _render_l1_tile(sym)
+    st.divider()
+    st.markdown("**🪙 Crypto — Binance.US** (honest: ~10-min tick cadence, NOT second-by-second)")
+    for row in _chunks(CRYPTO_QUOTE_SYMS, 4):
+        cols = st.columns(len(row))
+        for col, sym in zip(cols, row):
+            with col:
+                cq = _crypto_quote(sym)
+                if cq:
+                    _quote_tile(sym, cq["price"], cq["change_pct"], f"{_age_str(cq['ts'])} ago",
+                                "change vs 00:00 UTC open")
+                else:
+                    _quote_tile(sym, None, None, None, "no crypto tick yet")
+    st.divider()
+    st.subheader("🟡 Delayed / 🔴 no-entitlement (NOT second-by-second — see boundary above)")
+    st.markdown(f"**Delayed (12):** `{' '.join(DELAYED_L1)}` — historical bars still collected, L1 not recorded.")
+    st.markdown(f"**No entitlement (7):** `{' '.join(GAPPED_FX_SORTED)}` — no security definition on paper.")
+
+
+# ============================ DATA — COLD (S3 archive) ============================
+@st.cache_data(ttl=600, show_spinner=False)
+def _s3_cold_inventory():
+    """Per top-level S3 prefix: total objects + latest LastModified + latest key (cached 10min)."""
+    out = {}
+    try:
+        top = _s3.list_objects_v2(Bucket=S3_BUCKET, Delimiter="/")
+    except Exception:
+        return out
+    for cp in top.get("CommonPrefixes", []):
+        p = cp["Prefix"]
+        total = 0
+        last_ts = 0.0
+        last_key = None
+        truncated = False
+        pages = 0
+        try:
+            token = None
+            while pages < 5:  # bound ~5000 objects per prefix — first-load stays fast
+                kw = dict(Bucket=S3_BUCKET, Prefix=p)
+                if token:
+                    kw["ContinuationToken"] = token
+                resp = _s3.list_objects_v2(**kw)
+                pages += 1
+                for o in resp.get("Contents", []):
+                    total += 1
+                    if o["LastModified"].timestamp() > last_ts:
+                        last_ts = o["LastModified"].timestamp()
+                        last_key = o["Key"]
+                if resp.get("IsTruncated"):
+                    token = resp.get("NextContinuationToken")
+                else:
+                    break
+            else:
+                truncated = True
+        except Exception:
+            out[p] = {"error": True}
+            continue
+        out[p] = {"total": total, "last_ts": last_ts, "last_key": last_key, "truncated": truncated}
+    return out
+
+
+def render_data_cold():
+    st.subheader("🧊 Cold archive — S3 `trading-datalake-920641308584`")
+    st.caption("Every fetch is persisted here (never discarded). Bounded scan (≤5k objects/prefix) — "
+               "large prefixes (yf/, futures-bars/) are truncated: counts show ≥ and 'latest write' "
+               "reflects the scanned window, not the whole prefix. Freshness/liveness is on Live Pulse.")
+    inv = _s3_cold_inventory()
+    rows = []
+    for p in sorted(inv.keys()):
+        d = inv[p]
+        name = p.rstrip("/")
+        if d.get("error"):
+            rows.append((name, "⚠️ read error", "—", "—"))
+            continue
+        last = dt.datetime.fromtimestamp(d["last_ts"], dt.timezone.utc).strftime(
+            "%Y-%m-%d %H:%M UTC") if d.get("last_ts") else "—"
+        ttl = "≥" if d.get("truncated") else ""
+        rows.append((name, f"{ttl}{d.get('total', 0)}", last, d.get("last_key") or "—"))
+    st.table([("prefix", "objects", "latest write", "latest key")] + rows)
+    st.warning("`futures-ticks/` = 0 objects — the tick recorder has not yet captured a live RTH session "
+               "(deployed after Friday RTH close + IB Gateway down since Sat 06:11 UTC). First real capture: "
+               "the next RTH session after the gateway logs back in.")

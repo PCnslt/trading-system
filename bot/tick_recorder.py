@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 """Futures L1 tick recorder — persistent service (systemd), clientId=74.
 
-Streams IBKR L1 (bid/ask/last/size) for MES/MNQ/ES/NQ/ZB/ZN during RTH
-(13:30-20:00 UTC Mon-Fri), maximizing the CME/CBOT real-time subscription.
+Streams IBKR L1 (bid/ask/last/size) for the 23 CME/CBOT L1-live symbols
+(`data/symbol_registry.py::L1_LIVE`) during RTH (13:30-20:00 UTC Mon-Fri),
+maximizing the CME/CBOT real-time subscription.
 
+Capture:       EVENT-DRIVEN — `ib.pendingTickersEvent` fires on EVERY L1 update
+               (bid/ask/last/size/volume); each tick is stamped with a
+               sub-second `time.time()` float. No sampling loss at 5s — the 5s
+               is only the S3 write-batch interval.
 Writes (cold): S3  futures-ticks/<sym>/<date>/<ts>.jsonl — one JSONL line per
                tick, flushed every TICK_FLUSH_S seconds (default 5s) so we
-               batch instead of creating per-tick objects.
-Writes (hot):  DynamoDB QUOTE#<sym> (sk='latest') — bid/ask/last/timestamp,
-               overwritten each flush; TTL 1 day so a dead recorder self-cleans.
+               batch instead of creating per-tick objects (storage stays sane).
+Writes (hot):  DynamoDB QUOTE#<sym> (sk='latest') — bid/ask/last/size/timestamp,
+               overwritten every HOT_FLUSH_S seconds (default 1s) so the
+               dashboard sees second-by-second quotes; TTL 1 day so a dead
+               recorder self-cleans.
 
 READ-ONLY on the trading side: reqMktData subscriptions only. No orders, no
 account writes, no RUN# markers, no POSITION writes. Shares the paper gateway
@@ -43,7 +50,8 @@ S3_BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 CLIENT_ID = 74                       # distinct from live.py(70)/bonds(71)/intraday(72)/backfill(73)
 
-TICK_FLUSH_S = float(os.getenv('TICK_FLUSH_S', '5'))
+TICK_FLUSH_S = float(os.getenv('TICK_FLUSH_S', '5'))     # S3 COLD flush (write batching)
+HOT_FLUSH_S = float(os.getenv('HOT_FLUSH_S', '1'))       # DynamoDB QUOTE# HOT flush
 QUOTE_TTL_S = int(os.getenv('QUOTE_TTL_S', '86400'))   # 1 day
 RTH_OPEN_UTC = dt.time(13, 30)
 RTH_CLOSE_UTC = dt.time(20, 0)
@@ -81,8 +89,8 @@ class TickWriter:
         self.s3 = boto3.client('s3', region_name=AWS_REGION)
         self.table = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
 
-    def flush(self, buffer, latest):
-        """Write one S3 JSONL batch + latest QUOTE# per symbol, then clear ticks."""
+    def flush_s3(self, buffer):
+        """COLD path: write buffered ticks to S3 JSONL (one object per symbol), then clear."""
         now = dt.datetime.now(dt.timezone.utc)
         date = now.strftime('%Y-%m-%d')
         ts = int(now.timestamp())
@@ -93,7 +101,11 @@ class TickWriter:
             key = f'futures-ticks/{sym}/{date}/{ts}.jsonl'
             self.s3.put_object(Bucket=S3_BUCKET, Key=key, Body=lines)
             buffer[sym] = []
-        # latest-quote snapshot: most-recent non-None value per field (not just last tick)
+
+    def flush_hot(self, latest):
+        """HOT path: overwrite QUOTE#<sym> sk='latest' with most-recent non-None
+        value per field (bid/ask/last/size/volume). Runs every HOT_FLUSH_S (~1s)
+        so the dashboard sees second-by-second quotes without inflating S3."""
         for sym, lq in latest.items():
             if not lq:
                 continue
@@ -104,7 +116,6 @@ class TickWriter:
                 if lq.get(f) is not None:
                     q[f] = str(lq[f])
             self.table.put_item(Item=q)
-        return
 
 
 def on_tick_factory(buffer, latest):
@@ -154,14 +165,19 @@ def run_session():
     in_rth = _in_rth()
     log(f"RTH state at start: {'OPEN' if in_rth else 'CLOSED'} "
         f"(recording {RTH_OPEN_UTC}-{RTH_CLOSE_UTC} UTC Mon-Fri)")
+    last_cold = time.time()
     try:
         while True:
-            ib.sleep(TICK_FLUSH_S)
+            ib.sleep(min(HOT_FLUSH_S, TICK_FLUSH_S))
+            now = time.time()
             now_in_rth = _in_rth()
             if now_in_rth != in_rth:
                 in_rth = now_in_rth
                 log(f"RTH -> {'OPEN (recording)' if in_rth else 'CLOSED (idle)'}")
-            writer.flush(buffer, latest)
+            writer.flush_hot(latest)
+            if now - last_cold >= TICK_FLUSH_S:
+                writer.flush_s3(buffer)
+                last_cold = now
     finally:
         ib.disconnect()
 
