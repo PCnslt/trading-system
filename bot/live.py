@@ -6,17 +6,18 @@ Strategies (each tracked INDEPENDENTLY, tagged in DynamoDB pk):
      `sig_donchian` long-only — the validated trend edge: full-period PF
      2.23/1.80, walk-forward OOS PF 2.08/2.14 on ES/NQ):
        Entry : close > prior 20-day high   (h.rolling(20).max().shift(1))
-       Stop  : 2*ATR below entry on fill, GTC, then CHANDELIER-TRAILED 3*ATR
-               below the running high (tighten-only, never loosened).
+       Stop  : CHANDELIER trail — 3*ATR below the highest close since entry
+               (initial = entry - 3*ATR), ratcheted up only (tighten-only).
        Exits : 5-day time stop -> close <= stop -> close < prior 20-day low.
 
   2) RSI2 — RSI(2) buy-the-dip (exact port of bot/allmarkets_scan.py
      `sig_rsi2` long-only — the validated buy-dip edge: OOS PF 2.69/2.21/1.79
      on ES/NQ/YM):
        Entry : RSI(2) < 10   (buy the dip)
-       Exit  : RSI(2) > 70 (primary), 5-day time stop, or the ATR-RATCHET stop
-               (2*ATR on fill -> breakeven at entry+1*ATR -> trail 2*ATR below
-               running high at entry+2*ATR; tighten-only backstop).
+       Exit  : RSI(2) > 70, or 5-day time stop, or 2*ATR hard stop (FIXED —
+               trailing NOT applied: backtest showed trailing cuts
+               mean-reversion winners; never-lose-money: no unprotected
+               position, ever).
 
 Data: yfinance ES=F / NQ=F daily (same % action as MES/MNQ).
 Execution: IBKR paper (DUR193467) MES + MNQ, front-month, dynamic roll.
@@ -64,10 +65,8 @@ MAX_HOLD = 5
 RSI2_LO = 10.0    # RSI(2) buy-the-dip entry
 RSI2_HI = 70.0    # RSI(2) exit
 
-# ---- intelligent trailing-stop params (paper-only, tighten-only, revertible) ----
-CHAND_ATR = 3.0              # Donchian chandelier trail distance (vs 2.0 initial)
-RATCHET_BREAKEVEN_ATR = 1.0  # RSI2: raise to breakeven at entry + 1*ATR
-RATCHET_TRAIL_ATR = 2.0      # RSI2: trail (peak close - 2*ATR) at entry + 2*ATR
+# ---- trailing-stop params (validated: Donchian chandelier ONLY) ----
+CHAND_ATR = 3.0              # Donchian chandelier: 3*ATR below highest close
 
 # data ticker -> execution contract. MES/MNQ are 1/10 size; % returns identical.
 CONTRACTS = [
@@ -122,7 +121,9 @@ def donchian_exit(detail, stop, held):
 
 
 def donchian_stop(detail):
-    return detail['close'] - STOP_ATR * detail['atr']
+    # Chandelier initial width: 3*ATR below entry, then ratcheted up by
+    # donchian_trail. (Validated variant — see research/trailing_stop_backtest.py.)
+    return detail['close'] - CHAND_ATR * detail['atr']
 
 
 def rsi2_entry(detail):
@@ -145,65 +146,33 @@ def rsi2_stop(detail):
     return detail['close'] - STOP_ATR * detail['atr']
 
 
-# ===== trailing-stop functions (tighten-only; called each eval while holding) =====
-# Each returns (new_stop_or_None, reason). The runner only calls exec_mgr.trail_stop
-# when new_stop is not None AND above the currently resting stop (never loosens).
-def highest_close_since_entry(df, entry_date):
-    """Max close on bars strictly AFTER entry_date (matches held_days)."""
-    if not entry_date or df is None or df.empty:
-        return None
-    e = pd.Timestamp(entry_date)
-    idx = df.index
-    if getattr(idx, 'tz', None) is not None:
-        e = e.tz_localize(idx.tz)
-    after = df.loc[idx > e, 'Close']
-    if after.empty:
-        return None
-    return float(after.max())
+# ===== trailing-stop function (Donchian chandelier; tighten-only) =====
+def donchian_trail(detail, state):
+    """Chandelier: candidate = (highest close since entry) - 3*ATR, ratchet-up.
 
-
-def donchian_trail(detail, state, df):
-    """Chandelier: candidate = (highest close since entry) - 3*ATR, only upward."""
-    peak = highest_close_since_entry(df, state.get('entry_date'))
-    if peak is None or not np.isfinite(detail['atr']):
-        return None, "no close since entry / no ATR"
-    candidate = peak - CHAND_ATR * detail['atr']
-    return candidate, (f"chandelier {peak:.1f} - 3*ATR({detail['atr']:.1f}) "
-                       f"= {candidate:.1f}")
-
-
-def rsi2_trail(detail, state, df):
-    """ATR ratchet: breakeven at entry+1*ATR, trail (peak-2*ATR) at entry+2*ATR.
-
-    RSI(2)>70 remains the PRIMARY exit; the ratchet is the backstop, not the
-    primary. Entry-price and +1/+2*ATR thresholds use ENTRY-time ATR (stable);
-    the trail distance uses the CURRENT ATR (chandelier-style running distance).
+    `peak` is tracked in state (restart-safe) and advanced with today's close;
+    the raised stop rests from tomorrow. Returns (new_stop_or_None, new_peak,
+    reason). new_stop is None when the candidate does not exceed the current
+    stop; new_peak always advances so a later ATR fall still sees the true high.
     """
-    entry_px = float(state['entry']) if state.get('entry') else None
-    entry_atr = float(state['entry_atr']) if state.get('entry_atr') else None
-    if entry_px is None or entry_atr is None:
-        return None, "missing entry/entry_atr"
-    close = detail['close']
-    candidate = None
-    if close >= entry_px + RATCHET_BREAKEVEN_ATR * entry_atr:
-        candidate = entry_px          # breakeven
-    if close >= entry_px + RATCHET_TRAIL_ATR * entry_atr:
-        peak = highest_close_since_entry(df, state.get('entry_date'))
-        if peak is not None and np.isfinite(detail['atr']):
-            candidate = peak - RATCHET_TRAIL_ATR * detail['atr']
-    if candidate is None:
-        return None, (f"below breakeven (close {close:.1f} < "
-                      f"entry+1*ATR {entry_px + RATCHET_BREAKEVEN_ATR * entry_atr:.1f})")
-    return candidate, f"ratchet -> {candidate:.1f}"
+    if not np.isfinite(detail['atr']):
+        return None, None, "no ATR"
+    entry_px = float(state.get('entry', 0.0) or 0.0)
+    peak = float(state.get('peak', 0.0) or 0.0)
+    if peak <= 0:
+        peak = entry_px                        # legacy position (pre-tagging)
+    new_peak = max(peak, float(detail['close']))
+    candidate = new_peak - CHAND_ATR * float(detail['atr'])
+    return candidate, new_peak, (f"chandelier peak {new_peak:.1f} - 3*ATR"
+                                 f"({detail['atr']:.1f}) = {candidate:.1f}")
 
 
 STRATEGIES = [
-    {'name': 'DONCHIAN', 'label': 'Donchian/ATR long',
+    {'name': 'DONCHIAN', 'label': 'Donchian/ATR long (chandelier trail)',
      'entry': donchian_entry, 'exit': donchian_exit, 'stop': donchian_stop,
      'trail': donchian_trail},
-    {'name': 'RSI2', 'label': 'RSI(2) buy-dip long',
-     'entry': rsi2_entry, 'exit': rsi2_exit, 'stop': rsi2_stop,
-     'trail': rsi2_trail},
+    {'name': 'RSI2', 'label': 'RSI(2) buy-dip long (fixed 2*ATR)',
+     'entry': rsi2_entry, 'exit': rsi2_exit, 'stop': rsi2_stop},
 ]
 
 
@@ -313,7 +282,7 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
             log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
                 'pos': 0, 'stop': '0', 'entry': '0', 'entry_date': '', 'ts': int(time.time())})
             print(f">>> {mode} {tag} EXIT {pos} ({xreason})")
-        elif not exec_mgr.is_stop_open(sym, 'LONG'):
+        elif not exec_mgr.is_stop_open(sym, 'LONG', ref=tag):
             # state long but GTC stop no longer resting -> filled intraday
             exit_px = stop if stop is not None else detail['close']
             if risk is not None and entry_px is not None:
@@ -325,22 +294,27 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
                 'pos': 0, 'stop': '0', 'entry': '0', 'entry_date': '', 'ts': int(time.time())})
             print(f">>> {mode} {tag} EXIT via protective stop (intraday fill)")
         else:
-            # holding: tighten the trailing stop (tighten-only) before reporting.
+            # HOLD — ratchet the trailing stop (chandelier) for tomorrow.
             if 'trail' in strat:
-                new_stop, treason = strat['trail'](detail, state, df)
+                new_stop, new_peak, treason = strat['trail'](detail, state)
+                changed = False
+                if new_peak is not None:
+                    old_peak = float(state.get('peak', 0.0) or 0.0)
+                    if new_peak > old_peak + 1e-9:
+                        state['peak'] = str(round(new_peak, 2))
+                        changed = True
                 if (new_stop is not None and stop is not None
                         and float(new_stop) > float(stop)):
                     res = exec_mgr.trail_stop(con, sym, 'LONG', pos, float(new_stop),
-                                              tif='GTC')
+                                              ref=tag, tif='GTC')
                     if res.status == 'TRAILED':
-                        log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
-                            'pos': pos, 'stop': str(round(new_stop, 2)),
-                            'entry': str(round(entry_px, 2)) if entry_px is not None else '0',
-                            'entry_date': entry_date or '',
-                            'entry_atr': state.get('entry_atr', ''),
-                            'contract': state.get('contract', front_month()),
-                            'ts': int(time.time())})
+                        state['stop'] = str(round(new_stop, 2))
+                        stop = new_stop
+                        changed = True
                         print(f">>> {mode} {tag} TRAIL stop -> {new_stop:.1f} ({treason})")
+                if changed:
+                    log_dynamo(dynamo, f"POSITION#{tag}", 'current',
+                               {**state, 'ts': int(time.time())})
             print(f">>> {mode} {tag} hold pos={pos} held={held}d | "
                   f"close {detail['close']:.1f} {strat['label']}")
     elif entry:
@@ -383,7 +357,8 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
             log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
                 'pos': size, 'stop': str(round(stop_price, 2)),
                 'entry': str(round(entry_px_filled, 2)),
-                'entry_date': today, 'entry_atr': str(round(detail['atr'], 4)),
+                'entry_date': today, 'peak': str(round(float(detail['close']), 2)),
+                'stop_mode': 'chandelier' if 'trail' in strat else 'fixed',
                 'contract': front_month(), 'ts': int(time.time())})
             print(f">>> {mode} {tag} ENTRY: BUY {size} @ {round(entry_px_filled, 2)}, "
                   f"stop {round(stop_price, 1)} ({ereason})")

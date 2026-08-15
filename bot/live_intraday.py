@@ -10,16 +10,13 @@ flattened by end of session (no overnight risk):
      pop, so the entry requires BOTH:
        Entry : RSI(2) > 90  AND  close > upper Bollinger band (20-bar, 2.0 sd)
        Exit  : close <= mid band (reversion done), 2*ATR hard stop, or EOD flatten.
-     Stop  : 2*ATR on fill, then ATR-RATCHET (breakeven at entry-1*ATR, trail
-             trough+2*ATR at entry-2*ATR) — tighten-only backstop.
      HONEST: this is an intraday HYPOTHESIS, not a validated intraday edge —
      the daily fade-rally was validated on bonds/FX, not intraday MES.
 
   2) DONCH15 — 15m Donchian(20)/ATR breakout, BOTH directions (port of the
      `_donchian_15m` cell in intraday_scan.py):
        Entry : close break of prior 20-bar channel (long > hi, short < lo)
-       Stop  : 2*ATR protective stop (DAY), then CHANDELIER 3*ATR trail
-               (tighten-only, both directions).
+       Stop  : 2*ATR protective stop (DAY)
        Exit  : close crosses the opposite channel mid, or 2*ATR stop, or EOD.
      The preliminary 60-day scan was thin (long PF 0.08/18, short 1.27/21 —
      NOT statistically meaningful); this forward-test exists to collect real
@@ -90,11 +87,6 @@ FADE_STOP_ATR = 2.0    # sizing proxy only (no GTC stop in backtest)
 DC_N = 20
 DC_ATR_N = 14
 DC_STOP_ATR = 2.0
-
-# ---- intelligent trailing-stop params (paper-only, tighten-only, revertible) ----
-DC_CHAND_ATR = 3.0         # DONCH15 chandelier trail distance (vs 2.0 initial)
-FADE_BREAKEVEN_ATR = 1.0   # FADESHORT: breakeven at entry - 1*ATR (short)
-FADE_TRAIL_ATR = 2.0       # FADESHORT: trail (trough + 2*ATR) at entry - 2*ATR
 
 
 # ===== indicators =====
@@ -193,56 +185,14 @@ def donch15_stop(d, side):
     return d['close'] + DC_STOP_ATR * d['atr']
 
 
-# ===== trailing-stop functions (tighten-only; called each eval while holding) =====
-# Each returns (new_stop_or_None, reason, (extreme_field, extreme_value)).
-# The extreme (peak for long / trough for short) is the running close extreme
-# since entry, tracked explicitly in state (session-scoped, restart-safe).
-def donch15_trail(d, side, state):
-    """Chandelier trail for DONCH15 (both directions), tighten-only."""
-    if not np.isfinite(d['atr']):
-        return None, "no ATR", None
-    close = d['close']
-    if side == 'LONG':
-        peak = max(float(state.get('peak', close)), close)
-        cand = peak - DC_CHAND_ATR * d['atr']
-        return cand, f"chandelier {peak:.1f} - 3*ATR({d['atr']:.1f})", ('peak', round(peak, 2))
-    trough = min(float(state.get('trough', close)), close)
-    cand = trough + DC_CHAND_ATR * d['atr']
-    return cand, f"chandelier {trough:.1f} + 3*ATR({d['atr']:.1f})", ('trough', round(trough, 2))
-
-
-def fadeshort_trail(d, side, state):
-    """Breakeven + trail ratchet (tighten-only) for FADESHORT (short).
-
-    breakeven at entry - 1*ATR; trail (trough + 2*ATR) at entry - 2*ATR.
-    Entry/threshold ATR is entry-time (stable); trail distance is current ATR.
-    """
-    entry = float(state['entry']) if state.get('entry') else None
-    entry_atr = float(state['entry_atr']) if state.get('entry_atr') else None
-    if entry is None or entry_atr is None:
-        return None, "missing entry/entry_atr", None
-    close = d['close']
-    trough = min(float(state.get('trough', close)), close)
-    cand = None
-    if close <= entry - FADE_BREAKEVEN_ATR * entry_atr:
-        cand = entry
-    if close <= entry - FADE_TRAIL_ATR * entry_atr:
-        cand = trough + FADE_TRAIL_ATR * d['atr']
-    if cand is None:
-        return None, (f"above breakeven (close {close:.1f} > "
-                      f"entry-1*ATR {entry - FADE_BREAKEVEN_ATR * entry_atr:.1f})"), \
-            ('trough', round(trough, 2))
-    return cand, f"ratchet -> {cand:.1f}", ('trough', round(trough, 2))
-
-
 STRATEGIES = [
     {'name': 'FADESHORT', 'barsize': '5 mins', 'label': 'intraday fade-rally short',
      'detail': fadeshort_detail, 'entry': fadeshort_entry,
-     'exit': fadeshort_exit, 'stop': fadeshort_stop, 'trail': fadeshort_trail,
+     'exit': fadeshort_exit, 'stop': fadeshort_stop,
      'sig_keys': ['rsi2', 'boll_upper', 'boll_mid', 'atr']},
     {'name': 'DONCH15', 'barsize': '15 mins', 'label': '15m Donchian/ATR breakout',
      'detail': donch15_detail, 'entry': donch15_entry,
-     'exit': donch15_exit, 'stop': donch15_stop, 'trail': donch15_trail,
+     'exit': donch15_exit, 'stop': donch15_stop,
      'sig_keys': ['don_hi', 'don_lo', 'mid', 'atr']},
 ]
 
@@ -323,22 +273,6 @@ def _daily_mes_held(dynamo):
     return False, None
 
 
-def _persist_state(dynamo, tag, side, pos, state, today):
-    """Persist the full intraday position state (entry + trail paths share it)."""
-    log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
-        'pos': pos, 'side': side,
-        'stop': state.get('stop', '0'),
-        'entry': state.get('entry', '0'),
-        'entry_atr': state.get('entry_atr', ''),
-        'entry_ts': state.get('entry_ts', ''),
-        'peak': state.get('peak', ''),
-        'trough': state.get('trough', ''),
-        'session_date': today,
-        'contract': state.get('contract', front_month()),
-        'ts': int(time.time()),
-    })
-
-
 # ===== runner =====
 def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=None,
                  exec_mgr=None):
@@ -399,24 +333,6 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
                 'session_date': today, 'ts': int(time.time())})
             print(f">>> {mode} {tag} EXIT via protective stop (intraday fill) @ {stop}")
         else:
-            # holding: tighten the trailing stop (tighten-only) while open.
-            if strat.get('trail'):
-                new_stop, treason, extr = strat['trail'](detail, side, state)
-                changed = False
-                if extr is not None and state.get(extr[0]) != str(extr[1]):
-                    state[extr[0]] = str(extr[1])
-                    changed = True
-                if new_stop is not None and stop is not None:
-                    tighter = new_stop > stop if side == 'LONG' else new_stop < stop
-                    if tighter:
-                        res = exec_mgr.trail_stop(con, 'MES', side, pos, float(new_stop),
-                                                  tif='DAY')
-                        if res.status == 'TRAILED':
-                            state['stop'] = str(round(new_stop, 2))
-                            changed = True
-                            print(f">>> {mode} {tag} TRAIL stop -> {new_stop:.1f} ({treason})")
-                if changed:
-                    _persist_state(dynamo, tag, side, pos, state, today)
             print(f">>> {mode} {tag} hold {side} {pos} | close {detail['close']:.1f} | {xreason}")
     else:
         # flat -> evaluate entry
@@ -469,9 +385,6 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
             log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
                 'pos': size, 'side': nside, 'stop': str(round(stop_px, 2)),
                 'entry': str(round(entry_px_filled, 2)), 'entry_ts': now.isoformat(),
-                'entry_atr': str(round(detail['atr'], 4)),
-                'peak': str(round(entry_px_filled, 2)),
-                'trough': str(round(entry_px_filled, 2)),
                 'session_date': today, 'contract': front_month(), 'ts': int(time.time())})
             print(f">>> {mode} {tag} ENTRY: {nside} {size} @ {round(entry_px_filled, 2)}, "
                   f"stop {round(stop_px, 1)} ({ereason})")

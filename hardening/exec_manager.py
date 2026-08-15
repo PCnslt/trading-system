@@ -222,18 +222,6 @@ class ExecutionManager:
             except Exception as e:  # noqa: BLE001
                 print(f"[exec] cancel stop failed ({symbol}): {e}")
 
-    def replace_stop(self, contract, symbol: str, side: str, qty, stop_price,
-                     ref: str, tif='GTC') -> None:
-        """Raise an existing protective stop (trailing): cancel the OLD stop for
-        this strategy, then place a NEW one at `stop_price`, tagged with `ref`.
-
-        Caller must guarantee stop_price > current (ratchet-up only). Only this
-        strategy's own stop (orderRef == ref, or a legacy untagged stop) is
-        cancelled — a co-held strategy's stop on the same symbol is untouched.
-        """
-        self.cancel_stop(symbol, ref=ref)
-        self._place_stop(contract, side, qty, stop_price, tif, ref=ref)
-
     def is_stop_open(self, symbol: str, side: str, ref: str = None) -> bool:
         """True if a protective stop for `symbol` is still resting.
 
@@ -246,14 +234,17 @@ class ExecutionManager:
             and (ref is None or getattr(o.order, 'orderRef', '') in ('', ref))
             for o in self.ib.openOrders())
 
-    def current_stop_price(self, symbol: str, side: str):
-        """The tightest resting protective-stop price for `symbol`+`side`,
-        or None if no stop is resting. (Long stop = SELL stop; short = BUY.)"""
+    def current_stop_price(self, symbol: str, side: str, ref: str = None):
+        """The tightest resting protective-stop price for `symbol`+`side` (or
+        only this strategy's stop when `ref` is set), or None if none resting.
+        (Long stop = SELL stop; short = BUY.)"""
         action = 'SELL' if side == 'LONG' else 'BUY'
         prices = []
         for o in self.ib.openOrders():
             if (o.contract.symbol == symbol and o.order.orderType == 'STP'
                     and o.order.action == action):
+                if ref is not None and getattr(o.order, 'orderRef', '') not in ('', ref):
+                    continue
                 px = getattr(o.order, 'auxPrice', None)
                 if px is not None:
                     prices.append(float(px))
@@ -262,7 +253,8 @@ class ExecutionManager:
         # tightest = highest for a long, lowest for a short
         return max(prices) if side == 'LONG' else min(prices)
 
-    def trail_stop(self, contract, symbol, side, qty, new_stop, tif='GTC') -> ExecutionResult:
+    def trail_stop(self, contract, symbol, side, qty, new_stop, ref=None,
+                   tif='GTC') -> ExecutionResult:
         """Tighten a resting protective stop: cancel + re-place at `new_stop`.
 
         TIGHTEN-ONLY GUARD: a long stop may only move UP, a short stop only
@@ -270,9 +262,12 @@ class ExecutionManager:
         stop (or no stop is resting), this is a NOOP — it never loosens a stop
         and never rests a brand-new stop on a position whose stop vanished
         (a missing stop is the reconciler's job to catch, not to silently heal).
+
+        `ref` scopes the guard AND the cancel to this strategy's own stop
+        (orderRef == ref, or a legacy untagged stop), so trailing one strategy
+        never touches a co-held strategy's stop on the same symbol.
         """
-        from ib_insync import StopOrder
-        cur = self.current_stop_price(symbol, side)
+        cur = self.current_stop_price(symbol, side, ref=ref)
         if cur is None:
             return ExecutionResult('NOOP', detail=(
                 f'no resting {side} stop for {symbol} to tighten — reconciler owns this'))
@@ -280,15 +275,8 @@ class ExecutionManager:
         if not tighter:
             return ExecutionResult('NOOP', detail=(
                 f'trail {new_stop:.2f} not tighter than resting {cur:.2f} (tighten-only)'))
-        action = 'SELL' if side == 'LONG' else 'BUY'
-        for o in list(self.ib.openOrders()):
-            if (o.contract.symbol == symbol and o.order.orderType == 'STP'
-                    and o.order.action == action):
-                try:
-                    self.ib.cancelOrder(o)
-                except Exception as e:  # noqa: BLE001
-                    print(f"[exec] cancel stop failed ({symbol}): {e}")
-        self.ib.placeOrder(contract, StopOrder(action, qty, new_stop, tif=tif))
+        self.cancel_stop(symbol, ref=ref)
+        self._place_stop(contract, side, qty, new_stop, tif, ref=ref)
         return ExecutionResult('TRAILED', detail=f'stop tightened {cur:.2f} -> {new_stop:.2f}')
 
     # ---- fill verification ----

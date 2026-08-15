@@ -41,11 +41,12 @@ class FakeTrade:
 
 
 class _Order:
-    def __init__(self, action, orderType, totalQuantity, symbol='MES', auxPrice=None):
+    def __init__(self, action, orderType, totalQuantity, symbol='MES', auxPrice=None,
+                 orderRef=''):
         self.contract = type('C', (), {'symbol': symbol})()
         self.order = type('O', (), {'action': action, 'orderType': orderType,
                                     'totalQuantity': totalQuantity,
-                                    'auxPrice': auxPrice})()
+                                    'auxPrice': auxPrice, 'orderRef': orderRef})()
 
 
 class FakeIB:
@@ -296,3 +297,42 @@ def test_trail_stop_short_noop_when_loosening(fake_table):
     assert res.status == 'NOOP'
     assert ib.cancelled == []
     assert len(ib.placed) == 0
+
+
+# ---- ref-tagging (targeted trail/exit when two strategies co-hold one symbol) ----
+def test_submit_entry_tags_stop_with_ref(fake_table):
+    ib = FakeIB(fill_status='Filled', fill_shares=1, fill_price=100.0)
+    mgr = make_manager(ib, fake_table)
+    intent = make_intent(qty=1, stop_price=95.0, tag='MES_DONCHIAN')
+    res = mgr.submit_entry(intent, None)
+    assert res.status == 'FILLED'
+    stop = [o for o in ib.placed if o.orderType == 'STP'][0]
+    assert stop.orderRef == 'MES_DONCHIAN'
+
+
+def test_trail_stop_targeted_does_not_cancel_other_strategy(fake_table):
+    ib = FakeIB()
+    don = _Order('SELL', 'STP', 1, auxPrice=95.0, orderRef='MES_DONCHIAN')
+    rsi = _Order('SELL', 'STP', 1, auxPrice=93.0, orderRef='MES_RSI2')
+    ib.open.append(don)
+    ib.open.append(rsi)
+    mgr = make_manager(ib, fake_table)
+    res = mgr.trail_stop(None, 'MES', 'LONG', 1, new_stop=97.0, ref='MES_DONCHIAN')
+    assert res.status == 'TRAILED'
+    assert don in ib.cancelled and don not in ib.open     # Donchian stop moved
+    assert rsi not in ib.cancelled and rsi in ib.open     # RSI2 stop untouched
+    assert ib.placed[-1].orderRef == 'MES_DONCHIAN'       # new stop re-tagged
+
+
+def test_trail_stop_ref_scopes_tighten_guard(fake_table):
+    # A co-held strategy with a TIGHTER stop must not block this strategy's trail.
+    ib = FakeIB()
+    don = _Order('SELL', 'STP', 1, auxPrice=95.0, orderRef='MES_DONCHIAN')
+    rsi = _Order('SELL', 'STP', 1, auxPrice=98.0, orderRef='MES_RSI2')  # tighter
+    ib.open.append(don)
+    ib.open.append(rsi)
+    mgr = make_manager(ib, fake_table)
+    res = mgr.trail_stop(None, 'MES', 'LONG', 1, new_stop=96.0, ref='MES_DONCHIAN')
+    assert res.status == 'TRAILED'       # 96 > Donchian's own 95, despite RSI2's 98
+    assert don in ib.cancelled
+    assert rsi in ib.open and rsi not in ib.cancelled
