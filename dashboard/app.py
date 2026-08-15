@@ -315,6 +315,7 @@ with tab_road:
 | Strategy | Walk-forward/OOS: Donchian long PF 2.08/2.16 (ES/NQ n=59/53), ADX 2.55/1.77 (thin) | done |
 | Strategy | First paper signals fired (index 23:00 + bonds 23:05 UTC — flat, no entry, expected) | done |
 | Strategy | Gate-1 decision: index LONG PROMOTED, bonds fade-SHORT SHELVED, BBAND_INDEX_LONG TABLED, screening CLOSED | done |
+| Strategy | Gate-5 paper-forward validation (index-LONG) — 10 RTH-session execution-correctness gate | STARTED (docs/GATE5_LOG.md) |
 | Data | Historical backfill → S3 futures-bars: 12 sym (ES/NQ/MES/MNQ/RTY/YM/ZB/ZN/ZF/ZT/UB/TN), daily ~3y index / ~16mo rates + intraday 1h/15m/5m/1m | done |
 | Data | S3 cold-archive (7 gaps closed) | done |
 | Data | Research ingest (FMP/NewsAPI/crypto → S3) | done |
@@ -356,6 +357,15 @@ with tab_road:
 | R6 | HF datasets for research/backtest | `HF_TOKEN` | FUTURE |
 """)
 
+    st.markdown("#### 📡 Future data subscriptions (when needed)")
+    st.markdown("""
+| Sub | Unlocks | Status |
+|---|---|---|
+| L2 market depth | order-flow / depth strategies | NOT needed yet — DB fill in progress |
+| Historical options bars | options edges | NOT needed yet — DB fill in progress |
+| Deeper futures history >3y | long-run futures research | NOT needed yet — DB fill in progress; **CME DataMine** (3rd-party), NOT an IBKR sub (IBKR caps ~3y index / ~16mo rates); yfinance already covers 10–16y |
+""")
+
     st.markdown("#### 🗺️ Roadmap (refocused — Gate-1 decision, 2026-08-14)")
     st.markdown("""
 **Strategy question CLOSED — one independent edge:**
@@ -367,7 +377,7 @@ with tab_road:
 **Path to live capital (in order):**
 1. Execution-layer hardening — broker reconciliation ✅ (Phase 2) + execution manager & idempotency ✅ (Phase 3).
 2. Persistent risk ledger — restart-safe daily P&L + loss cap. ✅ DONE (Phase 1)
-3. Paper-forward the index edge (live.py) until Gate 5 (paper validation) passes.
+3. Paper-forward the index edge (live.py) until Gate 5 (paper validation) passes — **STARTED 2026-08-14** (docs/GATE5_LOG.md).
 4. Micro-live — min size, hard loss limit, tested kill.
 """)
 
@@ -377,9 +387,34 @@ with tab_road:
 2. Execution validity (exec manager, order state machine, idempotency) — ✅ done (Phase 3)
 3. Risk validity (persistent ledger, functional caps, kill + flatten verified) — ✅ done (Phase 1)
 4. Operational validity (restart-safe, reconciliation, heartbeats, monitoring)
-5. Paper validation (min days/trades, no reconciliation incidents, fill quality)
+5. Paper validation — Gate 5: 10 RTH sessions, zero execution defects (criteria below + docs/GATE5_LOG.md)
 6. Shadow mode (real signals, no submission)
 7. Micro-live (min size, hard loss limit, tested kill + rollback)
 """)
+
+    st.markdown("#### 🎯 Gate 5 — paper-forward validation (IN PROGRESS)")
+    st.markdown("""**Target: 10 RTH sessions of `live.py` index-LONG paper-forward, zero execution defects.**
+Gate on execution-correctness per fired signal/cycle (index edge is low-frequency ~12 signals/yr), NOT
+signal count — the intraday MES lane supplies execution-volume validation.
+
+| # | Criterion (ALL must hold over the window) |
+|---|---|
+| (a) | Every fired signal → correct `TradeIntent` → verified fill → reconcile `MATCH` end-to-end |
+| (b) | Zero fill-verification failures |
+| (c) | Zero **unexplained** HALTs (each must trace to a documented cause) |
+| (d) | Risk ledger (`RISK#<date>/<scope>`) persists correctly across restarts |
+
+Tracking: **`docs/GATE5_LOG.md`** · counter resets on any (a)–(d) failure.
+""")
+    _recon = latest("RECONCILE", 1)
+    _r = _recon[0] if _recon else {}
+    _rst = _r.get("status", "no-data")
+    try:
+        _rts = dt.datetime.fromtimestamp(int(_r.get("ts")), dt.UTC).strftime("%Y-%m-%d %H:%M UTC") if _r.get("ts") else "—"
+    except (TypeError, ValueError, OSError):
+        _rts = "—"
+    _ricon = "✅" if _rst == "MATCH" else "⚠️ fail-closed (bots halt on non-MATCH)"
+    st.markdown(f"- Reconcile daemon (45s → `RECONCILE/system`): `{_rst}` @ {_rts} {_ricon}")
+    st.markdown("- Window: declared 2026-08-14 · first counted RTH session Mon 2026-08-17 · 0/10 sessions.")
 
 st.caption(f"Updated {dt.datetime.now(dt.UTC).strftime('%Y-%m-%d %H:%M')} UTC · Data: DynamoDB `trading-data` · S3 `trading-datalake-920641308584`")
