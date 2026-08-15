@@ -42,6 +42,24 @@ class FakeTable:
                 items.append(dict(item))
         return {'Items': items}
 
+    def query(self, KeyConditionExpression=None, ExpressionAttributeValues=None,
+              ScanIndexForward=False, Limit=None, **kwargs):
+        """Minimal query: supports 'pk = :pk' and 'pk = :pk AND begins_with(sk, :p)'."""
+        eav = ExpressionAttributeValues or {}
+        pk = eav.get(':pk')
+        prefix = eav.get(':p')
+        out = []
+        for (kpk, ksk), item in self.items.items():
+            if kpk != pk:
+                continue
+            if prefix is not None and not str(ksk).startswith(prefix):
+                continue
+            out.append((ksk, dict(item)))
+        out.sort(key=lambda x: x[0], reverse=not ScanIndexForward)
+        if Limit:
+            out = out[:Limit]
+        return {'Items': [it for _, it in out]}
+
 
 @pytest.fixture
 def fake_table():

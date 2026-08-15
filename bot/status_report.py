@@ -9,8 +9,14 @@ Prints a concise, plain-text report from DynamoDB (table trading-data):
      equity daily ingest (OHLCV#*), crypto ticker (QUOTE#*).
 
 Read-only; never places orders. Safe to run any time.
+
+Ground-truth rule (see trading-bot-operations skill): "ran today" and "bars
+fresh" MUST key on the latest S3 `futures-bars/intraday/…` archived-bar date
+and/or the RUN# marker — NEVER on SIGNAL#/TRADE# presence. A flat session
+(fresh bars, no signal) is HEALTHY, not "didn't run" / "stale".
 """
 import os
+import re
 import datetime as dt
 
 import boto3
@@ -31,6 +37,87 @@ IMPLIED_SIDE = {
 }
 
 table = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
+
+# ---- ground-truth data sources (NEVER key liveness/freshness on SIGNAL#/TRADE#) ----
+S3_BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
+INTRADAY_S3_PREFIX = 'futures-bars/intraday/MES/'   # the intraday lane's archived bars
+INTRADAY_RUN_KEY = 'live_intraday'                   # RUN#<key>/<today> marker
+BAR_STALE_DAYS = 3   # >3 calendar days behind = pipeline stopped (weekend+holiday safe)
+
+_s3 = None
+
+
+def _s3_client():
+    global _s3
+    if _s3 is None:
+        _s3 = boto3.client('s3', region_name=AWS_REGION)
+    return _s3
+
+
+def _date_from_bar_key(key):
+    """'futures-bars/intraday/MES/15min/2026-08-14.json' -> '2026-08-14'."""
+    m = re.search(r'/(\d{4}-\d{2}-\d{2})\.json$', key or '')
+    return m.group(1) if m else None
+
+
+def _latest_intraday_bar_date(prefix=INTRADAY_S3_PREFIX, client=None):
+    """Most recent session date among archived intraday bars, read from the key's
+    `<date>.json` (the BAR's date — NOT S3 LastModified, which a backfill resets).
+
+    Ground truth for 'did the intraday bot archive bars for a given session'.
+    Returns None on S3 error or no objects."""
+    client = client or _s3_client()
+    latest = None
+    try:
+        token = None
+        while True:
+            kw = dict(Bucket=S3_BUCKET, Prefix=prefix)
+            if token:
+                kw['ContinuationToken'] = token
+            resp = client.list_objects_v2(**kw)
+            for obj in resp.get('Contents', []):
+                d = _date_from_bar_key(obj.get('Key'))
+                if d and (latest is None or d > latest):
+                    latest = d
+            if resp.get('IsTruncated'):
+                token = resp.get('NextContinuationToken')
+            else:
+                break
+    except Exception:
+        pass
+    return latest
+
+
+def _intraday_ran_today(today, tbl=None, latest_bar_date=None):
+    """Ground truth for 'did the intraday bot run today': a MES intraday bar
+    archive dated today OR the RUN#live_intraday marker. Never SIGNAL# presence."""
+    if latest_bar_date == today:
+        return True
+    t = tbl if tbl is not None else table
+    try:
+        if t.get_item(Key={'pk': f'RUN#{INTRADAY_RUN_KEY}', 'sk': today}).get('Item'):
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _intraday_bars_status(latest_date, today):
+    """(status, note) for the intraday lane's bar freshness, keyed on the latest
+    archived-bar session date (ground truth), never on SIGNAL# presence.
+    'ok' = fresh OR market-closed within the weekend/holiday window (<= BAR_STALE_DAYS);
+    'stale' = archive older than that (pipeline actually stopped)."""
+    if latest_date is None:
+        return 'stale', 'no MES intraday archive — check pipeline'
+    try:
+        age_days = (dt.date.fromisoformat(today) - dt.date.fromisoformat(latest_date)).days
+    except ValueError:
+        return 'stale', f'last {latest_date} (unparseable date)'
+    if age_days == 0:
+        return 'ok', f'archived {latest_date}'
+    if age_days <= BAR_STALE_DAYS:
+        return 'ok', f'last {latest_date} ({age_days}d, market closed/quiet)'
+    return 'stale', f'last {latest_date} ({age_days}d ago — check pipeline)'
 
 
 def _f(v):
@@ -139,6 +226,8 @@ def report_positions():
 def report_intraday():
     lines = []
     today = _now_utc().date().isoformat()
+    latest_bar = _latest_intraday_bar_date()
+    ran_today = _intraday_ran_today(today, latest_bar_date=latest_bar)
     for tag in INTRA_TAGS:
         sig = _latest(f'SIGNAL#{tag}')
         pos_it = _latest(f'POSITION#{tag}')
@@ -153,8 +242,10 @@ def report_intraday():
                 f"  {tag}: signal={sig.get('signal')} close={sig.get('close')} "
                 f"pos={pos}{'/' + side if side else ''} "
                 f"({_age_str(sig.get('ts'))} ago)")
+        elif ran_today:
+            lines.append(f'  {tag}: no signal (bot ran today — flat)')
         else:
-            lines.append(f'  {tag}: no signal yet (bot not run today)')
+            lines.append(f'  {tag}: no signal (no bar archive today — last {latest_bar or "—"})')
         # today's trades
         trades = []
         try:
@@ -175,10 +266,12 @@ def report_intraday():
 # ===== 3. data health =====
 def report_health():
     lines = []
-    # IBKR intraday bars (fresh = the 15-min bot ran with live bars)
-    fs = _latest('SIGNAL#MES_FADESHORT')
-    lines.append(f"  IBKR intraday bars: {'ok' if fs and '_err' not in fs else 'stale'} "
-                 f"(last {_age_str(fs.get('ts')) if fs and '_err' not in fs else '—'} ago)")
+    today = _now_utc().date().isoformat()
+    # IBKR intraday bars — keyed on the latest S3 archived-bar session date
+    # (ground truth), NOT SIGNAL# presence: fresh bars + no signal = healthy.
+    latest_date = _latest_intraday_bar_date()
+    status, note = _intraday_bars_status(latest_date, today)
+    lines.append(f'  IBKR intraday bars: {status} ({note})')
     # equity daily ingest
     ohlcv = _latest('OHLCV#AAPL')
     if ohlcv and '_err' not in ohlcv:
