@@ -13,13 +13,16 @@
 */10 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/crypto_tick.py >> /home/ubuntu/trading-system/data/crypto.log 2>&1
 0 21 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/ingest.py >> /home/ubuntu/trading-system/data/ingest.log 2>&1
 */30 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/market_research.py >> /home/ubuntu/trading-system/data/research.log 2>&1
+45 21 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/options_chains.py >> /home/ubuntu/trading-system/data/options_chains.log 2>&1
+0 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/fred_collect.py >> /home/ubuntu/trading-system/data/fred.log 2>&1
 15 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/fmp_ingest.py >> /home/ubuntu/trading-system/data/fmp.log 2>&1
+30 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/yf_collect.py >> /home/ubuntu/trading-system/data/yf.log 2>&1
 45 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/newsapi_ingest.py >> /home/ubuntu/trading-system/data/newsapi.log 2>&1
 20 23 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/daily_collect.py >> /home/ubuntu/trading-system/data/daily_collect.log 2>&1
 
 # ---- bot execution (Hermes cron — NOT here) ----
 #   "Paper signals — index futures"    script paper_index_futures.sh   @ 0 23 * * *
-#   "Paper signals — bonds"            script paper_bonds.sh           @ 5 23 * * *   ⛔ PAUSED 2026-08-14 (Gate-1 KILL)
+#   "Paper signals — bonds"            script paper_bonds.sh           @ 5 23 * * *   ⛔ PAUSED 2026-08-14 (Gate-1 SHELVED)
 #   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 13-20 * * 1-5
 #   "Daily trading summary"            prompt (status_report.py)       @ 45 23 * * *
 #   "IB Gateway health watchdog"       script ibgw_health.sh           @ */30 * * * *
@@ -41,9 +44,13 @@
 # ---- one-time / on-demand data-lake jobs (not scheduled) ----
 #   bot/futures_contracts.py  contract resolver + rollover  -> CONTRACT#<sym> + S3 contracts/*
 #   bot/session_calendar.py   session calendar + RTH hours  -> SESSION#<sym> + S3 sessions/*
-#   bot/backfill_bars.py      historical-bar backfill (12 sym, daily+intraday) -> S3 futures-bars/*
-#
+#   bot/backfill_bars.py      historical-bar backfill (42-sym registry, daily+intraday) -> S3 futures-bars/*
+#   data/options_chains.py    options-on-futures chain metadata -> OPTCHAIN#<sym> + S3 options/*
+#                             (scheduled daily 21:45; also runnable on demand)
+
 # ---- recurring bar collection (daily delta; system crontab, above) ----
-#   data/daily_collect.py     daily + 15m/5m bars, all 12 symbols -> S3 futures-bars/*
+#   data/daily_collect.py     daily + 15m/5m bars, full 42-sym registry -> S3 futures-bars/*
 #                             clientId 75; idempotent date-keyed writes; self-heals missed days.
+#   data/yf_collect.py        yfinance daily(max)+1h depth -> S3 yf/<class>/<sym>.json (no IBKR)
+#   data/fred_collect.py      FRED macro series -> S3 macro/<series>.json (no IBKR)
 

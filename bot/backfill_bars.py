@@ -45,7 +45,7 @@ from ib_insync import IB, Future, ContFuture, util
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
-from bot.futures_contracts import SYMBOLS, front_month
+from bot.futures_contracts import SYMBOLS, resolve_front
 from bot.intraday_scan import prep_rth, TZ
 from data.s3_archive import put_json
 
@@ -139,7 +139,10 @@ def _daily_records(df, sym):
 def backfill_daily(ib, sym, dry_run):
     """Daily bars: front-contract continuous series, merged with CONTFUT if shallow."""
     exchange = EXCHANGE[sym]
-    con = ib.qualifyContracts(Future(sym, front_month(), exchange))[0]
+    con = resolve_front(ib, sym, exchange)
+    if con is None:
+        print(f"    [{sym}] daily: NO CONTRACT (gapped?)")
+        return 0
     df = _load_bars(ib, con, duration=DAILY_DUR, bar_size='1 day', rth=True)
 
     merged = {r['date']: r for r in _daily_records(df, sym)} if (df is not None and not df.empty) else {}
@@ -197,7 +200,10 @@ def backfill_intraday_tf(ib, sym, con, bar_size, slug, duration, dry_run):
 
 def backfill_intraday(ib, sym, dry_run):
     exchange = EXCHANGE[sym]
-    con = ib.qualifyContracts(Future(sym, front_month(), exchange))[0]
+    con = resolve_front(ib, sym, exchange)
+    if con is None:
+        print(f"    [{sym}] intraday: NO CONTRACT (gapped?)")
+        return 0
     tot = 0
     tot += backfill_intraday_tf(ib, sym, con, '1 hour', '1h', INTRA_1H_DUR, dry_run)
     tot += backfill_intraday_tf(ib, sym, con, '15 mins', '15min', INTRA_15M_DUR, dry_run)

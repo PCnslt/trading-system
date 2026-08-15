@@ -33,7 +33,7 @@ from ib_insync import IB, Future, ContFuture
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
-from bot.futures_contracts import SYMBOLS, front_month        # noqa: E402
+from bot.futures_contracts import SYMBOLS, resolve_front        # noqa: E402
 from bot.intraday_scan import load_ibkr_bars, prep_rth        # noqa: E402
 from data.s3_archive import archive_daily_bar, archive_intraday_bars  # noqa: E402
 
@@ -72,7 +72,10 @@ def _f(v):
 
 def collect_daily(ib, sym, dry_run):
     exchange = EXCHANGE[sym]
-    con = ib.qualifyContracts(Future(sym, front_month(), exchange))[0]
+    con = resolve_front(ib, sym, exchange)
+    if con is None:
+        print(f"  [{sym}] daily: NO CONTRACT (gapped?)")
+        return 0
     df = load_ibkr_bars(ib, con, duration=DAILY_DUR, bar_size='1 day', rth=True)
     records = _daily_records(df, sym) if (df is not None and not df.empty) else []
     if not records:
@@ -137,10 +140,13 @@ def main():
                 time.sleep(PACING_S)
             if do_intra:
                 try:
-                    con = ib.qualifyContracts(Future(sym, front_month(), exchange))[0]
-                    ni += collect_intraday_tf(ib, sym, con, '15 mins', '15min', args.dry_run)
-                    time.sleep(PACING_S)
-                    ni += collect_intraday_tf(ib, sym, con, '5 mins', '5min', args.dry_run)
+                    con = resolve_front(ib, sym, exchange)
+                    if con is None:
+                        print(f"  [{sym}] intraday: NO CONTRACT (gapped?)")
+                    else:
+                        ni += collect_intraday_tf(ib, sym, con, '15 mins', '15min', args.dry_run)
+                        time.sleep(PACING_S)
+                        ni += collect_intraday_tf(ib, sym, con, '5 mins', '5min', args.dry_run)
                 except Exception as e:
                     print(f"  [{sym}] intraday FAILED: {e!r}")
                 time.sleep(PACING_S)

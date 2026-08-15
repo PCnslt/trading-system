@@ -185,7 +185,7 @@ with tab_arch:
                      │  STRATEGY RUNNER     │
                      │  (3 bots, Hermes cron)│
                      │  live.py        23:00 │  index MES/MNQ (Donchian + RSI2)
-                     │  live_bondsfx   KILLED│  bonds ZB/ZN (disarmed)
+                     │  live_bondsfx  SHELVED│  bonds ZB/ZN (disarmed)
                      │  live_intraday  */15  │  intraday MES (RTH)
                      └──────────┬──────────┘
                                 │ TradeIntent (deterministic signal_id/intent_id)
@@ -289,7 +289,7 @@ with tab_road:
 | IBKR | MES paper round-trip filled | done |
 | IBKR | Real-time CME/CBOT L1 → paper DUR193467 | done |
 | Bots | live.py (index MES/MNQ, 23:00 UTC) — PROMOTED | done |
-| Bots | live_bondsfx.py (bonds ZB/ZN, 23:05 UTC) | KILLED (Gate-1: dies at 1-tick slip) |
+| Bots | live_bondsfx.py (bonds ZB/ZN, 23:05 UTC) | SHELVED (Gate-1: dies at 1-tick slip; code kept + disarmed) |
 | Bots | live_intraday.py (intraday MES, */15 RTH) | done |
 | Bots | Kill switch (control.py) read by all 3 bots before order | done |
 | Bots | Cross-bot guard (intraday stands down if daily holds MES) | done |
@@ -314,7 +314,7 @@ with tab_road:
 | Strategy | ES breakout backtest PF 2.73, MaxDD -7.9% | done |
 | Strategy | Walk-forward/OOS: Donchian long PF 2.08/2.16 (ES/NQ n=59/53), ADX 2.55/1.77 (thin) | done |
 | Strategy | First paper signals fired (index 23:00 + bonds 23:05 UTC — flat, no entry, expected) | done |
-| Strategy | Gate-1 decision: index LONG PROMOTED, bonds fade-SHORT KILLED, BBAND_INDEX_LONG skipped, screening CLOSED | done |
+| Strategy | Gate-1 decision: index LONG PROMOTED, bonds fade-SHORT SHELVED, BBAND_INDEX_LONG TABLED, screening CLOSED | done |
 | Data | Historical backfill → S3 futures-bars: 12 sym (ES/NQ/MES/MNQ/RTY/YM/ZB/ZN/ZF/ZT/UB/TN), daily ~3y index / ~16mo rates + intraday 1h/15m/5m/1m | done |
 | Data | S3 cold-archive (7 gaps closed) | done |
 | Data | Research ingest (FMP/NewsAPI/crypto → S3) | done |
@@ -360,8 +360,8 @@ with tab_road:
     st.markdown("""
 **Strategy question CLOSED — one independent edge:**
 - **INDEX LONG = PROMOTED** ✅ — Donchian + RSI2-LONG (live.py) is the live-capital candidate. Honest numbers: Donchian PF 1.56 full / 1.52 OOS / 1.43 @3t; RSI2-LONG 1.99 / 2.57 / 1.88 @3t (corr 0.002 → independent bets).
-- **BONDS fade-SHORT = KILLED** 🛑 — dies at 1-tick slippage (S3 re-run + validate_edges.py agree); live_bondsfx.py disarmed, cron paused.
-- **BBAND_INDEX_LONG = SKIPPED** — redundant with RSI2-LONG (corr 0.69, 73% trade overlap); revisit only if RSI2-LONG underperforms live.
+- **BONDS fade-SHORT = SHELVED** 📦 — dies at 1-tick slippage (S3 re-run + validate_edges.py agree); code kept + disarmed no-op, cron paused. Revisit only if cost/regime materially changes.
+- **BBAND_INDEX_LONG = TABLED** 📦 — paper forward-test candidate (redundant w/ RSI2-LONG, corr 0.69, PF 1.84 / OOS 1.71); revisit if RSI2-LONG underperforms live.
 - **Screening CLOSED** — weekly scan paused; no new strategy screening.
 
 **Path to live capital (in order):**

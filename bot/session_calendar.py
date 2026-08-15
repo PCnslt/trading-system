@@ -151,10 +151,16 @@ def main():
     n = 0
     for sym, _ in SYMBOLS:
         chain = _load_contracts(s3, sym)
-        if not chain or not chain[0].get('liquidHours'):
+        if not chain:
+            print(f"[{sym}] no contracts.json — skip")
+            continue
+        # liquidHours is symbol-level (same across the chain); use the first
+        # contract that carries it (the oldest expiry may have an empty field).
+        lh = next((c.get('liquidHours') for c in chain if c.get('liquidHours')), None)
+        if not lh:
             print(f"[{sym}] no liquidHours in contracts.json — skip")
             continue
-        cal = build_calendar(sym, chain[0]['liquidHours'])
+        cal = build_calendar(sym, lh)
         state = session_state(cal)
         # S3 calendar
         s3.put_object(Bucket=S3_BUCKET, Key=f'sessions/{sym}/calendar.json',

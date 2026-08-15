@@ -24,6 +24,8 @@ from ib_insync import IB, Future
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
+from data.symbol_registry import SYMBOLS, MONTHS, ASSET_CLASSES  # noqa: E402
+
 IBKR_HOST = os.getenv('IBKR_HOST', '127.0.0.1')
 IBKR_PORT = int(os.getenv('IBKR_PORT', '4002'))
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
@@ -35,21 +37,47 @@ ROLL_DAYS = 8           # roll N days before expiry (documented convention)
 YEARS_BACK = 3          # schedule depth back (matches IBKR daily-bar depth)
 YEARS_FWD = 5           # schedule depth forward
 
-SYMBOLS = [
-    ('ES', 'CME'), ('NQ', 'CME'), ('MES', 'CME'), ('MNQ', 'CME'),
-    ('RTY', 'CME'), ('YM', 'CBOT'),
-    ('ZB', 'CBOT'), ('ZN', 'CBOT'), ('ZF', 'CBOT'), ('ZT', 'CBOT'),
-    ('UB', 'CBOT'), ('TN', 'CBOT'),
-]
+# CME-group listing exchanges, in preference order, for the chain fallback.
+# (The symbol universe now spans CME / CBOT / NYMEX / COMEX, not just CME/CBOT.)
+CME_EXCHANGES = ('CME', 'CBOT', 'NYMEX', 'COMEX', 'GLOBEX')
 
 
 def front_month(now=None):
-    """Front-month contract month (YYYYMM), quarterly Mar/Jun/Sep/Dec."""
+    """Front-month contract month (YYYYMM), quarterly Mar/Jun/Sep/Dec.
+
+    Legacy helper — correct only for the quarterly cycles. For monthly energy /
+    metals / ags contracts use `resolve_front` (reqContractDetails picks the true
+    active front). Kept for back-compat with older callers.
+    """
     now = now or dt.date.today()
     for m in (3, 6, 9, 12):
         if now.month <= m:
             return f"{now.year}{m:02d}"
     return f"{now.year + 1}03"
+
+
+def resolve_front(ib, sym, exchange):
+    """Resolve the ACTIVE front contract (nearest expiry >= today) via reqContractDetails.
+
+    Exact for every asset class (monthly energy/metals/ags, quarterly index/fx) —
+    no month arithmetic. Returns a qualified Contract, or None if the chain is
+    empty (gapped symbol / no entitlement). Callers skip on None.
+    """
+    today = dt.date.today().strftime('%Y%m%d')
+    cd = ib.reqContractDetails(Future(sym, exchange=exchange))
+    if not cd and exchange != '':
+        cd = ib.reqContractDetails(Future(sym, exchange=''))
+    if not cd:
+        return None
+    active = None
+    for c in cd:
+        exp = c.contract.lastTradeDateOrContractMonth
+        if exp >= today and (active is None or exp < active.contract.lastTradeDateOrContractMonth):
+            active = c
+    if active is not None:
+        return active.contract
+    # all expiries in the past -> newest
+    return max(cd, key=lambda c: c.contract.lastTradeDateOrContractMonth).contract
 
 
 def _expiry_date(ymd):
@@ -67,15 +95,33 @@ def third_friday(year, month):
     return dt.date(year, month, fridays[2])
 
 
+def _nth_weekday(year, month, weekday, n):
+    days = [w[weekday] for w in calendar.monthcalendar(year, month) if w[weekday] != 0]
+    return dt.date(year, month, days[min(n - 1, len(days) - 1)])
+
+
+def third_wednesday(year, month):
+    """3rd Wednesday of a month (CME FX futures expiry convention)."""
+    return _nth_weekday(year, month, calendar.WEDNESDAY, 3)
+
+
 def _month_end(year, month):
     return dt.date(year, month, calendar.monthrange(year, month)[1])
 
 
 def _approx_expiry(sym, year, month):
-    """Approximate expiry date for a quarterly futures month (derived fallback)."""
-    if sym in ('ES', 'NQ', 'MES', 'MNQ', 'RTY', 'YM'):
+    """Approximate expiry date for a contract month (derived fallback).
+
+    The exact date comes from the chain; this is only used when the chain lacks
+    that month. Asset-class aware: index -> 3rd Friday, fx -> 3rd Wednesday,
+    everything else -> month-end (close enough for the derived schedule).
+    """
+    ac = ASSET_CLASSES.get(sym, '')
+    if ac == 'index':
         return third_friday(year, month)
-    return _month_end(year, month)   # rates (ZB/ZN/ZF/ZT/UB/TN) ~ month-end
+    if ac == 'fx':
+        return third_wednesday(year, month)
+    return _month_end(year, month)
 
 
 def _quarterly_months(start, end):
@@ -89,13 +135,21 @@ def _quarterly_months(start, end):
 
 
 def fetch_chain(ib, sym, exchange):
-    """Full ACTIVE chain for a symbol via reqContractDetails (sorted by expiry)."""
+    """Full ACTIVE chain for a symbol via reqContractDetails (sorted by expiry).
+
+    Tries the registry exchange first, then the other CME-group exchanges
+    (NYMEX/COMEX/CBOT/CME/GLOBEX) as a fallback so a mis-specified exchange
+    never yields an empty chain.
+    """
     cd = ib.reqContractDetails(Future(sym, exchange=exchange))
     if not cd:
-        alt = 'CME' if exchange == 'CBOT' else 'CBOT'
-        cd = ib.reqContractDetails(Future(sym, exchange=alt))
-        if cd:
-            exchange = alt
+        for alt in CME_EXCHANGES:
+            if alt == exchange:
+                continue
+            cd = ib.reqContractDetails(Future(sym, exchange=alt))
+            if cd:
+                exchange = alt
+                break
     rows = []
     for c in cd:
         con = c.contract

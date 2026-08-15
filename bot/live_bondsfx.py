@@ -304,13 +304,14 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
 
 
 # ===== main =====
-# KILLED (Gate-1, 2026-08-14): bonds fade-rally SHORT (ZB/ZN RSI2SHORT + BBANDSHORT)
+# SHELVED (Gate-1, 2026-08-14): bonds fade-rally SHORT (ZB/ZN RSI2SHORT + BBANDSHORT)
 # dies at 1-tick slippage — S3 re-run AND validate_edges.py agree. Bot DISARMED as a
-# no-op; the strategy/execution code above is kept intact FOR REFERENCE ONLY.
+# no-op; the strategy/execution code above is kept intact FOR REFERENCE ONLY (shelve,
+# never destroy optionality — revisit only if cost/regime materially changes).
 # Hermes cron `paper_bonds.sh` (id 230216077ed8) is paused. DO NOT re-enable without a
 # fresh Gate-1 validation. See research/GATE1_REPORT.md.
 def main():
-    print(f"[{dt.date.today().isoformat()}] bonds fade-SHORT KILLED (Gate-1) — "
+    print(f"[{dt.date.today().isoformat()}] bonds fade-SHORT SHELVED (Gate-1) — "
           f"no-op, bot disarmed; file kept for reference only.")
     return
     dynamo = boto3.resource('dynamodb', region_name='us-east-1').Table(DYNAMO_TABLE)

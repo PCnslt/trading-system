@@ -33,7 +33,7 @@ from ib_insync import IB, Future
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
-from bot.futures_contracts import SYMBOLS, front_month
+from bot.futures_contracts import SYMBOLS, resolve_front
 
 IBKR_HOST = os.getenv('IBKR_HOST', '127.0.0.1')
 IBKR_PORT = int(os.getenv('IBKR_PORT', '4002'))
@@ -47,7 +47,13 @@ QUOTE_TTL_S = int(os.getenv('QUOTE_TTL_S', '86400'))   # 1 day
 RTH_OPEN_UTC = dt.time(13, 30)
 RTH_CLOSE_UTC = dt.time(20, 0)
 
-SYMS = ['MES', 'MNQ', 'ES', 'NQ', 'ZB', 'ZN']
+# Config-driven stream set: defaults to the FULL registry universe (single source
+# of truth — `data/symbol_registry.py`). Override with a comma list to shrink:
+#   TICK_SYMBOLS=ES,NQ,MES,MNQ
+# Gapped symbols (6E/6J/... SIL) are attempted but resolve_front returns None and
+# they are skipped with a log — never fabricate ticks.
+SYMS = [s.strip().upper() for s in os.getenv(
+    'TICK_SYMBOLS', ','.join(s for s, _ in SYMBOLS)).split(',') if s.strip()]
 EXCHANGE = {sym: ex for sym, ex in SYMBOLS}
 
 
@@ -130,7 +136,10 @@ def run_session():
     ib.reqMarketDataType(1)          # request live (not delayed)
     log(f"connected clientId={CLIENT_ID} accounts={ib.managedAccounts()} (READ-ONLY)")
     for sym in SYMS:
-        con = ib.qualifyContracts(Future(sym, front_month(), EXCHANGE[sym]))[0]
+        con = resolve_front(ib, sym, EXCHANGE[sym])
+        if con is None:
+            log(f"  SKIP {sym} — no contract (gapped subscription?)")
+            continue
         t = ib.reqMktData(con, '', False, False)
         log(f"  subscribed {sym} {con.localSymbol} conId={con.conId} "
             f"marketDataType={t.marketDataType}")
