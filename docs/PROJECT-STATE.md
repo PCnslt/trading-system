@@ -44,7 +44,7 @@ flag the gap and ask the owner whether to purchase the proper subscription.**
 | Source | Tier | What we get | Depth | Where |
 |---|---|---|---|---|
 | IBKR (paper, broker-verified) | **Paid / source of truth** | 42-symbol futures registry (35 resolve) across index/rates/energy/metals/ags/fx: daily + intraday (1h/15m/5m/1m) + L1 real-time ticks | daily ~3y index / ~16mo rates; intraday 1h/15m/5m ~1y; 1m ~30d | `futures-bars/`, `futures-ticks/`, `contracts/`, `sessions/`, `options/` |
-| yfinance | Free / unofficial | ETFs, sectors, futures-continuous (`ES=F` etc), fx, crypto spot | daily ~10-16y; 1h ~2y | `yf/` |
+| yfinance | Free / unofficial | ETFs, sectors, futures-continuous (`ES=F` etc), fx, crypto spot + **US equities universe (~6.9k stocks, data engine)** | daily ~10-16y; 1h ~2y; 1m ~8d | `yf/`, `yf/stocks/` |
 | FRED | Free / public | Macro (DGS10/2/30, DFEDTARU, CPIAUCSL, UNRATE, PAYEMS, T10Y2Y, VIXCLS) | daily/monthly, 60y+ | `macro/` |
 | FMP (free tier) | Free | Quote + company profile | — (QQQ→402 → use profile) | `fmp/` |
 | Binance.US | Free | Crypto spot ticks + daily candles | — | `crypto-tick/`, `crypto-candles/` |
@@ -67,6 +67,11 @@ flag the gap and ask the owner whether to purchase the proper subscription.**
 - **Schwab API = ON HOLD** (approval pending, NOT dropped).
 - **Micro silver** (`SIL`) has no separate root — it is SI `tradingClass='SIL'`
   (multiplier 1000). Accessed via the SI chain.
+- **Tick-level US equities data** (every-second) — NOT in the futures subscription;
+  needs a paid real-time consolidated-tape feed. Tagged *"needed only if a future
+  project needs tick-level stock data"* (see `docs/DATA-ENGINE.md` §10). **Do NOT buy.**
+- **Deeper than ~8 days of 1m intraday** — yfinance hard-caps 1m at ~8 days;
+  deeper 1m needs a paid intraday archive (research-grade only for now).
 
 ## Current edge → data requirement
 

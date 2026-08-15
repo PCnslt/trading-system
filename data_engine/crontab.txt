@@ -1,0 +1,33 @@
+# ==============================================================================
+# DATA ENGINE — separate, decoupled data-collection project (US equities).
+# ==============================================================================
+# This is the data engine's OWN crontab (self-contained; splittable into its own
+# repo later with zero surgery). It is MERGED into the system crontab under the
+# "# ---- DATA ENGINE (separate project) ----" delimiter — NOT into the trading
+# bots' Hermes cron, and NOT into the trading system's data-ingestion block.
+#
+# Data engine = yfinance only (no IBKR, no clientId, no DynamoDB trading keys).
+# Read-only on the trading side; never places orders. It owns its own lockfiles
+# (data_engine/state/*.lock) so its runs serialize against themselves.
+#
+# Install (merge into existing crontab):
+#   ( crontab -l | grep -v 'DATA ENGINE'; cat data_engine/crontab.txt ) | crontab -
+# Or install standalone (a future dedicated host/repo):
+#   crontab data_engine/crontab.txt
+#
+# All times UTC. Logs under data_engine/logs/ (gitignored).
+# ==============================================================================
+REPO=/home/ubuntu/trading-system
+
+# ---- weekly universe refresh (Sun 12:00 UTC): rebuild ~7k common-stock list + liquid seed ----
+0 12 * * 0 cd /home/ubuntu/trading-system && ./venv/bin/python -m data_engine.universe --refresh >> /home/ubuntu/trading-system/data_engine/logs/universe.log 2>&1
+
+# ---- daily bar collection (01:15 UTC): bounded batch, incremental + checkpoint resume ----
+15 1 * * * cd /home/ubuntu/trading-system && ./venv/bin/python -m data_engine.collect_daily --limit 2000 >> /home/ubuntu/trading-system/data_engine/logs/daily.log 2>&1
+
+# ---- liquid ranking (02:00 UTC): top-1000 by avg dollar volume from daily metrics ----
+0 2 * * * cd /home/ubuntu/trading-system && ./venv/bin/python -m data_engine.universe --rank-liquid --top 1000 >> /home/ubuntu/trading-system/data_engine/logs/liquid.log 2>&1
+
+# ---- intraday bars for liquid subset (02:30 / 02:45 UTC): 1h (~2y) then 1m (~8d rolling) ----
+30 2 * * * cd /home/ubuntu/trading-system && ./venv/bin/python -m data_engine.collect_intraday --interval 1h >> /home/ubuntu/trading-system/data_engine/logs/intraday_1h.log 2>&1
+45 2 * * * cd /home/ubuntu/trading-system && ./venv/bin/python -m data_engine.collect_intraday --interval 1m >> /home/ubuntu/trading-system/data_engine/logs/intraday_1m.log 2>&1

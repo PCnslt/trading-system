@@ -49,6 +49,9 @@ fallback; the collectors actually resolve the **active front via reqContractDeta
 | `sessions/<sym>/calendar.json` | IBKR (derived) | RTH/holidays/early-close | `bot/session_calendar.py` |
 | `options/<sym>/chains.json` | IBKR | expiries + strikes (metadata only) | `data/options_chains.py` |
 | `yf/<class>/<sym>.json` | yfinance | daily (max) + 1h (~2y) OHLCV | `data/yf_collect.py` |
+| `yf/stocks/daily/<sym>.json` | yfinance | **US equities data engine** — full daily history (IPO→), ~6.9k common stocks | `data_engine/collect_daily.py` |
+| `yf/stocks/intraday/<sym>/<interval>/<date>.json` | yfinance | data engine — 1h (~2y) + 1m (~8d rolling) session bars, liquid ~1k subset | `data_engine/collect_intraday.py` |
+| `data-engine/universe/…` · `data-engine/meta/…` | Nasdaq Trader + yfinance | universe snapshot, liquid rank, collection manifest | `data_engine/universe.py` |
 | `macro/<series>.json` | FRED | daily/monthly macro series | `data/fred_collect.py` |
 | `fmp/<sym>/<Y>/<m>/<d>/<ts>.json` | FMP | quote+profile (fundamentals) | `data/fmp_ingest.py` |
 | `newsapi/<Y>/<m>/<d>/<ts>.json` | NewsAPI | news batches | `data/newsapi_ingest.py` |
@@ -57,6 +60,9 @@ fallback; the collectors actually resolve the **active front via reqContractDeta
 | `research/scan-results/<name>/…` | — | strategy scan outputs | `bot/*_scan.py` |
 
 `yf/` asset classes: `etfs` `sectors` `futures` `fx` `crypto` (crypto = BTC-USD/ETH-USD spot cross-check).
+
+The **data engine** (`data_engine/`, a separate decoupled project) owns the
+`yf/stocks/…` and `data-engine/…` namespaces. See `docs/DATA-ENGINE.md`.
 
 ---
 

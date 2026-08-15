@@ -1,0 +1,77 @@
+{
+  "engine": "data-engine",
+  "version": "1.0.0",
+  "scope": "US equities market data (research-grade, yfinance). Decoupled from the trading system.",
+
+  "s3": {
+    "bucket": "trading-datalake-920641308584",
+    "region": "us-east-1"
+  },
+
+  "prefixes": {
+    "daily": "yf/stocks/daily/{sym}.json",
+    "intraday": "yf/stocks/intraday/{sym}/{interval}/{date}.json",
+    "universe": "data-engine/universe/{name}.json",
+    "meta": "data-engine/meta/{name}"
+  },
+
+  "intervals": {
+    "daily": "1d",
+    "intraday": ["1h", "1m"]
+  },
+
+  "depth": {
+    "daily_period": "max",
+    "daily_incremental_period": "5d",
+    "intraday_1h_period": "730d",
+    "intraday_1m_period": "7d"
+  },
+
+  "universe": {
+    "source": "nasdaq-trader",
+    "description": "US common stocks (excl. ETFs, preferred, warrants, units, test issues)",
+    "urls": {
+      "nasdaq": "https://www.nasdaqtrader.com/dynamic/SymDir/nasdaqlisted.txt",
+      "other": "https://www.nasdaqtrader.com/dynamic/SymDir/otherlisted.txt"
+    },
+    "cache_file": "data_engine/cache/us_common_stocks.json",
+    "s3_key": "data-engine/universe/us_common_stocks.json",
+    "exclude_suffixes": [".", "-", "=", "^"],
+    "require_common_stock": true
+  },
+
+  "liquid": {
+    "description": "Top ~1000 by average dollar volume (close*volume, 20 sessions), seeded from Yahoo screeners then refined from collected daily bars",
+    "target_count": 1000,
+    "metrics_window_days": 20,
+    "seed_screeners": [
+      "most_actives", "day_gainers", "day_losers", "most_shorted",
+      "undervalued_large_caps", "growth_technology_stocks",
+      "aggressive_small_caps", "small_cap_gainers",
+      "undervalued_growth_stocks", "solid_large_growth_funds",
+      "solid_midcap_growth_funds"
+    ],
+    "seed_cache_file": "data_engine/cache/liquid_seed.json",
+    "s3_key": "data-engine/meta/liquid_universe.json",
+    "metrics_file": "data_engine/cache/daily_metrics.jsonl"
+  },
+
+  "pacing": {
+    "daily_between_symbols_s": 1.2,
+    "intraday_between_symbols_s": 2.0,
+    "intraday_between_intervals_s": 1.0,
+    "rate_limit_backoff_s": 90,
+    "max_consecutive_errors": 15,
+    "checkpoint_every_symbols": 100,
+    "max_symbols_per_run": 0
+  },
+
+  "schedule": {
+    "_comment": "Own crontab: data_engine/crontab.txt (merged into system crontab under a # DATA ENGINE delimiter; the file itself is the splittable source of truth).",
+    "universe_refresh": "0 12 * * 0",
+    "daily_collect": "15 1 * * *",
+    "liquid_rank": "0 2 * * *",
+    "intraday_1h": "30 2 * * *",
+    "intraday_1m": "45 2 * * *"
+  }
+}

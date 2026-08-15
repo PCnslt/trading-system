@@ -1,0 +1,4 @@
+# Runtime state — gitignored (checkpoints, metrics, cached universes, logs).
+cache/
+state/
+logs/
