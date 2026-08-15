@@ -238,9 +238,9 @@ with tab_live:
 
 # ============================ ARCHITECTURE TAB ============================
 with tab_arch:
-    st.subheader("System architecture — TARGET (current vs target annotated)")
-    st.caption("This is the target layered design, NOT the as-built state. Layers 2–7 are the hardening "
-               "being added — current code skips straight from strategy → IBKR.")
+    st.subheader("System architecture — AS-BUILT (the running system)")
+    st.caption("Hardening DONE — this IS the running architecture: strategy → risk/admission → "
+               "execution manager → IBKR → reconcile → risk ledger. No \"target-only\" layers remain.")
 
     st.code("""                        RESEARCH / DATA LAKE
         ┌──────────────────────────────────────────────────────┐
@@ -339,15 +339,15 @@ with tab_arch:
              ▲                       │
              └──── Telegram group ────┘  (user visibility, not transport)""", language="text")
 
-    st.markdown("#### Current → Target delta")
+    st.markdown("#### Hardening — all landed & live (as-built)")
     st.markdown("""
-- no TradeIntent layer → add it (strategies express intent, don't call broker)
-- no Execution Manager → centralize order submission (idempotency, timeout=UNKNOWN)
-- no Reconciliation → broker = source of truth for positions/orders/fills
-- risk state stateless per-run → persistent Risk Ledger
-- IBC-based gateway → native auto-restart + token re-login ✅ **[NOW DONE]**
-- control plane fail-open → fail-closed (unreadable state = HALT) ✅ **[NOW DONE]**
-- no fill verification → verify fill before writing position/stop ✅ **[NOW DONE]**
+- TradeIntent layer ✅ — strategies express intent, don't call broker (deterministic signal_id/intent_id)
+- Execution Manager ✅ — centralized order submission (idempotency, timeout=UNKNOWN)
+- Reconciliation ✅ — broker = source of truth for positions/orders/fills
+- Persistent Risk Ledger ✅ — restart-safe daily P&L + loss cap (never-lose-money)
+- IBC-based gateway → native auto-restart + token re-login ✅ **[DONE]**
+- control plane fail-open → fail-closed (unreadable state = HALT) ✅ **[DONE]**
+- fill verification before writing position/stop ✅ **[DONE]**
 """)
 
 # ============================ ROADMAP TAB ============================
