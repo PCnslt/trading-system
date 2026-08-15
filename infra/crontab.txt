@@ -24,6 +24,8 @@
 #   "Paper signals — index futures"    script paper_index_futures.sh   @ 0 23 * * *
 #   "Paper signals — bonds"            script paper_bonds.sh           @ 5 23 * * *   ⛔ PAUSED 2026-08-14 (Gate-1 SHELVED)
 #   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 13-20 * * 1-5
+#   "Paper signals — equities"         script paper_equity_signals.sh  @ 15 23 * * *   (signals only; no execution; deliver=telegram)
+#   "Paper signals — crypto"           script paper_crypto_signals.sh  @ */30 * * * *  (signals only; no execution; deliver=local)
 #   "Daily trading summary"            prompt (status_report.py)       @ 45 23 * * *
 #   "IB Gateway health watchdog"       script ibgw_health.sh           @ */30 * * * *
 #   "Broker reconcile watchdog"        script reconcile_watchdog.sh    @ */5 * * * *
