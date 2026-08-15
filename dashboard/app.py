@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from bot.control import set_control as control_set_control
+from dashboard.pulse import render_pulse
 
 load_dotenv()
 
@@ -78,7 +79,12 @@ elif state == "RUNNING":
 else:
     st.warning("⚠️ Control state UNKNOWN — bots are fail-closed (no trading until set)")
 
-tab_live, tab_arch, tab_road = st.tabs(["📊 Live", "🗺️ Architecture", "📋 Roadmap"])
+tab_pulse, tab_live, tab_arch, tab_road = st.tabs(
+    ["💓 Live Pulse", "📊 Live", "🗺️ Architecture", "📋 Roadmap"])
+
+# ============================ LIVE PULSE TAB ============================
+with tab_pulse:
+    render_pulse()
 
 # ============================ LIVE TAB ============================
 with tab_live:
@@ -322,7 +328,7 @@ with tab_road:
 | Data | Data-lake build-out (contract metadata + rollover, session calendar, L1 tick recorder) | done |
 | Data | Broker reconciliation (startup + periodic 45s daemon) — positions/orders/fills vs DynamoDB, halt+alert on mismatch/UNKNOWN | done |
 | Data | Data-health gate + stale-signal gate | next phase |
-| Obs | Streamlit dashboard :8501 (Live + Architecture + Roadmap) | done |
+| Obs | Streamlit dashboard :8501 (Live Pulse + Live + Architecture + Roadmap) | done |
 | Obs | Telegram group (user visibility) | done |
 | Obs | Daily summary 23:45, health watchdog */30, weekly scan | done |
 | Obs | Health watchdog fixed — native GWClient + :4002 check (was checking removed IBC) | done |
