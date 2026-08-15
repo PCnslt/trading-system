@@ -34,6 +34,7 @@ from ib_insync import IB, Future
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
 from bot.futures_contracts import SYMBOLS, resolve_front
+from data.symbol_registry import L1_LIVE
 
 IBKR_HOST = os.getenv('IBKR_HOST', '127.0.0.1')
 IBKR_PORT = int(os.getenv('IBKR_PORT', '4002'))
@@ -47,13 +48,14 @@ QUOTE_TTL_S = int(os.getenv('QUOTE_TTL_S', '86400'))   # 1 day
 RTH_OPEN_UTC = dt.time(13, 30)
 RTH_CLOSE_UTC = dt.time(20, 0)
 
-# Config-driven stream set: defaults to the FULL registry universe (single source
-# of truth — `data/symbol_registry.py`). Override with a comma list to shrink:
+# Config-driven stream set: defaults to symbols with LIVE L1 on paper (CME + CBOT
+# listings — see `data/symbol_registry.py::L1_LIVE`). NYMEX energy / COMEX metals
+# are delayed-only on paper (Error 354) and are EXCLUDED so we never record delayed
+# ticks as real-time; their historical BARS are still collected by the backfill +
+# daily-collect scripts. Override with a comma list to shrink (or force a subset):
 #   TICK_SYMBOLS=ES,NQ,MES,MNQ
-# Gapped symbols (6E/6J/... SIL) are attempted but resolve_front returns None and
-# they are skipped with a log — never fabricate ticks.
 SYMS = [s.strip().upper() for s in os.getenv(
-    'TICK_SYMBOLS', ','.join(s for s, _ in SYMBOLS)).split(',') if s.strip()]
+    'TICK_SYMBOLS', ','.join(sorted(L1_LIVE))).split(',') if s.strip()]
 EXCHANGE = {sym: ex for sym, ex in SYMBOLS}
 
 

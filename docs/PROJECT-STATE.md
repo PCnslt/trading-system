@@ -51,6 +51,9 @@ flag the gap and ask the owner whether to purchase the proper subscription.**
 
 - **FX futures majors `6E 6J 6B 6A 6C 6S 6N`** — "no security definition" on paper
   (separate CME FX-futures entitlement). Only `6M` (MXN) resolves. → purchase decision pending.
+- **L1 real-time for NYMEX energy + COMEX/NYMEX metals** — Error 354 (delayed-only)
+  on paper, even though historical BARS work. L1 tick recorder streams CME+CBOT
+  listings only (excludes delayed symbols). → separate real-time energy/metals subscription if needed.
 - **IBKR historical depth is thin** (~3y index, ~16mo rates) — the *depth* gap is
   filled by yfinance (10-16y) + FRED (60y+). Free sources are research-grade depth,
   NOT a replacement for the paid archive.

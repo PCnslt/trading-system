@@ -100,6 +100,18 @@ MONTHS = {d['sym']: d['months'] for d in FUTURES}
 ASSET_CLASSES = {d['sym']: d['asset_class'] for d in FUTURES}
 OPTION_UNDERLYINGS = [d['sym'] for d in FUTURES if d.get('options')]
 
+# Gapped FX majors (no security definition on paper — separate CME FX-futures
+# entitlement). Only 6M resolves.
+GAPPED_FX = {'6E', '6J', '6B', '6A', '6C', '6S', '6N'}
+
+# Live L1 (reqMktData) entitlement on paper DUR193467 = CME + CBOT listings only.
+# NYMEX energy (CL/NG/RB/HO/QM/QG) + COMEX/NYMEX metals (GC/SI/HG/PL/PA/MGC)
+# return Error 354 "market data not subscribed" (delayed only) on paper — even
+# though historical BARS (reqHistoricalData) work for them. The L1 tick recorder
+# must NOT record those delayed ticks as real-time. FX majors don't resolve.
+L1_LIVE = {d['sym'] for d in FUTURES
+           if d['exchange'] in ('CME', 'CBOT') and d['sym'] not in GAPPED_FX}
+
 
 def front_month_for(sym, now=None):
     """Nearest valid contract month (YYYYMM) for `sym` using its registry months.

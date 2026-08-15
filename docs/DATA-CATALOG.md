@@ -94,9 +94,10 @@ fallback; the collectors actually resolve the **active front via reqContractDeta
 ## 5. Subscription gaps (need a SEPARATE IBKR subscription later)
 
 1. **FX futures majors** `6E 6J 6B 6A 6C 6S 6N` — no security definition on paper (CME FX-futures entitlement). `6M` works.
-2. **Options on futures BARS** (historical) — NOT attempted; separate subscription. Only chain *metadata* (expiries+strikes) is captured.
-3. **L2 depth** — separate paid package; we have top-of-book L1 only (no `reqMktDepth`).
-4. **IBKR historical depth caps** (entitlement): daily ~3y index / ~16mo rates, intraday 1h/15m/5m ~1y, 1m ~30d. Free-source depth fills this: `yf/` (10–16y daily) + `macro/` (FRED 60y+).
+2. **L1 real-time (reqMktData) for NYMEX energy + COMEX/NYMEX metals** — Error 354 "not subscribed" (delayed-only) on paper DUR193467, even though historical BARS work for the same symbols. The L1 tick recorder excludes these (`L1_LIVE` in the registry) so delayed ticks are never recorded as real-time. Live L1 on paper = CME + CBOT listings only (index/rates/ags/livestock/6M).
+3. **Options on futures BARS** (historical) — NOT attempted; separate subscription. Only chain *metadata* (expiries+strikes) is captured.
+4. **L2 depth** — separate paid package; we have top-of-book L1 only (no `reqMktDepth`).
+5. **IBKR historical depth caps** (entitlement): daily ~3y index / ~16mo rates, intraday 1h/15m/5m ~1y, 1m ~30d. Free-source depth fills this: `yf/` (10–16y daily) + `macro/` (FRED 60y+).
 
 ---
 
