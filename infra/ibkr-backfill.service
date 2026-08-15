@@ -1,0 +1,20 @@
+[Unit]
+Description=IBKR full-depth historical backfill (resumable, quality=BROKER -> S3 ibkr/*)
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+ExecStart=/home/ubuntu/trading-system/run_ibkr_full_backfill.sh
+Restart=on-failure
+RestartSec=60
+# Memory ceiling: t3.small is memory-starved. The collector streams per-symbol
+# (no universe in RAM); cap the whole job so it can never OOM the trading bots.
+MemoryMax=1200M
+# Safety: never let a runaway backfill starve the trading daemons' CPU.
+Nice=10
+
+[Install]
+WantedBy=multi-user.target

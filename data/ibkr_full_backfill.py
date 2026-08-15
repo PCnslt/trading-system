@@ -106,6 +106,14 @@ CRYPTO_SYMBOLS = ['MBT', 'MET']
 
 QUALITY_META = {'quality': 'BROKER'}
 
+
+class GatewayDown(BaseException):
+    """Gateway unreachable (2FA gap / maintenance). Propagates past the per-symbol
+    `except Exception` handlers so the run EXITS (systemd Restart=on-failure
+    relaunches it; the checkpoint resumes) instead of churning every remaining
+    symbol as FAILED."""
+
+
 _s3 = None
 
 
@@ -183,7 +191,7 @@ def req_hist(ib, con, duration, bar_size, end='', use_rth=True, timeout=None):
         if not ib.isConnected() and not _ensure_connected(ib):
             time.sleep(30)
             if not _ensure_connected(ib):
-                raise ConnectionError('gateway not reachable')
+                raise GatewayDown('gateway not reachable (2FA/maintenance)')
         try:
             return ib.reqHistoricalData(con, endDateTime=end, durationStr=duration,
                                         barSizeSetting=bar_size, whatToShow='TRADES',
@@ -197,7 +205,7 @@ def req_hist(ib, con, duration, bar_size, end='', use_rth=True, timeout=None):
             elif any(k in msg for k in ('connect', 'socket', 'not connected', 'broken pipe')):
                 print(f"      [disconnect] reconnect attempt ({e!r})", flush=True)
                 if not _ensure_connected(ib):
-                    raise
+                    raise GatewayDown('gateway not reachable (2FA/maintenance)')
             elif 'cancelled' in msg or 'timeout' in msg:
                 if attempt < RETRIES:
                     print(f"      [timeout/cancelled] retry {attempt + 1}", flush=True)
@@ -693,6 +701,11 @@ def main():
                 collect_crypto_1min(ib, args.dry_run, state)
         elif args.mode == 'options':
             collect_options(ib, args.dry_run, state)
+    except GatewayDown as e:
+        save_state(state)
+        print(f"\nGATEWAY DOWN: {e} — exiting non-zero (systemd will relaunch; "
+              f"checkpoint resumes).", flush=True)
+        sys.exit(1)
     finally:
         ib.disconnect()
 
