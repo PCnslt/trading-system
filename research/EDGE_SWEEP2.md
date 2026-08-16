@@ -1,10 +1,12 @@
 # Edge Sweep 2 — New Strategy Families (Carry · XSMOM · Vol-Overlay · Value)
 
 Date: 2026-08-16 · Operator: VPS Hermes (builder) · Research-only, **paper-only, no live**.
-Data: S3 `trading-datalake-920641308584` — yfinance continuous futures (16y),
-IBKR CONTFUT continuous (56 syms, ~5y), IBKR per-contract chains (current chain),
-IBKR equities daily (5,792 US stocks landed, 20y). Nothing touched live; gateway
-not restarted.
+Data: S3 `trading-datalake-920641308584` — yfinance continuous futures (**26y**,
+2000→2026 — the "16y" figure is stale), IBKR CONTFUT continuous (56 syms, but
+depth is heterogeneous: ~12 syms @ 5y, index @ 3y, rates @ ~16mo, micros/yields
+@ ≤1y), IBKR per-contract chains (current chain only), IBKR equities daily
+(20y, backfill still in-flight at sweep time → partial snapshot). Nothing
+touched live; gateway not restarted.
 
 ## TL;DR
 
@@ -22,6 +24,64 @@ sweep (`EDGE_SWEEP.md`): the futures complex is statistically flat or worse afte
 are fragile in modern (post-2000) markets. The one genuinely positive read —
 **long-only 12m cross-sectional momentum in US equities** (PF 1.80, Sharpe 0.78) —
 is a side-finding, not the long-short construct that was requested.
+
+---
+
+## Second-pass diagnosis (owner request, 2026-08-16)
+
+**Question asked:** were the four NO-GOs caused by data depth, by parameter
+choice, or is the edge genuinely absent?
+
+**Headline: three of four are *genuine* no-edge findings; only carry is a data
+gap — and carry's gap is *permanent* on this account, not fixable by any pending
+backfill.**
+
+Critical corrections to the laptop's priors (verified against live S3 + the
+running collector):
+
+1. **yfinance continuous futures is 26y (2000→2026), not 16y.** Every yfinance
+   futures ticker in S3 (ES=F, GC=F, CL=F, NG=F, ZC=F, ZB=F, 6E=F, …) starts
+   2000-08 and runs to 2026-08 (~6,500 bars). The "16y" figure in memory/skills
+   is stale. This matters: the *deep-history proxy the laptop wanted is already
+   in hand and was already used* by the value and xsmom families.
+2. **There is no "20y stitched futures daily backfill" queued or possible.** The
+   backfill collector that is running (`ibkr-backfill.service`, process
+   `data/ibkr_full_backfill.py --mode equities --kind daily`) is **equities-only**
+   (20y, still in-flight). IBKR futures CONTFUT caps at ~5y; per-contract is the
+   current forward chain only; expired contracts return **Error 200** on this
+   paper account (DUR193467). 20y futures stitching is *physically impossible*
+   here — no subscription fixes it. So "re-test after the futures backfill lands"
+   is not an actionable path for **any** of these families.
+3. **Value did NOT no-go for data depth.** The value family ran on yfinance
+   26y (not the short IBKR 3-5y bars), so the 5y lookback was fully computable —
+   n=253 cross-sectional months, 14 symbols, 2000→2026. The "5y lookback is
+   impossible on ~3y data" concern does not apply to what was actually run.
+
+**Parameter alternatives — tested this pass (they were *not* tried in the first
+pass, which used single defaults):**
+
+| Family | Alternatives run | Result |
+|---|---|---|
+| xsmom futures (yf 26y) | 6m-skip1 / 12m-skip0 / 6m-skip0 vs baseline 12m-skip1 | PF 0.88 / 0.90 / 0.89 vs 0.94; OOS 0.85/0.84/0.81 vs 0.90 — **all fail** |
+| value (cross-sectional) | 3y / 10y lookback vs baseline 5y | PF 0.84 / 0.97 vs 0.90; OOS 0.70 / 0.87 vs 0.79 — **all fail** |
+| vol overlay | 60d realized-vol vs baseline 20d | same non-uniform pattern (ES-RSI2 0.62 vs 0.73, GC-Don 0.54 vs 0.56; ES-Don & GC-RSI2 flat/worse) — **no window flips it** |
+| carry | n/a | gap is the *data* (fixed-spread proxy), not a parameter — no hold/roll tweak recreates historical near/far |
+
+**Per-family failure-mode classification:**
+
+| Family | Failure mode | Data depth sufficient? | Verdict |
+|---|---|---|---|
+| Carry / term-structure | **DATA GAP (permanent)** | **No** — true near/far term structure unobtainable (expired=Error 200); proxy only | **(b) untestable** → cannot re-test on this account; needs paid term-structure archive |
+| XSMOM futures | **Genuine no-edge** (thin deep read + short wide read, both neg) | Marginal — deep read 13 names (thin), wide read 2-5y (short) | **(a) absent** on available data |
+| XSMOM equities (L/S) | **Genuine no-edge** (short leg) | Yes (2,191 names, 20y) | **(a) absent** (long-only leg real) |
+| Vol overlay | **Genuine no-Sharpe-edge** (mechanical) | Yes (26y) | **(a) absent**; HOLD as de-risker |
+| Value / 5y reversal | **Genuine no-edge** (thin *width*, not depth) | Yes (26y) — 5y lookback fully computed | **(a) absent** in 14-name universe |
+
+Only **carry** is a re-test candidate — and only after acquiring a paid
+multi-decade term-structure archive (Pinnacle Data / CSI / Bloomberg), since
+IBKR paper can never return expired contracts. No other family should be
+re-queued for "after the futures backfill"; the deepest futures data (26y
+yfinance) is already consumed and the verdicts hold under parameter variation.
 
 ---
 
