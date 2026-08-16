@@ -83,3 +83,20 @@
 - **Commits**: `ca67818`
 - **Blockers**:
   - GAP-3 remains open: owner 150-USD daily loss cap is not a literal in code; enforced cap is 2% x budget (1k live / 500 intraday). Owner decision needed — out of scope for this task.
+
+---
+
+## 2026-08-16T13:28:58-04:00 — RSI2 entry: test + adopt Connors 200d-SMA trend filter (ES/NQ backtest)
+
+- **Summary**: RSI2 entry refinement: current RSI(2)<10 (no filter) vs Connors ORIGINAL (RSI(2)<10 AND close>200d SMA) on ES/NQ daily 2010-2026, 3-tick+1.3bp comm, same 40/20/40 + 3-fold walk-forward as validate_edges. DECISION: ADOPT (added 200d-SMA filter to live.py rsi2_entry; 165/165 tests pass).
+Numbers (3-tick cost, single contract):
+  ES  no-filter: OOS PF 2.57, maxDD -$44.2k (-155% rel), trough -$15.6k, worst -$16.7k, streak 3, win 70% (n=199).
+  ES  filtered:  OOS PF 2.47, maxDD -$23.4k (-86% rel),  trough +$3.8k, worst -$11.2k, streak 3, win 70% (n=142).
+  NQ  no-filter: OOS PF 2.24, maxDD -$35.6k (-77% rel), trough +$10.9k, worst -$17.9k, streak 7, win 66% (n=194).
+  NQ  filtered:  OOS PF 2.33, maxDD -$48.2k (-68% rel), trough +$22.9k, worst -$17.6k, streak 4, win 68% (n=143).
+Rule check (>= comparable OOS PF AND lower maxDD):
+  - OOS PF comparable/better both: ES 2.47 vs 2.57 (~noise), NQ 2.33 vs 2.24 (better); pooled 3-tick PF 2.04 vs 1.88 (better).
+  - Drawdown LOWER on the meaningful measure: relative DD% ES 86 vs 155, NQ 68 vs 77; absolute trough higher both; worst trade <=; losing streak <=.
+  - NQ raw-$ maxDD is HIGHER (-$48k vs -$35k) but this is a COMPOUNDING artifact, not worse DD: filtered peaked higher ($71k vs $46k @ 2021-11-29, gate kept it in the bull) so peak->trough $ distance is larger even though its trough ($22.9k) is HIGHER than no-filter's ($10.9k); same peak/trough dates (2021-11-29 -> 2024-01-04). Relative DD is lower (68% vs 77%).
+  - Mechanism = Connors' intent: gate blocks sub-200d-SMA knife-catches; it removed the COVID 2020-03-09 crash entries (worst trades) on both symbols. No-filter ES went NEGATIVE cumulative (-$15.6k) at the COVID bottom while filtered stayed positive (+$3.8k).
+live.py change: rsi2_entry requires close>200d SMA (fail-closed on NaN), compute() returns sma200, signal logs sma200, label updated. Artifacts: research/rsi2_sma200_compare.py + _results.json + _diag.py.

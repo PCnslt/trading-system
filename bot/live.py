@@ -10,10 +10,12 @@ Strategies (each tracked INDEPENDENTLY, tagged in DynamoDB pk):
                (initial = entry - 3*ATR), ratcheted up only (tighten-only).
        Exits : 5-day time stop -> close <= stop -> close < prior 20-day low.
 
-  2) RSI2 — RSI(2) buy-the-dip (exact port of bot/allmarkets_scan.py
-     `sig_rsi2` long-only — the validated buy-dip edge: OOS PF 2.69/2.21/1.79
-     on ES/NQ/YM):
-       Entry : RSI(2) < 10   (buy the dip)
+  2) RSI2 — RSI(2) buy-the-dip (Connors ORIGINAL + 200d-SMA trend filter;
+     refined 2026-08-16 — see research/rsi2_sma200_compare.py):
+       Entry : RSI(2) < 10  AND  close > 200-day SMA   (Connors' trend gate:
+               only buy dips in an uptrend, not falling knives. Backtest
+               showed comparable OOS PF + lower relative maxDD + no COVID
+               knife-catch vs the no-filter rule.)
        Exit  : RSI(2) > 70, or 5-day time stop, or 2*ATR hard stop (FIXED —
                trailing NOT applied: backtest showed trailing cuts
                mean-reversion winners; never-lose-money: no unprotected
@@ -69,6 +71,7 @@ STOP_ATR = 2.0
 MAX_HOLD = 5
 RSI2_LO = 10.0    # RSI(2) buy-the-dip entry
 RSI2_HI = 70.0    # RSI(2) exit
+RSI2_TREND_SMA = 200   # Connors trend filter: entry requires close > 200d SMA
 
 # ---- trailing-stop params (validated: Donchian chandelier ONLY) ----
 CHAND_ATR = 3.0              # Donchian chandelier: 3*ATR below highest close
@@ -102,8 +105,9 @@ def compute(df):
     don_lo = l.rolling(LOOKBACK).min().shift(1)
     atr = wilder_atr(h, l, c, 14)
     r2 = rsi(c, 2)
+    sma200 = c.rolling(RSI2_TREND_SMA).mean()
     return pd.DataFrame({'close': c, 'don_hi': don_hi, 'don_lo': don_lo,
-                         'atr': atr, 'rsi2': r2}).iloc[-1]
+                         'atr': atr, 'rsi2': r2, 'sma200': sma200}).iloc[-1]
 
 
 # ===== strategy interface: entry -> (bool, reason); exit -> (bool, reason);
@@ -133,7 +137,18 @@ def donchian_stop(detail):
 
 def rsi2_entry(detail):
     if detail['rsi2'] < RSI2_LO:
-        return True, f"RSI(2) {detail['rsi2']:.1f} < {RSI2_LO}"
+        # Connors' ORIGINAL trend filter: only buy the dip when price is ABOVE
+        # the 200-day SMA (dips in an uptrend mean-revert; dips below the SMA
+        # are falling knives in a downtrend). Fail-closed on missing history.
+        sma = detail['sma200']
+        if not np.isfinite(sma):
+            return False, (f"RSI(2) {detail['rsi2']:.1f} < {RSI2_LO} but no "
+                           f"200d SMA yet (insufficient history)")
+        if detail['close'] <= sma:
+            return False, (f"RSI(2) {detail['rsi2']:.1f} < {RSI2_LO} but close "
+                           f"{detail['close']:.1f} <= 200d SMA {sma:.1f}")
+        return True, (f"RSI(2) {detail['rsi2']:.1f} < {RSI2_LO} and close "
+                      f"{detail['close']:.1f} > 200d SMA {sma:.1f}")
     return False, f"RSI(2) {detail['rsi2']:.1f} >= {RSI2_LO}"
 
 
@@ -182,7 +197,7 @@ STRATEGIES = [
      'entry': donchian_entry, 'exit': donchian_exit, 'stop': donchian_stop,
      'trail': donchian_trail, 'horizon': 'swing', 'exit_mode': 'close',
      'stop_width': '3xATR chandelier (catastrophic)'},
-    {'name': 'RSI2', 'label': 'RSI(2) buy-dip long (fixed 2*ATR)',
+    {'name': 'RSI2', 'label': 'RSI(2) buy-dip long (>200d SMA, fixed 2*ATR)',
      'entry': rsi2_entry, 'exit': rsi2_exit, 'stop': rsi2_stop,
      'horizon': 'swing', 'exit_mode': 'close', 'stop_width': '2xATR fixed'},
 ]
@@ -266,6 +281,7 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
         })
     else:
         sig['rsi2'] = str(round(detail['rsi2'], 2))
+        sig['sma200'] = str(round(detail['sma200'], 2))
     log_dynamo(dynamo, f"SIGNAL#{tag}", today, sig)
 
     if pos > 0:
