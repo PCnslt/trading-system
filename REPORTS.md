@@ -123,3 +123,15 @@ live.py change: rsi2_entry requires close>200d SMA (fail-closed on NaN), compute
 
 - **Summary**: PASS — both workstreams complete. (A) Direct VPS→laptop channel: FIFO queue vps-to-laptop.fifo created (queue policy: VPS role SendMessage + account-root Receive/Delete; scoped inline IAM policy sqs-publish-vps-to-laptop). append_report() now mirrors every report to SQS (MessageDeduplicationId=sha256(ts|task)). infra/laptop_inbox.py = laptop long-poll (20s) subscriber, dedupe by message_id/MessageId, never crash-loops, plain venv loop. docs/COMMUNICATION.md covers schema/start/IAM + why SQS over IoT Core MQTT / API Gateway WS. Verified end-to-end: VPS publish → laptop_inbox --once received + deduped (2nd run=0 msgs). (B) Full sweep GREEN: tests 171 passed; systemd ibgateway/dashboard/tick-recorder/reconcile-daemon/reports active+enabled, backfill+watchdogs timer-driven (5 timers active); git pushed ahead=0/behind=0, author PCnslt; paper CONTROL=RUNNING, RECONCILE=MATCH (streak 0), gateway :4002 LISTENING, LIVE=false; risk_pct=0.01 + vol_target_pct=0.01 landed in bot/risk.py, bot/*.py py_compile clean; architecture diagram renders (assets/architecture.html via dashboard Architecture tab, HTTP 200).
 - **Commits**: `01f4cbb`
+
+---
+
+## 2026-08-16T14:09:29-04:00 — Small-capital sweep + Robinhood RSI2 lane spec (research only, no orders)
+
+- **Summary**: Wrote research/ROBINHOOD_LANE_PLAN.md (exact RSI(2)-dip fractional-share spec: top-50 S&P100 + 10 ETF universe, RSI(2)<5 + close>SMA200 entry, 2xATR hard stop + 5d cap + revert exit, trailing stop REJECTED, + Donchian(200d) ETF variant) and research/SMALL_CAPITAL_OPPORTUNITIES.md (drawdown-first ranking). New backtests this pass: RSI2 on 50 large-caps (OOS PF 1.47, all 5 folds >1.0, but single bear years 2008 PF 0.36 / 2022 0.81 -> satellite w/ index regime gate, NOT a core); gap fade PF 1.34->1.26 (dominated by RSI2); 5d momentum 1.20->1.07 (no-go); individual Donchian 1.18->1.04 (weak); pairs 1.29->1.14 (needs shorting, no-go); options credit spreads (synthetic BS, IV=realized) PF 1.04 breakeven with -87%-of-margin worst trade -> no-go unless a 15% vol premium exists on indices (data-gapped). Seasonal commodities confirmed PF 1.20/1.23 but needs full-size futures monthly overnight -> ~5-10k IBKR post-deposit.
+- **Commits**: `e629c0a` `ca3bbce`
+- **Blockers**:
+  - Options: no historical options bars in S3 (only futures chain metadata) -> cannot verify any credit-spread vol-premium edge; needs paid options archive.
+  - RSI2 bear-market decay (2008/2022 negative): index-level SPX>SMA200 entry gate recommended but NOT yet validated.
+  - Seasonal commodities: monthly overnight hold needs full-size futures margin (~3-12k) or MGC ~2k; violates 50 overnight cap at 00 IBKR -> post-deposit (~-10k).
+  - Carry/term-structure: expired contracts = Error 200 on paper -> untestable without paid near/far archive.
