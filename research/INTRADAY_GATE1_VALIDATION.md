@@ -20,9 +20,10 @@ full per-symbol cost grid: `research/intraday_validate_results.json`.
 
 - **5-min (~1y) is the statistically meaningful dataset** used below.
 - **1-min is too thin** for a 1m-timeframe edge. Deeper 1-min backfill
-  (`ibkr_full_backfill.py` phase 4, "futures 1-min, 16 liquid, monthly" → ~1y) is **queued**
-  behind the equities-daily phase (running at report time). Do NOT start a competing collector
-  (clientId 50 in use, t3.small memory-starved).
+  (`ibkr_full_backfill.py` phase 4, "futures 1-min, 16 liquid" → **24 months ≈ ~2y**,
+  month-partitioned; symbol list `['ES','NQ','MES','MNQ','RTY','YM','ZB','ZN','ZF','ZT','GC','SI','CL','NG','HG','6M']`
+  includes all 9 liquid) is **queued** behind the equities-daily phase (running at report
+  time). Do NOT start a competing collector (clientId 50 in use, t3.small memory-starved).
 - **Tick recorder** (`futures-tick-recorder.service`, clientId 74): **running**, 23 CME/CBOT
   symbols at `marketDataType=1` (live L1), RTH-gated 09:30–16:00 ET. Restarted Sun 09:32 ET
   post-weekly-2FA; correctly reports RTH CLOSED on Sunday, resumes Monday's open. No ticks
