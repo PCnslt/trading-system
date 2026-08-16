@@ -38,6 +38,7 @@ Execution-layer hardening is **done** (3 phases):
 | **intraday MES** (FADESHORT + DONCH15, `live_intraday.py`) | ▶️ paper | RTH entries, EOD flatten 15:45 ET. |
 | **gold momentum** (GC Donchian L/S + TSMOM, `live_gc.py`) | ✅ paper-EXEC | Promoted (EDGE_SWEEP) → IBKR paper execution (clientId 78, ~19:10 ET). Donchian 1.45/1.81 OOS/1.31 IB, 3-tick 1.42; TSMOM 1.37/1.73/1.99, 3-tick 1.35. Donchian = chandelier 3·ATR trail; TSMOM = fixed 3·ATR stop. GC full = $100/pt (~$23k risk/contract @ 3·ATR → $1.5M fwd-test sleeve; MGC micro is the realistic live size). |
 | **equities RSI2-dip + Donchian(200d)** (`equity_signals.py`) | ▶️ paper-signal | Promoted (EQUITIES_SWEEP). RSI2 champion (both regimes); Donchian gated by close>200d-MA. Robinhood stays manual. |
+| **RH equities RSI2** (`live_equities.py`) | ▶️ paper | Robinhood lane (laptop executes via MCP). RSI(2)<5 + SMA200, 2xATR stop, 5d cap, revert. 1%/trade (5% cap), $150/day loss cap. Signals+sim fills → DynamoDB `RHSIG#/RHPOS#/RHTRADE#/RHLEDGER#`. Index regime gate REJECTED (2022 worse 0.81→0.21). OOS PF 1.47 (thr2)/1.36@5bps. |
 | **crypto Donchian-20+200d** (`crypto_paper.py`) | ▶️ paper-signal | Promoted (CRYPTO_SWEEP) but buy-and-hold proxy; LOWEST live-priority. |
 | **bonds fade-SHORT** (ZB/ZN, `live_bondsfx.py`) | 📦 SHELVED | Dies at 1-tick slip. Code kept + disarmed no-op; cron paused. Revisit only if cost/regime materially changes. |
 | **BBAND_INDEX_LONG** | 📦 TABLED | Redundant w/ RSI2-LONG (corr 0.69, PF 1.84 / OOS 1.71). Paper fwd-test candidate if RSI2-LONG underperforms live. |

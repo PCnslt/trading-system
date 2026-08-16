@@ -92,8 +92,15 @@ def _stop_exit(d: pd.DataFrame, entry_i: int, entry_price: float,
     return n - 1, float(c[n - 1]), "end"
 
 
-def run_symbol(d: pd.DataFrame, symbol: str, thr: int, stop_mode: str) -> list:
-    """Generate trades for one symbol. Returns list of dicts."""
+def run_symbol(d: pd.DataFrame, symbol: str, thr: int, stop_mode: str,
+               gate: pd.Series | None = None) -> list:
+    """Generate trades for one symbol. Returns list of dicts.
+
+    gate: optional boolean Series indexed by date (e.g. SPY close > SPY SMA200).
+    When provided, entry ALSO requires gate True at the SIGNAL bar (index i).
+    Missing/unknown dates are treated as False (fail-closed: no entry). Default
+    None = no index-level regime gate (backward-compatible).
+    """
     d = indicators(d)
     n = len(d)
     o = d["open"].to_numpy()
@@ -101,12 +108,19 @@ def run_symbol(d: pd.DataFrame, symbol: str, thr: int, stop_mode: str) -> list:
     rsi2 = d["rsi2"].to_numpy()
     sma200 = d["sma200"].to_numpy()
 
+    gate_arr = None
+    if gate is not None:
+        gate_arr = gate.reindex(d.index).fillna(False).to_numpy(dtype=bool)
+
     trades = []
     warmup = 200
     i = warmup
     while i < n - 1:
         # flat: check signal at bar i close, enter at bar i+1 open
-        if rsi2[i] < thr and c[i] > sma200[i] and not np.isnan(sma200[i]):
+        ok = rsi2[i] < thr and c[i] > sma200[i] and not np.isnan(sma200[i])
+        if ok and gate_arr is not None:
+            ok = bool(gate_arr[i])
+        if ok:
             entry_i = i + 1
             entry_price = float(o[entry_i])
             if entry_price > 0 and not np.isnan(entry_price):

@@ -35,6 +35,7 @@ CRON_TZ=America/New_York
 #   "Paper signals — bonds"            script paper_bonds.sh           @ 5 23 * * *   ⛔ PAUSED 2026-08-14 (Gate-1 SHELVED)
 #   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 13-20 * * 1-5
 #   "Paper signals — equities"         script paper_equity_signals.sh  @ 15 23 * * *   (signals only; no execution; deliver=telegram)
+#   "Paper signals — RH equities RSI2" script paper_rh_equities.sh    @ 20 23 * * *   (PAPER ONLY; RSI(2)<5 + SMA200 buy-the-dip; signals + simulated fills -> DynamoDB RHSIG#/RHPOS#/RHTRADE#/RHLEDGER#; NO execution, NO RH creds; deliver=telegram)
 #   "Paper signals — crypto"           script paper_crypto_signals.sh  @ */30 * * * *  (signals only; no execution; deliver=local)
 #   "Paper execution — gold momentum" script paper_gc_exec.sh         @ 10 23 * * *   (PAPER EXEC: GC Donchian L/S chandelier + TSMOM fixed-stop, clientId 78; deliver=telegram)
 #   "Paper fwd — crypto Donch200"      script paper_crypto_paper.sh    @ */30 * * * *  (signals only; no execution; deliver=local; buy-and-hold proxy flag)
