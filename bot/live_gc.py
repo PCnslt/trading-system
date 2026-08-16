@@ -61,7 +61,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.symbol_registry import front_month_for
 from data.s3_archive import archive_scan_results
 
-from risk import RiskEngine, RiskConfig, realized_pnl
+from risk import RiskEngine, RiskConfig, realized_pnl, realized_vol_daily
 from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
 from hardening.reconciler import reconcile
 from hardening.exec_manager import ExecutionManager, TradeIntent
@@ -354,7 +354,9 @@ def run_strategy(ib, dynamo, con, sym, df, detail, strat, today, mode, ctrl=None
             return
         stop_price = strat['stop'](detail, desired)
         stop_distance = abs(detail['close'] - stop_price)
-        size = risk.position_size(stop_distance, point_value=POINT_VALUE)
+        vol = realized_vol_daily(df['Close'], 20)
+        size = risk.position_size(stop_distance, point_value=POINT_VALUE,
+                                  realized_vol=vol, price=detail['close'])
         if size > 0:
             action = 'BUY' if desired == 'LONG' else 'SELL'
             intent = TradeIntent(scope=BOT_KEY, tag=tag, symbol=sym, action=action,

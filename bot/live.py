@@ -42,7 +42,7 @@ from ib_insync import IB, Future
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.s3_archive import archive_daily_bar
 
-from risk import RiskEngine, RiskConfig, realized_pnl
+from risk import RiskEngine, RiskConfig, realized_pnl, realized_vol_daily
 from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
 from hardening.reconciler import reconcile
 from hardening.exec_manager import ExecutionManager, TradeIntent
@@ -328,7 +328,10 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
             print(f">>> {mode} {tag} blocked by risk: {why}")
             return
         stop_price = strat['stop'](detail)
-        size = risk.position_size(detail['close'] - stop_price, point_value=c['point_value'])
+        vol = realized_vol_daily(df['Close'], 20)
+        size = risk.position_size(detail['close'] - stop_price,
+                                  point_value=c['point_value'],
+                                  realized_vol=vol, price=detail['close'])
         if size > 0:
             intent = TradeIntent(scope='live', tag=tag, symbol=sym, action='BUY',
                                  side='LONG', qty=size, order_type='MKT',

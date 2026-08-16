@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from risk import RiskEngine, RiskConfig, realized_pnl
+from risk import RiskEngine, RiskConfig, realized_pnl, realized_vol_daily
 
 
 def make_engine(**cfg):
@@ -40,6 +40,51 @@ def test_position_size_respects_min_contracts_boundary():
     e = make_engine()
     # 2000 / (200 * 5) = 2 contracts
     assert e.position_size(200.0, 5.0) == 2
+
+
+# --- volatility overlay (PART 2.2: 1/realized-vol scaling, hard cap) ---
+def test_position_size_vol_overlay_caps_qty():
+    # stop-based: 2000/(10*5)=40 -> capped to max_contracts 5.
+    # vol-based: budget 1000 / (0.05*1000*5=250) = 4 -> cap 5 down to 4.
+    e = make_engine()
+    assert e.position_size(10.0, 5.0, realized_vol=0.05, price=1000.0) == 4
+
+
+def test_position_size_vol_overlay_rejects_when_vol_too_high():
+    # even one contract exceeds the vol budget -> reject (fail-closed, 0).
+    e = make_engine()
+    assert e.position_size(10.0, 5.0, realized_vol=0.5, price=1000.0) == 0
+
+
+def test_position_size_vol_overlay_never_increases():
+    # stop-based=4; a tiny vol would allow 200 contracts, but the overlay only
+    # caps — it never raises the stop-derived size.
+    e = make_engine()
+    assert e.position_size(100.0, 5.0, realized_vol=0.001, price=1000.0) == 4
+
+
+def test_position_size_vol_overlay_off():
+    e = make_engine(vol_scale_enabled=False)
+    assert e.position_size(10.0, 5.0, realized_vol=0.5, price=1000.0) == 5
+
+
+def test_position_size_vol_missing_params_backward_compat():
+    # no vol/price -> overlay skipped, stop-based sizing unchanged.
+    e = make_engine()
+    assert e.position_size(10.0, 5.0) == 5
+
+
+def test_realized_vol_daily():
+    import pandas as pd
+    # flat series -> ~0
+    assert realized_vol_daily(pd.Series([100.0] * 30), 20) == pytest.approx(0.0, abs=1e-9)
+    # insufficient history -> 0
+    assert realized_vol_daily(pd.Series([100.0, 101.0]), 20) == 0.0
+    # None -> 0
+    assert realized_vol_daily(None, 20) == 0.0
+    # real returns -> positive
+    s = pd.Series([100.0, 101.0, 100.0, 102.0, 101.0])
+    assert realized_vol_daily(s, 3) > 0.0
 
 
 # --- daily-loss halt ---

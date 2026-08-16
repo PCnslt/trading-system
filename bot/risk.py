@@ -31,6 +31,13 @@ class RiskConfig:
     min_contracts: int = 1
     max_contracts: int = 5             # hard cap regardless of sizing math
 
+    # --- Volatility overlay (1/realized-vol position scaling — HARD cap) ---
+    # Co-equal with the protective stop: cap each position's expected DAILY
+    # dollar-volatility at vol_target_pct * budget, so size scales as 1/realized
+    # vol and every position carries equal (bounded) volatility risk.
+    vol_scale_enabled: bool = True
+    vol_target_pct: float = 0.01       # target daily $-vol per position (fraction of budget)
+
     # --- Stops / targets ---
     risk_reward_ratio: float = 1.5     # TP distance = RR * SL distance
     sl_atr_mult: float = 2.0           # SL distance = mult * ATR
@@ -51,6 +58,18 @@ def realized_pnl(side, entry, exit_px, point_value, qty):
     """Realized P&L for a closed position. side: 'LONG'/'SHORT'."""
     direction = 1 if side == 'LONG' else -1
     return direction * (float(exit_px) - float(entry)) * float(point_value) * int(qty)
+
+
+def realized_vol_daily(close, n=20):
+    """Daily realized volatility = std of pct returns over `n` bars (a fraction,
+    e.g. 0.01 = 1%/day). Duck-typed on a pandas Series — no numpy/pandas import.
+    Returns 0.0 when there are fewer than `n` returns."""
+    if close is None or len(close) < n + 1:
+        return 0.0
+    rets = close.pct_change().dropna()
+    if len(rets) < n:
+        return 0.0
+    return float(rets.tail(n).std())
 
 
 class RiskEngine:
@@ -160,11 +179,21 @@ class RiskEngine:
         self._persist()
 
     # ---- sizing ----
-    def position_size(self, stop_distance: float, point_value: float) -> int:
-        """Contracts = risk_pct * budget / (stop_distance * point_value), capped.
+    def position_size(self, stop_distance: float, point_value: float,
+                      realized_vol: float = None, price: float = None) -> int:
+        """Contracts = min(stop-based, vol-based), clamped.
+
+        stop-based: risk_pct * budget / (stop_distance * point_value).
+
+        vol-based (HARD overlay, co-equal with the stop): cap so the position's
+        expected DAILY dollar-volatility (qty * realized_vol * price *
+        point_value) does not exceed vol_target_pct * budget. This is
+        1/realized-vol scaling — each position carries equal (bounded)
+        volatility risk. The overlay NEVER increases qty; if even one contract
+        exceeds the vol budget, reject (return 0).
 
         Fail-closed: if the stop is so wide that even one contract would exceed
-        the 2% risk budget, return 0 (reject) — never force >= min_contracts.
+        the risk budget, return 0 (reject) — never force >= min_contracts.
         """
         if stop_distance <= 0:
             return 0
@@ -172,7 +201,16 @@ class RiskEngine:
         contracts = int(risk_amount / (stop_distance * point_value))
         if contracts < self.cfg.min_contracts:
             return 0   # stop too wide for budget — reject rather than over-risk
-        return min(contracts, self.cfg.max_contracts)
+        contracts = min(contracts, self.cfg.max_contracts)
+        if (self.cfg.vol_scale_enabled and realized_vol and realized_vol > 0
+                and price and price > 0 and point_value > 0):
+            vol_budget = self.cfg.vol_target_pct * self.cfg.risk_budget_usd
+            per_contract_dollar_vol = realized_vol * price * point_value
+            if per_contract_dollar_vol > 0:
+                contracts = min(contracts, int(vol_budget / per_contract_dollar_vol))
+            if contracts < self.cfg.min_contracts:
+                return 0   # even one contract exceeds the vol budget — reject
+        return contracts
 
     def stop_target(self, entry: float, atr: float, side: int) -> tuple[float, float]:
         """side=+1 long, -1 short. Returns (stop, target)."""
