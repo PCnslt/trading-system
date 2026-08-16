@@ -27,7 +27,7 @@ from hardening.risk_ledger import RiskStateUnavailable
 class RiskConfig:
     # --- Sizing ---
     risk_budget_usd: float = 100_000   # trading sleeve, NOT full account NetLiq
-    risk_pct: float = 0.02             # fraction of budget risked per trade (to stop)
+    risk_pct: float = 0.01             # fraction of budget risked per trade (to stop) — owner: 0.5-1% max
     min_contracts: int = 1
     max_contracts: int = 5             # hard cap regardless of sizing math
 
@@ -35,11 +35,11 @@ class RiskConfig:
     # Co-equal with the protective stop: cap each position's expected DAILY
     # dollar-volatility at vol_target_pct * budget, so size scales as 1/realized
     # vol and every position carries equal (bounded) volatility risk. Default
-    # 2% = SAME as risk_pct, so the two layers agree (a tighter vol budget than
-    # the stop budget would wrongly reject instruments the stop-based sizing
-    # already admits, e.g. MNQ on the $50k index sleeve).
+    # 1% = SAME as risk_pct (co-equality invariant — the two layers must agree;
+    # a tighter vol budget than the stop budget would wrongly reject
+    # instruments the stop-based sizing already admits).
     vol_scale_enabled: bool = True
-    vol_target_pct: float = 0.02       # target daily $-vol per position (fraction of budget)
+    vol_target_pct: float = 0.01       # target daily $-vol per position (fraction of budget)
 
     # --- Stops / targets ---
     risk_reward_ratio: float = 1.5     # TP distance = RR * SL distance

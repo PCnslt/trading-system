@@ -11,7 +11,7 @@ from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
 
 
 def make_cfg(**kw):
-    base = dict(risk_budget_usd=100_000, risk_pct=0.02,
+    base = dict(risk_budget_usd=100_000, risk_pct=0.01,
                 max_trades_per_day=4, max_consecutive_losses=6,
                 max_daily_loss_pct=0.02, max_data_staleness_s=120)
     base.update(kw)

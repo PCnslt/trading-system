@@ -7,7 +7,7 @@ from risk import RiskEngine, RiskConfig, realized_pnl, realized_vol_daily
 
 
 def make_engine(**cfg):
-    base = dict(risk_budget_usd=100_000, risk_pct=0.02,
+    base = dict(risk_budget_usd=100_000, risk_pct=0.01,
                 max_trades_per_day=4, max_consecutive_losses=6,
                 max_daily_loss_pct=0.02, max_data_staleness_s=120)
     base.update(cfg)
@@ -16,7 +16,7 @@ def make_engine(**cfg):
 
 # --- sizing cap (critical fix #5) ---
 def test_position_size_wide_stop_returns_zero():
-    # risk_amount = 2000; stop 1000 pts * $5 = $5000 risk -> contracts 0 -> reject
+    # risk_amount = 1000; stop 1000 pts * $5 = $5000 risk -> contracts 0 -> reject
     e = make_engine()
     assert e.position_size(1000.0, 5.0) == 0
 
@@ -28,26 +28,26 @@ def test_position_size_zero_or_negative_stop_returns_zero():
 
 
 def test_position_size_normal():
-    # risk_amount 2000 / (10 pts * $5) = 40 -> capped by max_contracts 5
+    # risk_amount 1000 / (10 pts * $5) = 20 -> capped by max_contracts 5
     e = make_engine(max_contracts=5)
     assert e.position_size(10.0, 5.0) == 5
-    # wider but still within budget: 2000/(100*5)=4
-    assert e.position_size(100.0, 5.0) == 4
+    # wider but still within budget: 1000/(100*5)=2
+    assert e.position_size(100.0, 5.0) == 2
 
 
 def test_position_size_respects_min_contracts_boundary():
     # exactly one contract worth of risk -> 1, not forced to 0
     e = make_engine()
-    # 2000 / (200 * 5) = 2 contracts
-    assert e.position_size(200.0, 5.0) == 2
+    # 1000 / (200 * 5) = 1 contract
+    assert e.position_size(200.0, 5.0) == 1
 
 
 # --- volatility overlay (PART 2.2: 1/realized-vol scaling, hard cap) ---
 def test_position_size_vol_overlay_caps_qty():
-    # stop-based: 2000/(10*5)=40 -> capped to max_contracts 5.
-    # vol-based: budget 2000 / (0.1*1000*5=500) = 4 -> cap 5 down to 4.
+    # stop-based: 1000/(10*5)=20 -> capped to max_contracts 5.
+    # vol-based: budget 1000 / (0.1*1000*5=500) = 2 -> cap 5 down to 2.
     e = make_engine()
-    assert e.position_size(10.0, 5.0, realized_vol=0.1, price=1000.0) == 4
+    assert e.position_size(10.0, 5.0, realized_vol=0.1, price=1000.0) == 2
 
 
 def test_position_size_vol_overlay_rejects_when_vol_too_high():
@@ -57,10 +57,10 @@ def test_position_size_vol_overlay_rejects_when_vol_too_high():
 
 
 def test_position_size_vol_overlay_never_increases():
-    # stop-based=4; a tiny vol would allow 200 contracts, but the overlay only
+    # stop-based=2; a tiny vol would allow 200 contracts, but the overlay only
     # caps — it never raises the stop-derived size.
     e = make_engine()
-    assert e.position_size(100.0, 5.0, realized_vol=0.001, price=1000.0) == 4
+    assert e.position_size(100.0, 5.0, realized_vol=0.001, price=1000.0) == 2
 
 
 def test_position_size_vol_overlay_off():
