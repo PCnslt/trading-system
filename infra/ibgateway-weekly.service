@@ -4,3 +4,4 @@ Description=IB Gateway weekly cold restart (Sunday 13:00 UTC, triggers 2FA re-lo
 [Service]
 Type=oneshot
 ExecStart=/usr/bin/systemctl restart ibgateway
+ExecStartPost=/bin/sh -c 'sleep 60 && DISPLAY=:99 /home/ubuntu/ibgateway-login.sh'

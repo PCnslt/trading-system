@@ -47,13 +47,19 @@ returns. The alert is retried until delivered (never silently dropped), and a sl
 post-restart login is tolerated because any later up-transition resets + resumes.
 The watchdog **never bypasses 2FA** — it only detects the hang and alerts.
 
-## Weekly 2FA re-login (manual floor — do NOT try to bypass)
+## Weekly 2FA re-login (auto-triggered — do NOT try to bypass)
 
-Sunday 13:00 UTC the timer restarts the gateway. It lands on the login screen
-(username pre-filled). Approve on your phone:
+Sunday 13:00 UTC the timer restarts the gateway, then the weekly service
+auto-runs the login helper ~60s later (`ExecStartPost` → `sleep 60` →
+`DISPLAY=:99 /home/ubuntu/ibgateway-login.sh`). The helper types the password and
+clicks "Paper Log In" — a **full login**, which is the ONLY thing that fires the
+**IB Key 2FA push** to the owner's phone. A bare `systemctl restart ibgateway`
+just lands on the login screen and fires NO push (that was the 2026-08-16 gap).
+Weekly flow: restart → auto login-helper → IB Key push → owner approves. The phone
+approval is the 2FA floor and is NEVER automated.
 
 ```bash
-# from the VPS (or via the telegram bot → ask VPS Hermes to run it):
+# Manual re-run (auto-run interrupted, or the login window was not ready at +60s):
 DISPLAY=:99 /home/ubuntu/ibgateway-login.sh   # types password + clicks "Paper Log In"
 # then approve the IB Key 2FA push on the phone.
 ```
