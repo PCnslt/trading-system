@@ -167,12 +167,19 @@ def donchian_trail(detail, state):
                                  f"({detail['atr']:.1f}) = {candidate:.1f}")
 
 
+# HORIZON-SPLIT STOPS (owner directive 2026-08-16): live.py is the SWING lane
+# (2-3 day) — it uses CLOSE-BASED signal/trailing exits (avoid intra-bar noise
+# fills) and keeps a WIDE ~3xATR hard stop (chandelier) as CATASTROPHIC
+# protection only. Intraday lanes (live_intraday.py) keep intraday 2xATR stops
+# + EOD flatten. `horizon`/`exit_mode` are declarative metadata for reviewers.
 STRATEGIES = [
     {'name': 'DONCHIAN', 'label': 'Donchian/ATR long (chandelier trail)',
      'entry': donchian_entry, 'exit': donchian_exit, 'stop': donchian_stop,
-     'trail': donchian_trail},
+     'trail': donchian_trail, 'horizon': 'swing', 'exit_mode': 'close',
+     'stop_width': '3xATR chandelier (catastrophic)'},
     {'name': 'RSI2', 'label': 'RSI(2) buy-dip long (fixed 2*ATR)',
-     'entry': rsi2_entry, 'exit': rsi2_exit, 'stop': rsi2_stop},
+     'entry': rsi2_entry, 'exit': rsi2_exit, 'stop': rsi2_stop,
+     'horizon': 'swing', 'exit_mode': 'close', 'stop_width': '2xATR fixed'},
 ]
 
 

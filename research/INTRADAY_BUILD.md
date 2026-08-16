@@ -26,6 +26,24 @@ Date: 2026-08-16 · Operator: VPS Hermes (builder) · **Paper-only, never-lose-m
   intraday set*: e.g. Donchian on a 2–3 day lookback, 2–3 day mean-reversion. Not yet
   implemented; add as variants in the next sweep, not as a separate priority lane.
 
+## Horizon-split stops (binding, owner directive 2026-08-16)
+
+Every edge declares a HORIZON; its stop/exit design must match it. Never mix
+intraday stop semantics into a swing edge or vice versa.
+
+- **Swing (2–3 day):** CLOSE-BASED signal/trailing exits (decide on the daily
+  close — avoid intra-bar noise fills) + a WIDE ~3×ATR hard stop as CATASTROPHIC
+  protection only. The stop is insurance, not the primary exit. (`live.py` already
+  conforms: Donchian chandelier 3×ATR close-based trail + close-based exits;
+  RSI2 fixed 2×ATR. Both tagged `horizon='swing', exit_mode='close'`.)
+- **Intraday:** intraday stops (2×ATR) + EOD flatten — no overnight risk.
+  (`live_intraday.py`.)
+
+Rationale (Kaufman): intra-bar exits on a swing edge fill on noise and bleed the
+edge through churn; a swing edge should exit on the close that proves the thesis
+wrong, with a wide broker-side stop sized for the catastrophe, not the noise
+("stops work except when you need them most").
+
 ## Evaluation ranking (NEW STANDARD — supersedes the PF-based promote bar)
 
 Rank every strategy **primarily** by:
