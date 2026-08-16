@@ -63,6 +63,12 @@ pointed at `:4002` can never reach live (`:4001`/`:4003`), and vice versa.
 - t3.small is memory-tight (1.9 GB): do **not** run paper + live gateways
   simultaneously long-term. Run one at a time (stop paper before a sustained
   live session) or upgrade to t3.medium before going live.
+- ⚠️ **Same-username session caution (unverified):** paper and live share ONE
+  login (`mushfiqrhmn1`). A concurrent audit reported IBKR may restrict
+  simultaneous paper + live sessions under one username (a live login could kick
+  the paper session). Not confirmed against a live login (2FA-gated), but the
+  safe path is the same: **stop the paper gateway before the first live login**
+  and run one at a time until confirmed otherwise.
 
 ## Verified vs. not-yet-verified
 
