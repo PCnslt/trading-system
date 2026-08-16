@@ -26,6 +26,11 @@ import sys
 import yfinance as yf
 import numpy as np
 import pandas as pd
+# --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
+import os as _so, sys as _ss
+_ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
+from infra.secrets import bootstrap as _sb
+_sb()
 
 SYMBOLS = ['SPY', 'QQQ']
 PERIOD = '10y'
@@ -237,3 +242,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

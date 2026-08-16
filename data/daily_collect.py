@@ -32,6 +32,11 @@ from dotenv import load_dotenv
 from ib_insync import IB, Future, ContFuture
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
+# --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
+import os as _so, sys as _ss
+_ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
+from infra.secrets import bootstrap as _sb
+_sb()
 
 from bot.futures_contracts import SYMBOLS, resolve_front        # noqa: E402
 from bot.intraday_scan import load_ibkr_bars, prep_rth        # noqa: E402
@@ -162,3 +167,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

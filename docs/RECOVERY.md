@@ -27,13 +27,14 @@
 
 - Attached via instance profile; boto3 auto-fetches creds from instance metadata.
   **There are NO AWS keys on disk — do not set `AWS_EC2_METADATA_DISABLED=true`.**
-- Effective permissions (verified by probe 2026-08-16):
+- Effective permissions (probed 2026-08-16; **updated 2026-08-16** — role now
+  has **AdministratorAccess**, granted from the laptop):
   - **ALLOWED:** `s3` (Head/List/Get/Put/Delete on the datalake bucket),
     `dynamodb` (full CRUD + `CreateTable` on trading tables),
-    `ec2:DescribeSecurityGroups` (narrow read), `sts:GetCallerIdentity`.
-  - **DENIED:** `ssm:GetParameter`, `ec2:DescribeInstances`,
-    `cloudformation:ListStacks`, and all `ec2` write actions
-    (incl. `ec2:AuthorizeSecurityGroupIngress`).
+    `ec2:DescribeSecurityGroups` (narrow read), `sts:GetCallerIdentity`,
+    **`ssm:GetParameter`/`ssm:GetParameters`** — the VPS reads `/trading/*`
+    secrets directly (verified `WithDecryption` works, 8/8 params).
+  - **DENIED:** `ec2` write actions (incl. `ec2:AuthorizeSecurityGroupIngress`).
 - Consequence: **the VPS cannot open port 8645 (reports) in its own security
   group.** The owner must do it from a machine with AWS creds (see §3).
 
@@ -87,18 +88,37 @@ IpRanges='[{CidrIp=<LAPTOP_IP>/32,Description="Laptop return-channel pull"}]'
 
 ---
 
-## 5. Secrets — FILE-ONLY, gitignored, NO SSM
+## 5. Secrets — SSM Parameter Store (SOURCE OF TRUTH) + gitignored file fallback
 
-**All secrets live in gitignored files and must be restored from the laptop backup
-on rebuild.** SSM Parameter Store (`/trading/ibkr/{username,password}`) is the
-documented **future target** (and the `ssm:GetParameter` permission is **not**
-currently granted — verified `AccessDenied`).
+**AWS SSM Parameter Store (`/trading/*`, SecureString) is the SOURCE OF TRUTH.**
+The VPS loads secrets SSM-first at process start via `infra/secrets.py`
+(`bootstrap()` for the Python data collectors + bots; `--ibkr-shell` for
+`ibgateway-login.sh`). The gitignored files below are kept as a **fallback
+cache**: the loader degrades to them silently when SSM is unreachable or a key
+is absent, so the bots never crash on an SSM hiccup. The role `trading-vps-role`
+has AdministratorAccess (granted 2026-08-16), so the instance reads parameters
+with **no AWS keys on disk**.
+
+SSM → env mapping (`infra/secrets.py` `PARAM_TO_ENV`):
+
+| SSM path | Env var | Fallback file |
+|---|---|---|
+| `/trading/ibkr/username` | `IBG_USERNAME` | `ibgateway-creds.env` |
+| `/trading/ibkr/password` | `IBG_PASSWORD` | `ibgateway-creds.env` |
+| `/trading/alphavantage/api_key` | `ALPHAVANTAGE_API_KEY` | `.env` |
+| `/trading/binance_us/api_key` | `BINANCE_US_API_KEY` | `.env` |
+| `/trading/binance_us/secret_key` | `BINANCE_US_SECRET_KEY` | `.env` |
+| `/trading/fmp/api_key` | `FMP_API_KEY` | `.env` |
+| `/trading/newsapi/api_key` | `NEWSAPI_ORG_API_KEY` | `.env` |
+| `/trading/serper/api_key` | `SERPER_API_KEY` | `.env` |
+
+Fallback cache files (gitignored — keep on rebuild for SSM-outage resilience):
 
 | File | Contains (key names) | Notes |
 |---|---|---|
 | `/home/ubuntu/ibgateway-creds.env` | `IBG_USERNAME`, `IBG_PASSWORD` | IBKR **paper** acct `DUR193467`; mode 0600 |
-| `/home/ubuntu/trading-system/.env` | `AWS_REGION`, `DYNAMODB_TABLE`, `ALPHAVANTAGE_API_KEY`, `BINANCE_US_API_KEY`, `BINANCE_US_SECRET_KEY`, `FMP_API_KEY`, `NEWSAPI_ORG_API_KEY`, `SERPER_API_KEY` | app/ingest API keys |
-| `/home/ubuntu/.hermes/.env` | `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS`, `TELEGRAM_HOME_CHANNEL`, `WEBHOOK_ENABLED`, `WEBHOOK_PORT`, `WEBHOOK_SECRET`, `IBKR_USERNAME`, `IBKR_PASSWORD`, … | Hermes gateway (Telegram + webhook + model routing) |
+| `/home/ubuntu/trading-system/.env` | `AWS_REGION`, `DYNAMODB_TABLE`, + the 6 API keys above | app/ingest API keys |
+| `/home/ubuntu/.hermes/.env` | `DEEPSEEK_API_KEY`, `OPENROUTER_API_KEY`, `TELEGRAM_BOT_TOKEN`, `TELEGRAM_ALLOWED_USERS`, `TELEGRAM_HOME_CHANNEL`, `WEBHOOK_ENABLED`, `WEBHOOK_PORT`, `WEBHOOK_SECRET`, `IBKR_USERNAME`, `IBKR_PASSWORD`, … | Hermes gateway (Telegram + webhook + model routing) — NOT under `/trading/*`, separate concern |
 
 `WEBHOOK_PORT=8644` and `WEBHOOK_SECRET` drive the inbound `laptop-task` webhook;
 the same secret is reused by the reports server (`~/.hermes/webhook_subscriptions.json`).
@@ -221,7 +241,9 @@ python3 -m venv venv
 ./venv/bin/pip install -U pip
 ./venv/bin/pip install -r requirements.txt        # 90 packages (frozen 2026-08-16)
 
-# 3. Restore secrets FROM LAPTOP BACKUP (file-only, no SSM):
+# 3. Secrets are SSM-FIRST (source of truth /trading/*, SecureString) — the
+#    instance role reads them directly (NO restore needed). Still restore the
+#    fallback cache files from the laptop backup for SSM-outage resilience:
 #    /home/ubuntu/ibgateway-creds.env   (mode 600)
 #    /home/ubuntu/trading-system/.env
 #    /home/ubuntu/.hermes/.env          (after Hermes install in step 8)
@@ -273,7 +295,10 @@ if-not-exists on first run, so starting the bots re-provisions all 19 tables.
 
 ## 11. What is NOT recoverable automatically
 
-- **Secrets** (all 3 files) — laptop backup is the only copy.
+- **Secrets** — SSM Parameter Store (`/trading/*`) is the live source of truth;
+  the gitignored fallback files (ibgateway-creds.env, `.env`, `~/.hermes/.env`)
+  are only a cache. If BOTH SSM and the files are lost, the laptop backup is the
+  last copy.
 - **IB Gateway encrypted soft-token** (`autorestart file`) — a fresh build needs a
   full login + 2FA (owner's phone), never silently.
 - **~/.hermes/cron/jobs.json** — restore from laptop backup or re-create via the

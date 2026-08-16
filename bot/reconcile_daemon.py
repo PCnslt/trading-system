@@ -31,6 +31,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from hardening.reconciler import reconcile
 
 load_dotenv()
+# --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
+import os as _so, sys as _ss
+_ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
+from infra.secrets import bootstrap as _sb
+_sb()
 
 IBKR_HOST = os.getenv('IBKR_HOST', '127.0.0.1')
 IBKR_PORT = int(os.getenv('IBKR_PORT', '4002'))
@@ -89,3 +94,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

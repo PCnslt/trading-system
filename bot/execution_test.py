@@ -5,6 +5,11 @@ place BUY -> fill -> place SELL -> fill -> positions. Run manually on VPS.
 """
 import sys
 from ib_insync import IB, Future, MarketOrder
+# --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
+import os as _so, sys as _ss
+_ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
+from infra.secrets import bootstrap as _sb
+_sb()
 
 def main():
     ib = IB()
@@ -40,3 +45,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

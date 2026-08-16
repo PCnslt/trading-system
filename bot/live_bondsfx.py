@@ -61,6 +61,11 @@ from control import (get_control, control_state, control_allows_entry, wants_fla
                      mark_ran_today, ControlUnavailable, account_mode_ok)
 
 load_dotenv()
+# --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
+import os as _so, sys as _ss
+_ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
+from infra.secrets import bootstrap as _sb
+_sb()
 
 # ===== config =====
 IBKR_HOST = os.getenv('IBKR_HOST', '127.0.0.1')
@@ -404,3 +409,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

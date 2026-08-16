@@ -37,6 +37,11 @@ import pandas as pd
 import yfinance as yf
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
+import os as _so, sys as _ss
+_ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
+from infra.secrets import bootstrap as _sb
+_sb()
 from data.s3_archive import archive_scan_results
 
 # ===== config =====
@@ -344,3 +349,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

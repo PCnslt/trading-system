@@ -24,6 +24,11 @@ import boto3
 from dotenv import load_dotenv
 
 load_dotenv()
+# --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
+import os as _so, sys as _ss
+_ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
+from infra.secrets import bootstrap as _sb
+_sb()
 
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
@@ -314,3 +319,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

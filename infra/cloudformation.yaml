@@ -4,8 +4,9 @@ Description: >
   (2026-08-16). This documents the REAL running system; the live instance was built
   MANUALLY (no /var/log/trading-bootstrap.log) and this template was NEVER deployed.
   It is a recovery artifact only — do NOT deploy over the live stack. Native IB
-  Gateway GWClient (IBC removed 8/14); secrets are currently file-based (gitignored),
-  with SSM Parameter Store as the documented future target (not yet granted).
+  Gateway GWClient (IBC removed 8/14). Secrets are SSM-first: Parameter Store
+  (/trading/*, SecureString) is the SOURCE OF TRUTH (loaded via infra/secrets.py),
+  with gitignored .env files kept as a fallback cache.
 
 Parameters:
   InstanceType:
@@ -41,13 +42,11 @@ Parameters:
 
 Resources:
 
-  # ---------- IAM (least-privilege: S3 + DynamoDB + narrow ec2 read) ----------
-  # NOTE: the live role `trading-vps-role` could not be introspected from the
-  # instance (no iam:GetRolePolicy), so this policy encodes the VERIFIED effective
-  # permissions (probed 2026-08-16): S3 datalake OK, DynamoDB OK,
-  # ec2:DescribeSecurityGroups OK; ssm/cloudformation/ec2:DescribeInstances DENIED.
-  # Reconcile against the real role from a machine with IAM read access if exact
-  # policy text matters.
+  # ---------- IAM (least-privilege: S3 + DynamoDB + narrow ec2 read + SSM read) ----------
+  # NOTE: the live role `trading-vps-role` now carries AdministratorAccess
+  # (granted 2026-08-16, so the VPS reads /trading/* from SSM directly). This
+  # template encodes the LEAST-PRIVILEGE rebuild policy: S3 datalake, DynamoDB,
+  # narrow ec2:DescribeSecurityGroups, and ssm read scoped to /trading/*.
   TradingRole:
     Type: AWS::IAM::Role
     Properties:
@@ -94,14 +93,17 @@ Resources:
                 Action:
                   - ec2:DescribeSecurityGroups
                 Resource: '*'
-
-  # NOTE (secrets — target state, NOT current): migrate secrets to SSM Parameter
-  # Store and add the policy below. Today they are FILE-ONLY (gitignored
-  # /home/ubuntu/ibgateway-creds.env, /home/ubuntu/trading-system/.env,
-  # /home/ubuntu/.hermes/.env) and the role has NO ssm perms (verified AccessDenied).
-  #   - Effect: Allow
-  #     Action: [ssm:GetParameter, ssm:GetParameters]
-  #     Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/trading/*
+              # SSM Parameter Store — SOURCE OF TRUTH for secrets (/trading/*,
+              # SecureString), loaded SSM-first by infra/secrets.py. Read-only
+              # GetParameter(s) scoped to /trading/*. The live role carries
+              # AdministratorAccess (granted 2026-08-16); this least-privilege
+              # grant is what a clean rebuild should carry.
+              - Effect: Allow
+                Action:
+                  - ssm:GetParameter
+                  - ssm:GetParameters
+                  - ssm:GetParametersByPath
+                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/trading/*
 
   TradingInstanceProfile:
     Type: AWS::IAM::InstanceProfile
@@ -176,10 +178,11 @@ Resources:
           /home/ubuntu/trading-system/venv/bin/pip install -q --upgrade pip
           /home/ubuntu/trading-system/venv/bin/pip install -q -r /home/ubuntu/trading-system/requirements.txt
 
-          # --- secrets: restore from laptop backup (file-only; see RECOVERY.md §5) ---
+          # --- secrets: SSM-FIRST (source of truth /trading/*, SecureString) ---
+          #   The instance role reads them directly (no restore needed). Restore
+          #   the fallback cache files (RECOVERY.md §5) for SSM-outage resilience:
           #   /home/ubuntu/ibgateway-creds.env   (IBG_USERNAME/IBG_PASSWORD, mode 600)
           #   /home/ubuntu/trading-system/.env
-          #   (SSM Parameter Store /trading/ibkr/* is the documented future target.)
 
           # --- IB Gateway (native GWClient, headless Xvfb :99 + openbox) ---
           #   see docs/IBGATEWAY-NATIVE-OPS.md — install standalone, then the
@@ -234,7 +237,8 @@ Outputs:
     Value: https://github.com/PCnslt/trading-system/blob/main/docs/RECOVERY.md
   NextSteps:
     Value: >
-      1) Restore secrets from laptop backup (file-only). 2) Approve IBKR 2FA push.
+      1) Secrets resolve from SSM (/trading/*) automatically via the instance role;
+      restore the .env fallback cache files. 2) Approve IBKR 2FA push.
       3) Verify: ss -tln | grep -E '4002|8501|8644|8645'.
       4) Restore ~/.hermes/cron/jobs.json + webhook_subscriptions.json.
       5) Open SG :8645 for the return channel (owner action — role cannot).
