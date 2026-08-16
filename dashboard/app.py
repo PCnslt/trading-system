@@ -23,6 +23,18 @@ AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 DYNAMO_TABLE = os.getenv("DYNAMODB_TABLE", "trading-data")
 NY = ZoneInfo("America/New_York")   # display timezone (ET)
 
+ARCH_HTML_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                              "assets", "architecture.html")
+
+
+def _load_architecture_html():
+    """Read assets/architecture.html (SVG topology) for the Architecture tab."""
+    try:
+        with open(ARCH_HTML_PATH, "r", encoding="utf-8") as f:
+            return f.read()
+    except Exception:
+        return None
+
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(DYNAMO_TABLE)
 
@@ -245,7 +257,16 @@ with tab_arch:
     st.caption("Hardening DONE — this IS the running architecture: strategy → risk/admission → "
                "execution manager → IBKR → reconcile → risk ledger. No \"target-only\" layers remain.")
 
-    st.code("""                        RESEARCH / DATA LAKE
+    _arch = _load_architecture_html()
+    if _arch:
+        st.caption("🗺️ Primary view — full SVG topology (laptop → VPS → IBKR → AWS → Telegram). "
+                   "Solid = trade path · dashed = broker-truth / state. Scroll to explore.")
+        st.components.v1.html(_arch, height=880, scrolling=True)
+    else:
+        st.warning("assets/architecture.html not found — falling back to legacy ASCII.")
+
+    with st.expander("🗜️ Legacy ASCII topology (secondary view)", expanded=False):
+        st.code("""                        RESEARCH / DATA LAKE
         ┌──────────────────────────────────────────────────────┐
         │  TradingView (charts/Pine) · yfinance ES=F           │
         │  AlphaVantage · Binance.US · Serper (news)           │

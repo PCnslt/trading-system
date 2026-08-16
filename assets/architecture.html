@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Trading System — As-Built Architecture</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; padding: 0; background: #020617; }
+  svg { display: block; width: 100%; height: auto; background: #020617; }
+</style>
+</head>
+<body>
+<svg viewBox="0 0 1500 1340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trading system as-built architecture diagram">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0c1526" stroke-width="1"/>
+    </pattern>
+    <marker id="arCyan" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#22d3ee"/>
+    </marker>
+    <marker id="arEmerald" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#34d399"/>
+    </marker>
+    <marker id="arRose" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#fb7185"/>
+    </marker>
+    <marker id="arViolet" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#a78bfa"/>
+    </marker>
+    <marker id="arSlate" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#94a3b8"/>
+    </marker>
+  </defs>
+
+  <!-- grid -->
+  <rect width="1500" height="1340" fill="url(#grid)"/>
+
+  <!-- ============ HEADER ============ -->
+  <text x="40" y="40" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="21" font-weight="700" fill="#f1f5f9">TRADING SYSTEM — AS-BUILT ARCHITECTURE</text>
+  <text x="40" y="64" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12" fill="#94a3b8">laptop (director) → VPS (executor) → IBKR paper · futures phase-1 · 100% paper until edges earn trust</text>
+
+  <!-- legend -->
+  <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="11">
+    <rect x="40"  y="76" width="12" height="12" rx="2" fill="#22d3ee"/>
+    <text x="58"  y="87" fill="#cbd5e1">LAPTOP / DIRECTOR</text>
+    <rect x="260" y="76" width="12" height="12" rx="2" fill="#34d399"/>
+    <text x="278" y="87" fill="#cbd5e1">BACKEND / EXECUTION</text>
+    <rect x="480" y="76" width="12" height="12" rx="2" fill="#fb7185"/>
+    <text x="498" y="87" fill="#cbd5e1">RISK / SECURITY</text>
+    <rect x="700" y="76" width="12" height="12" rx="2" fill="#fbbf24"/>
+    <text x="718" y="87" fill="#cbd5e1">CLOUD / AWS</text>
+    <rect x="920" y="76" width="12" height="12" rx="2" fill="#a78bfa"/>
+    <text x="938" y="87" fill="#cbd5e1">DATABASE</text>
+    <rect x="1140" y="76" width="12" height="12" rx="2" fill="#94a3b8"/>
+    <text x="1158" y="87" fill="#cbd5e1">BROKER / EXTERNAL</text>
+  </g>
+
+  <!-- ============ LAPTOP ============ -->
+  <g>
+    <rect x="40" y="120" width="300" height="580" rx="10" fill="#22d3ee" fill-opacity="0.05" stroke="#22d3ee" stroke-opacity="0.65" stroke-width="1.5"/>
+    <text x="56" y="148" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="14" font-weight="700" fill="#22d3ee">LAPTOP — DIRECTOR</text>
+    <text x="56" y="166" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10.5" fill="#64748b">Hermes · research + live execution</text>
+
+    <!-- cards -->
+    <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace">
+      <rect x="52" y="184" width="276" height="70" rx="8" fill="#22d3ee" fill-opacity="0.07" stroke="#22d3ee" stroke-opacity="0.3"/>
+      <text x="64" y="206" font-size="11.5" font-weight="700" fill="#e2e8f0">Hermes director</text>
+      <text x="64" y="226" font-size="10" fill="#94a3b8">research · strategy · task dispatch</text>
+
+      <rect x="52" y="268" width="276" height="70" rx="8" fill="#22d3ee" fill-opacity="0.07" stroke="#22d3ee" stroke-opacity="0.3"/>
+      <text x="64" y="290" font-size="11.5" font-weight="700" fill="#e2e8f0">HMAC dispatch webhook :8644</text>
+      <text x="64" y="310" font-size="10" fill="#94a3b8">signed task delivery → VPS</text>
+
+      <rect x="52" y="352" width="276" height="70" rx="8" fill="#22d3ee" fill-opacity="0.07" stroke="#22d3ee" stroke-opacity="0.3"/>
+      <text x="64" y="374" font-size="11.5" font-weight="700" fill="#e2e8f0">Robinhood MCP — LIVE orders</text>
+      <text x="64" y="394" font-size="10" fill="#94a3b8">options L2 · CSP→CC wheel</text>
+
+      <rect x="52" y="436" width="276" height="70" rx="8" fill="#22d3ee" fill-opacity="0.07" stroke="#22d3ee" stroke-opacity="0.3"/>
+      <text x="64" y="458" font-size="11.5" font-weight="700" fill="#e2e8f0">Research + edge validation</text>
+      <text x="64" y="478" font-size="10" fill="#94a3b8">TradingView · backtests · sweeps</text>
+
+      <rect x="52" y="520" width="276" height="70" rx="8" fill="#22d3ee" fill-opacity="0.07" stroke="#22d3ee" stroke-opacity="0.3"/>
+      <text x="64" y="542" font-size="11.5" font-weight="700" fill="#e2e8f0">Secrets</text>
+      <text x="64" y="562" font-size="10" fill="#94a3b8">.env · broker tokens (VPS-only)</text>
+    </g>
+
+    <!-- never-ssh annotation -->
+    <rect x="52" y="620" width="276" height="46" rx="8" fill="none" stroke="#fb7185" stroke-opacity="0.7" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="64" y="639" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10.5" font-weight="700" fill="#fb7185">NEVER SSHes to VPS</text>
+    <text x="64" y="655" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10" fill="#94a3b8">control plane = HMAC webhook only</text>
+  </g>
+
+  <!-- ============ VPS ============ -->
+  <g>
+    <rect x="410" y="120" width="640" height="1120" rx="12" fill="#34d399" fill-opacity="0.04" stroke="#34d399" stroke-opacity="0.6" stroke-width="1.5"/>
+    <text x="430" y="150" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="15" font-weight="700" fill="#34d399">VPS — EXECUTOR</text>
+    <text x="430" y="170" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10.5" fill="#64748b">EC2 t3.small · us-east-1 · Hermes gateway (webhook :8644) · 24/7 cron + systemd</text>
+
+    <!-- STAGE 1: DATA COLLECTION -->
+    <g>
+      <rect x="430" y="188" width="600" height="150" rx="9" fill="#34d399" fill-opacity="0.07" stroke="#34d399" stroke-opacity="0.45"/>
+      <text x="446" y="214" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12.5" font-weight="700" fill="#34d399">DATA COLLECTION</text>
+      <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="11" fill="#cbd5e1">
+        <text x="446" y="240">ibkr_full_backfill — futures ~3-4y · equities 20y+ · 1-min</text>
+        <text x="446" y="258">L1 tick recorder — CME + CBOT RTH (clientId 74)</text>
+        <text x="446" y="276">options chains · contract resolver · session calendar</text>
+        <text x="446" y="294">yfinance / FRED macro · NewsAPI · FMP research</text>
+      </g>
+      <text x="1014" y="238" text-anchor="end" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="9.5" fill="#64748b">→ S3 · DynamoDB</text>
+    </g>
+
+    <!-- STAGE 2: STRATEGY RUNNER -->
+    <g>
+      <rect x="430" y="362" width="600" height="185" rx="9" fill="#34d399" fill-opacity="0.07" stroke="#34d399" stroke-opacity="0.45"/>
+      <text x="446" y="388" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12.5" font-weight="700" fill="#34d399">STRATEGY RUNNER — PAPER</text>
+      <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="11" fill="#cbd5e1">
+        <text x="446" y="414">live.py — index MES/MNQ · Donchian + RSI2 (19:00 ET)</text>
+        <text x="446" y="432">live_intraday.py — MES RTH · FADESHORT + DONCH15</text>
+        <text x="446" y="450">gc_signals.py — gold momentum · signal-only</text>
+        <text x="446" y="468">equity_signals.py — RSI2-dip + Donchian(200d) · signal-only</text>
+        <text x="446" y="486">crypto_paper.py — Donchian 20+200d · signal-only</text>
+        <text x="446" y="504">live_bondsfx.py — bonds ZB/ZN · SHELVED (disarmed)</text>
+      </g>
+    </g>
+
+    <!-- STAGE 3: RISK / ADMISSION -->
+    <g>
+      <rect x="430" y="571" width="600" height="175" rx="9" fill="#fb7185" fill-opacity="0.08" stroke="#fb7185" stroke-opacity="0.6" stroke-width="1.6"/>
+      <text x="446" y="597" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12.5" font-weight="700" fill="#fb7185">RISK / ADMISSION — FAIL-CLOSED</text>
+      <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="11" fill="#cbd5e1">
+        <text x="446" y="623">kill switch — KILLED = flatten + halt</text>
+        <text x="446" y="641">daily loss cap — persistent RISK# ledger</text>
+        <text x="446" y="659">portfolio / instrument / strategy limits</text>
+        <text x="446" y="677">stale-signal + data-health gate</text>
+        <text x="446" y="695">session + account-id dedupe / idempotency</text>
+        <text x="446" y="713" font-weight="700" fill="#fb7185">NEVER-LOSE-MONEY — refuse entry w/o protective stop</text>
+      </g>
+    </g>
+
+    <!-- STAGE 4: EXECUTION MANAGER -->
+    <g>
+      <rect x="430" y="770" width="600" height="140" rx="9" fill="#34d399" fill-opacity="0.07" stroke="#34d399" stroke-opacity="0.45"/>
+      <text x="446" y="796" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12.5" font-weight="700" fill="#34d399">EXECUTION MANAGER — only IBKR submitter</text>
+      <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="11" fill="#cbd5e1">
+        <text x="446" y="822">order lifecycle · partial fills · cancel/replace</text>
+        <text x="446" y="840">protective stop unconditional (orderRef-tagged)</text>
+        <text x="446" y="858">timeout → UNKNOWN (never assume rejected)</text>
+        <text x="446" y="876">idempotent TradeIntent (INTENT# conditional write)</text>
+      </g>
+    </g>
+
+    <!-- STAGE 5: RECONCILIATION -->
+    <g>
+      <rect x="430" y="934" width="600" height="100" rx="9" fill="#34d399" fill-opacity="0.07" stroke="#34d399" stroke-opacity="0.45"/>
+      <text x="446" y="960" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12.5" font-weight="700" fill="#34d399">RECONCILIATION — 45s daemon</text>
+      <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="11" fill="#cbd5e1">
+        <text x="446" y="986">broker truth vs internal state — MATCH / MISMATCH / UNKNOWN</text>
+        <text x="446" y="1004">halt + alert on non-MATCH (missing stop = MISMATCH)</text>
+      </g>
+    </g>
+
+    <!-- STAGE 6: MONITORING / OPS -->
+    <g>
+      <rect x="430" y="1058" width="600" height="150" rx="9" fill="#34d399" fill-opacity="0.07" stroke="#34d399" stroke-opacity="0.45"/>
+      <text x="446" y="1084" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12.5" font-weight="700" fill="#34d399">MONITORING / OPS</text>
+      <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="11" fill="#cbd5e1">
+        <text x="446" y="1110">Streamlit dashboard :8501 — read-only cockpit + controls</text>
+        <text x="446" y="1128">status_report → Telegram</text>
+        <text x="446" y="1146">IB Gateway hang-watchdog (alive-but-socket-dead)</text>
+        <text x="446" y="1164">IBKR backfill watchdog</text>
+        <text x="446" y="1182">weekly 2FA cold-restart (Sun 09:00 ET)</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============ RIGHT COLUMN: EXTERNAL / CLOUD ============ -->
+  <g>
+    <text x="1120" y="140" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="13" font-weight="700" fill="#94a3b8">EXTERNAL / CLOUD</text>
+    <line x1="1120" y1="148" x2="1480" y2="148" stroke="#94a3b8" stroke-opacity="0.35"/>
+
+    <!-- S3 -->
+    <g>
+      <rect x="1120" y="170" width="360" height="160" rx="9" fill="#fbbf24" fill-opacity="0.07" stroke="#fbbf24" stroke-opacity="0.6" stroke-width="1.5"/>
+      <text x="1140" y="198" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12.5" font-weight="700" fill="#fbbf24">AWS S3 — trading-datalake</text>
+      <text x="1140" y="214" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="9.5" fill="#64748b">920641308584</text>
+      <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10.5" fill="#cbd5e1">
+        <text x="1140" y="240">ibkr/ — parquet · quality=BROKER</text>
+        <text x="1140" y="258">futures-bars/ · futures-ticks/</text>
+        <text x="1140" y="276">options/ · contracts/ · sessions/</text>
+        <text x="1140" y="294">yf/ · macro/ · crypto-hist/ · newsapi/</text>
+      </g>
+    </g>
+
+    <!-- IBKR -->
+    <g>
+      <rect x="1120" y="740" width="360" height="200" rx="9" fill="#94a3b8" fill-opacity="0.06" stroke="#94a3b8" stroke-opacity="0.6" stroke-width="1.5"/>
+      <text x="1140" y="768" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12.5" font-weight="700" fill="#94a3b8">IBKR GATEWAY :4002</text>
+      <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10.5" fill="#cbd5e1">
+        <text x="1140" y="792">paper DUR193467 — futures phase-1 (active)</text>
+        <text x="1140" y="810">live U26949861 — OFF (Gate 5 pending)</text>
+        <text x="1140" y="828">native auto-restart · token re-login</text>
+        <text x="1140" y="846">(IBC removed)</text>
+        <text x="1140" y="864">read-only collectors · distinct clientIds</text>
+      </g>
+    </g>
+
+    <!-- DynamoDB -->
+    <g>
+      <rect x="1120" y="980" width="360" height="170" rx="9" fill="#a78bfa" fill-opacity="0.08" stroke="#a78bfa" stroke-opacity="0.65" stroke-width="1.5"/>
+      <text x="1140" y="1008" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12.5" font-weight="700" fill="#a78bfa">AWS DynamoDB — trading-data</text>
+      <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10.5" fill="#cbd5e1">
+        <text x="1140" y="1034">RISK LEDGER — RISK# (loss cap)</text>
+        <text x="1140" y="1052">OPS STATE — POSITION# · INTENT# · TRADE#</text>
+        <text x="1140" y="1070">DATA — CONTRACT# · SESSION# · QUOTE#</text>
+        <text x="1140" y="1088">SIGNAL# · OPTCHAIN# · NEWS# · RECONCILE#</text>
+      </g>
+    </g>
+
+    <!-- Telegram -->
+    <g>
+      <rect x="1120" y="1180" width="360" height="110" rx="9" fill="#94a3b8" fill-opacity="0.06" stroke="#94a3b8" stroke-opacity="0.6" stroke-width="1.5"/>
+      <text x="1140" y="1208" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="12.5" font-weight="700" fill="#94a3b8">TELEGRAM GROUP — observability</text>
+      <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10.5" fill="#cbd5e1">
+        <text x="1140" y="1234">heartbeats · alerts · daily summary</text>
+        <text x="1140" y="1252">status_report · reconcile watchdogs</text>
+      </g>
+    </g>
+  </g>
+
+  <!-- ============ ARROWS (drawn under labels) ============ -->
+
+  <!-- laptop -> VPS (HMAC) -->
+  <line x1="340" y1="454" x2="410" y2="454" stroke="#22d3ee" stroke-width="2" marker-end="url(#arCyan)"/>
+  <rect x="342" y="428" width="66" height="14" rx="3" fill="#020617" fill-opacity="0.85"/>
+  <text x="375" y="439" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="9" fill="#22d3ee">HMAC :8644</text>
+
+  <!-- vertical pipeline arrows -->
+  <line x1="730" y1="338" x2="730" y2="362" stroke="#34d399" stroke-width="2" marker-end="url(#arEmerald)"/>
+  <text x="718" y="352" text-anchor="end" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#64748b">bars / signals</text>
+
+  <line x1="730" y1="547" x2="730" y2="571" stroke="#34d399" stroke-width="2" marker-end="url(#arEmerald)"/>
+  <text x="718" y="561" text-anchor="end" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#64748b">TradeIntent (signal_id)</text>
+
+  <line x1="730" y1="746" x2="730" y2="770" stroke="#34d399" stroke-width="2" marker-end="url(#arEmerald)"/>
+  <text x="718" y="760" text-anchor="end" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#64748b">approved intent</text>
+
+  <line x1="730" y1="1034" x2="730" y2="1058" stroke="#34d399" stroke-width="2" marker-end="url(#arEmerald)"/>
+  <text x="718" y="1048" text-anchor="end" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#64748b">ops state</text>
+
+  <!-- data collection -> S3 (cold persist) -->
+  <line x1="1030" y1="250" x2="1120" y2="250" stroke="#34d399" stroke-width="1.6" marker-end="url(#arEmerald)"/>
+  <rect x="1040" y="236" width="70" height="13" rx="3" fill="#020617" fill-opacity="0.85"/>
+  <text x="1075" y="246" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#34d399">persist cold</text>
+
+  <!-- data collection -> DynamoDB (hot persist, background) -->
+  <line x1="1030" y1="320" x2="1120" y2="1030" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="5 4" opacity="0.5" marker-end="url(#arViolet)"/>
+  <rect x="1036" y="620" width="76" height="13" rx="3" fill="#020617" fill-opacity="0.9"/>
+  <text x="1074" y="630" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#a78bfa">persist hot</text>
+
+  <!-- exec -> IBKR (orders) -->
+  <line x1="1030" y1="840" x2="1120" y2="840" stroke="#34d399" stroke-width="2" marker-end="url(#arEmerald)"/>
+  <rect x="1042" y="826" width="66" height="13" rx="3" fill="#020617" fill-opacity="0.85"/>
+  <text x="1075" y="836" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#34d399">orders</text>
+
+  <!-- IBKR -> reconcile (fills, broker truth) -->
+  <line x1="1120" y1="910" x2="1030" y2="975" stroke="#fb7185" stroke-width="1.8" stroke-dasharray="5 4" marker-end="url(#arRose)"/>
+  <rect x="1038" y="938" width="76" height="13" rx="3" fill="#020617" fill-opacity="0.85"/>
+  <text x="1076" y="948" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#fb7185">fills (truth)</text>
+
+  <!-- reconcile -> DynamoDB (ledger + ops) -->
+  <line x1="1030" y1="985" x2="1120" y2="1000" stroke="#a78bfa" stroke-width="2" marker-end="url(#arViolet)"/>
+  <rect x="1038" y="970" width="72" height="13" rx="3" fill="#020617" fill-opacity="0.85"/>
+  <text x="1074" y="980" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#a78bfa">ledger+ops</text>
+
+  <!-- DynamoDB -> monitoring (reads) -->
+  <line x1="1120" y1="1100" x2="1030" y2="1130" stroke="#a78bfa" stroke-width="1.2" stroke-dasharray="5 4" opacity="0.7" marker-end="url(#arViolet)"/>
+  <rect x="1040" y="1108" width="68" height="13" rx="3" fill="#020617" fill-opacity="0.85"/>
+  <text x="1074" y="1118" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#a78bfa">reads</text>
+
+  <!-- monitoring -> Telegram (status) -->
+  <line x1="1030" y1="1160" x2="1120" y2="1225" stroke="#94a3b8" stroke-width="1.8" marker-end="url(#arSlate)"/>
+  <rect x="1036" y="1182" width="78" height="13" rx="3" fill="#020617" fill-opacity="0.85"/>
+  <text x="1075" y="1192" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#94a3b8">status/alerts</text>
+
+  <!-- ============ FOOTER ============ -->
+  <text x="40" y="1318" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="9.5" fill="#475569">AS-BUILT · 2026-08-16 · futures phase-1 (paper) · assets/architecture.html · solid = trade path · dashed = broker-truth / state · no target-only layers</text>
+</svg>
+</body>
+</html>
