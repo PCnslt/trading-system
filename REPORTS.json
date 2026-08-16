@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-16T14:36:42-04:00",
+  "updated": "2026-08-16T15:29:36-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -171,6 +171,31 @@
         "1b498e5"
       ],
       "blockers": []
+    },
+    {
+      "ts": "2026-08-16T15:12:59-04:00",
+      "task": "Build Robinhood broker client (hardening/rh_client.py) + LIVE execution mode in live_equities.py",
+      "summary": "Built the VPS Robinhood trader. FILE PATHS: hardening/rh_client.py (the only submitter: SSM cred load, refresh_token rotation writeback, MCP transport, get_account/get_positions/get_quote/place_equity_order/place_stop/cancel_order/list_orders + fail-closed place_equity_entry), infra/rh_oauth.py (PKCE re-auth recovery), bot/live_equities.py (EXECUTION MODE, PAPER default), docs/ROBINHOOD_EXECUTION.md, tests/test_rh_client.py (10 tests), infra/secrets.py (fixed 10-name get_parameters chunking), hardening/__init__.py. GO-LIVE SWITCH: set BOTH RH_EXECUTION_MODE=LIVE AND RH_LIVE_ENABLED=true (both default OFF); at order time LIVE also requires agentic_allowed account + RISK_PCT <=0.01 + $150/day cap + protective stop (stop_price>0, never naked). NO live order placed; paper-forward unchanged. 181 tests pass. SSM READ CONFIRMED: IAM role reads all 11 /trading/robinhood/* SecureString params. TRANSPORT REALITY: these creds authenticate the Robinhood MCP gateway (agent.robinhood.com/mcp/trading), NOT the public REST API (which rejects this client_id).",
+      "commits": [
+        "77fbb1e"
+      ],
+      "blockers": [
+        "TOKEN DEAD — during validation the refresh_token was rotated and the rotated value was not persisted before exit; Robinhood revoked BOTH old tokens. Run infra/rh_oauth.py on the laptop (browser + Robinhood login) to re-authenticate.",
+        "Fractional positions (<1 whole share) cannot carry a Robinhood broker stop (stops are whole-share only) — place_equity_entry reverses them fail-closed, so the fractional RSI2 edge is NOT live-executable at $700; needs whole-share sizing or more capital.",
+        "CONCURRENT-AGENT COLLISION: another dispatch is building a parallel Robinhood client (bot/rh_client.py, infra/robinhood.py) + broker-access audit + IBKR live gateway. I left their untracked files untouched and did not stage them."
+      ]
+    },
+    {
+      "ts": "2026-08-16T15:29:36-04:00",
+      "task": "Broker accessibility audit + enable (Robinhood, IBKR paper/live)",
+      "summary": "ACCESSIBILITY MATRIX (read-only, no live orders): Robinhood live = BLOCKED (SSM access_token revoked: MCP 401 token revoked; refresh_token grant = invalid_grant -> needs fresh OAuth browser+2FA on laptop). IBKR paper = OK (DUR193467 visible, 1M sim equity, futures MES/ES + equity AAPL + option SPY all qualify, whatIf accepted; equities market data DELAYED Error 10089, futures L1 live-when-open). IBKR live = BLOCKED (a) IBKR disallows 2 concurrent sessions per username (official TWS API), (b) live first-login requires IB Key 2FA; needs an ADDITIONAL username in Account Management + phone 2FA approval). ENABLED: SSM token refresh/persist path (PutParameter verified), Robinhood audit module + matrix builder + SQS publish (infra/robinhood.py, infra/broker_access_audit.py), live-gateway systemd unit + launcher + Jts-live settings (tradingMode=l). NOTE: a concurrent sibling task (commit 77fbb1e) built the Robinhood execution client (hardening/rh_client.py, bot/rh_client.py, infra/rh_oauth.py) and launched the live gateway instance in parallel; its live-gateway files are still uncommitted in-tree.",
+      "commits": [
+        "d33c22f"
+      ],
+      "blockers": [
+        "Robinhood: re-auth owner-gated (laptop browser OAuth + 2FA) — run infra/rh_oauth.py on laptop, or re-sync current laptop tokens to SSM /trading/robinhood/*.",
+        "IBKR live: owner creates ADDITIONAL username (Account Management) for U26949861, then first live login + IB Key 2FA."
+      ]
     }
   ]
 }
