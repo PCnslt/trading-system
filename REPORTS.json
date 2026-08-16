@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-16T13:28:58-04:00",
+  "updated": "2026-08-16T13:51:04-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -108,6 +108,15 @@
       "task": "RSI2 entry: test + adopt Connors 200d-SMA trend filter (ES/NQ backtest)",
       "summary": "RSI2 entry refinement: current RSI(2)<10 (no filter) vs Connors ORIGINAL (RSI(2)<10 AND close>200d SMA) on ES/NQ daily 2010-2026, 3-tick+1.3bp comm, same 40/20/40 + 3-fold walk-forward as validate_edges. DECISION: ADOPT (added 200d-SMA filter to live.py rsi2_entry; 165/165 tests pass).\nNumbers (3-tick cost, single contract):\n  ES  no-filter: OOS PF 2.57, maxDD -$44.2k (-155% rel), trough -$15.6k, worst -$16.7k, streak 3, win 70% (n=199).\n  ES  filtered:  OOS PF 2.47, maxDD -$23.4k (-86% rel),  trough +$3.8k, worst -$11.2k, streak 3, win 70% (n=142).\n  NQ  no-filter: OOS PF 2.24, maxDD -$35.6k (-77% rel), trough +$10.9k, worst -$17.9k, streak 7, win 66% (n=194).\n  NQ  filtered:  OOS PF 2.33, maxDD -$48.2k (-68% rel), trough +$22.9k, worst -$17.6k, streak 4, win 68% (n=143).\nRule check (>= comparable OOS PF AND lower maxDD):\n  - OOS PF comparable/better both: ES 2.47 vs 2.57 (~noise), NQ 2.33 vs 2.24 (better); pooled 3-tick PF 2.04 vs 1.88 (better).\n  - Drawdown LOWER on the meaningful measure: relative DD% ES 86 vs 155, NQ 68 vs 77; absolute trough higher both; worst trade <=; losing streak <=.\n  - NQ raw-$ maxDD is HIGHER (-$48k vs -$35k) but this is a COMPOUNDING artifact, not worse DD: filtered peaked higher ($71k vs $46k @ 2021-11-29, gate kept it in the bull) so peak->trough $ distance is larger even though its trough ($22.9k) is HIGHER than no-filter's ($10.9k); same peak/trough dates (2021-11-29 -> 2024-01-04). Relative DD is lower (68% vs 77%).\n  - Mechanism = Connors' intent: gate blocks sub-200d-SMA knife-catches; it removed the COVID 2020-03-09 crash entries (worst trades) on both symbols. No-filter ES went NEGATIVE cumulative (-$15.6k) at the COVID bottom while filtered stayed positive (+$3.8k).\nlive.py change: rsi2_entry requires close>200d SMA (fail-closed on NaN), compute() returns sma200, signal logs sma200, label updated. Artifacts: research/rsi2_sma200_compare.py + _results.json + _diag.py.",
       "commits": [],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-16T13:50:49-04:00",
+      "task": "PREP MGC (micro gold) — make validated gold edge tradable at ~$900 via env config",
+      "summary": "live_gc.py now env-drives the contract: GC_CONTRACT (default GC), GC_EXCHANGE (default COMEX), GC_POINT_VALUE (default 100.0; MGC -> 10.0). New pure seam resolve_contract_config() resolves (contract, exchange, point_value) from env/args; SYMBOL=GC_CONTRACT so DynamoDB tags (POSITION#/SIGNAL#/TRADE#), flatten, venue string, and front_month_for() all follow the contract. front_month_for(MGC) confirmed == 202608 (same COMEX metals Feb/Apr/Jun/Aug/Oct/Dec cycle as GC). Full GC stays the paper default; MGC is opt-in via GC_CONTRACT=MGC + GC_RISK_BUDGET=<real account>. No paper-config change, no orders placed, LIVE untouched. Tests: 6 added (MGC point value 10.0 vs GC 100.0, GC_POINT_VALUE env override, per-point realized_pnl scaling 1/10, stop-distance dollar risk ~$2.28k vs ~$22.8k). Full suite 171 passed.",
+      "commits": [
+        "04c0d8f"
+      ],
       "blockers": []
     }
   ]

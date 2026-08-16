@@ -100,3 +100,10 @@ Rule check (>= comparable OOS PF AND lower maxDD):
   - NQ raw-$ maxDD is HIGHER (-$48k vs -$35k) but this is a COMPOUNDING artifact, not worse DD: filtered peaked higher ($71k vs $46k @ 2021-11-29, gate kept it in the bull) so peak->trough $ distance is larger even though its trough ($22.9k) is HIGHER than no-filter's ($10.9k); same peak/trough dates (2021-11-29 -> 2024-01-04). Relative DD is lower (68% vs 77%).
   - Mechanism = Connors' intent: gate blocks sub-200d-SMA knife-catches; it removed the COVID 2020-03-09 crash entries (worst trades) on both symbols. No-filter ES went NEGATIVE cumulative (-$15.6k) at the COVID bottom while filtered stayed positive (+$3.8k).
 live.py change: rsi2_entry requires close>200d SMA (fail-closed on NaN), compute() returns sma200, signal logs sma200, label updated. Artifacts: research/rsi2_sma200_compare.py + _results.json + _diag.py.
+
+---
+
+## 2026-08-16T13:50:49-04:00 — PREP MGC (micro gold) — make validated gold edge tradable at ~$900 via env config
+
+- **Summary**: live_gc.py now env-drives the contract: GC_CONTRACT (default GC), GC_EXCHANGE (default COMEX), GC_POINT_VALUE (default 100.0; MGC -> 10.0). New pure seam resolve_contract_config() resolves (contract, exchange, point_value) from env/args; SYMBOL=GC_CONTRACT so DynamoDB tags (POSITION#/SIGNAL#/TRADE#), flatten, venue string, and front_month_for() all follow the contract. front_month_for(MGC) confirmed == 202608 (same COMEX metals Feb/Apr/Jun/Aug/Oct/Dec cycle as GC). Full GC stays the paper default; MGC is opt-in via GC_CONTRACT=MGC + GC_RISK_BUDGET=<real account>. No paper-config change, no orders placed, LIVE untouched. Tests: 6 added (MGC point value 10.0 vs GC 100.0, GC_POINT_VALUE env override, per-point realized_pnl scaling 1/10, stop-distance dollar risk ~$2.28k vs ~$22.8k). Full suite 171 passed.
+- **Commits**: `04c0d8f`
