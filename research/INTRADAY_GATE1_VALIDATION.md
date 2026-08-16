@@ -142,3 +142,27 @@ halt, 6-loss brake, 1 concurrent position, mandatory protective stop, EOD flatte
 
 Requires L2 size-at-price (separate paid feed; not on paper DUR193467). **VWAP (volume bars
 already archived) is the interim execution-timing layer** — already backtested above (HOLD).
+
+---
+
+## 9. KAMA (Kaufman adaptive MA, added 2026-08-16) — NO-GO, wrong horizon
+
+Added to the queue per the laptop's PART 2.4 directive ("KAMA attacks whipsaw
+drawdown"). Efficiency-ratio KAMA crossover, 2×ATR stop, on 5-min bars:
+
+| Candidate | n | Win% | PF@3t | OOS PF | Sharpe | maxDD (t) |
+|---|---|---|---|---|---|---|
+| **KAMA** | 7697 | ~20% | **0.70** | 0.68 | −4.02 | −163,279 |
+
+Cost curve: slip0 PF 0.82 → slip3 PF 0.70; net −58k → −104k ticks. **NO-GO at
+every cost level**, and structurally so — 7,697 trades over ~1y of 5-min bars is
+KAMA crossing its own line thousands of times. The efficiency ratio is a *slow*
+trend measure; at 5-minute granularity it whipsaws, and the churn bleeds the edge
+to death net-of-cost.
+
+**Verdict:** KAMA crossover does NOT survive honest costs on intraday 5-min. It
+is a swing/daily tool (Kaufman's adaptive MA is a daily-trend instrument).
+NEXT: re-test KAMA on the daily / 2–3-day swing horizon where it is designed to
+operate — not intraday. This also reinforces the no-feedback rule: the laptop's
+"persistent edge" priors (ORB, KAMA) both fail net-of-cost on our intraday data;
+priors do not override the honest-cost backtest.
