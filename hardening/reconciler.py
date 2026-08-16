@@ -97,14 +97,19 @@ def broker_positions(ib) -> dict:
 
 
 def broker_open_orders(ib) -> dict:
-    """symbol -> list of {'action','orderType','totalQuantity'} open orders."""
+    """symbol -> list of {'action','orderType','totalQuantity'} open orders.
+
+    Uses openTrades() (Trade objects carry BOTH .contract and .order).
+    openOrders() returns bare Order objects with NO .contract — reading
+    .contract off them raises AttributeError the moment any order rests.
+    """
     out = {}
-    for o in ib.openOrders():
-        sym = o.contract.symbol
+    for t in ib.openTrades():
+        sym = t.contract.symbol
         out.setdefault(sym, []).append({
-            'action': o.order.action,
-            'orderType': o.order.orderType,
-            'totalQuantity': float(o.order.totalQuantity),
+            'action': t.order.action,
+            'orderType': t.order.orderType,
+            'totalQuantity': float(t.order.totalQuantity),
         })
     return out
 

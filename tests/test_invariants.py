@@ -83,6 +83,9 @@ class _ReconcileIB:
     def openOrders(self):
         return list(self._orders)
 
+    def openTrades(self):
+        return list(self._orders)
+
     def executions(self):
         return []
 
@@ -148,6 +151,9 @@ class _FlattenIB:
         pass
 
     def openOrders(self):
+        return []
+
+    def openTrades(self):
         return []
 
     def positions(self):

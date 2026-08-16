@@ -143,14 +143,22 @@ class ExecutionManager:
 
     # ---- entry ----
     def submit_entry(self, intent: TradeIntent, contract, stop_tif='GTC',
-                     fill_timeout=8.0) -> ExecutionResult:
-        """Idempotently enter: BUY (long) or SELL (short) `intent.qty`.
+                     take_profit: float = None, fill_timeout=8.0) -> ExecutionResult:
+        """Idempotently enter via a NATIVE BRACKET: entry + protective stop (and
+        optional take-profit target) are submitted ATOMICALLY as parent+children,
+        so the stop is held BROKER-SIDE from the moment of submission and survives
+        a bot/gateway crash. This converts never-lose-money from a CODE guarantee
+        (place the stop after observing the fill) into a BROKER guarantee (the stop
+        is already resting when the entry fills — no naked-position window).
 
         1. Conditional-write the intent; DUPLICATE if the signal was accepted.
         2. Refuse an unprotected entry (stop_price <= 0) — NEVER-LOSE-MONEY.
-        3. Place a market order.
-        4. Verify the fill (partial-fill aware).
-        5. On fill, place the protective stop (unconditionally).
+        3. Submit the bracket (market parent, transmit=False + stop child, and an
+           optional target, OCA-linked so one exit leg cancels the other).
+        4. Verify the entry fill (partial-fill aware).
+        5. On a definitive REJECTION cancel any still-resting bracket legs; on
+           UNKNOWN keep the stop resting (if the entry actually filled it protects
+           the position); on a PARTIAL fill re-rest a stop sized to the FILLED qty.
         A fill timeout -> UNKNOWN (never assume rejected).
         """
         if not self.intents.accept(intent):
@@ -165,14 +173,66 @@ class ExecutionManager:
                                    detail='no protective stop supplied '
                                           '(never-lose-money: refuse unprotected entry)')
 
-        from ib_insync import MarketOrder
-        trade = self.ib.placeOrder(contract, MarketOrder(intent.action, intent.qty, tif='DAY'))
+        trade = self._place_bracket(contract, intent, stop_tif, take_profit)
         res = self._confirm(trade, intent, fill_timeout)
-        if res.status in ('REJECTED', 'UNKNOWN') or res.filled_qty <= 0:
+        if res.status == 'REJECTED':
+            # Definitive no-fill: cancel any still-resting bracket legs (defensive;
+            # IBKR already cancels children of a rejected/cancelled parent).
+            self.cancel_stop(intent.symbol, ref=intent.tag)
             return res
-        self._place_stop(contract, intent.side, res.filled_qty,
-                         intent.stop_price, stop_tif, ref=intent.tag)
+        if res.status == 'UNKNOWN':
+            # Keep the bracket stop resting: if the entry actually filled, the stop
+            # protects the position; if not, IBKR cancels the child when the parent
+            # resolves. Never strip protection on an uncertain fill.
+            return res
+        if res.status == 'PARTIAL':
+            # Right-size the stop to the ACTUAL filled qty (the bracket stop was
+            # sized to intent.qty). qty==1 (micros) cannot partially fill, so this
+            # is a qty>1 safety path only.
+            self.cancel_stop(intent.symbol, ref=intent.tag)
+            self._place_stop(contract, intent.side, res.filled_qty,
+                             intent.stop_price, stop_tif, ref=intent.tag)
         return res
+
+    def _place_bracket(self, contract, intent: TradeIntent, stop_tif,
+                       take_profit: float = None):
+        """Submit entry + protective stop (+ optional target) as a native bracket.
+
+        The entry (market, transmit=False) is held at the broker until the last
+        child transmits; the stop is linked via `parentId` so it ACTIVATES ON FILL,
+        broker-side (no client round-trip to arm the stop). The stop and optional
+        target share an OCA group so one exit leg cancels the other. Returns the
+        parent Trade (the entry) for fill confirmation.
+        """
+        from ib_insync import MarketOrder, StopOrder, LimitOrder
+
+        parent = MarketOrder(intent.action, intent.qty, tif='DAY')
+        parent.transmit = False
+        trade = self.ib.placeOrder(contract, parent)
+
+        close_action = 'SELL' if intent.side == 'LONG' else 'BUY'
+        oca = f'BRKT-{intent.signal_id}'
+
+        stop = StopOrder(close_action, intent.qty, intent.stop_price, tif=stop_tif)
+        stop.parentId = trade.order.orderId
+        stop.ocaGroup = oca
+        stop.ocaType = 1
+        if intent.tag:
+            stop.orderRef = intent.tag
+
+        if take_profit and take_profit > 0:
+            target = LimitOrder(close_action, intent.qty, take_profit, tif='GTC')
+            target.parentId = trade.order.orderId
+            target.ocaGroup = oca
+            target.ocaType = 1
+            stop.transmit = False
+            target.transmit = True      # last child transmits the whole chain
+            self.ib.placeOrder(contract, stop)
+            self.ib.placeOrder(contract, target)
+        else:
+            stop.transmit = True        # only child -> it transmits the chain
+            self.ib.placeOrder(contract, stop)
+        return trade
 
     # ---- exit ----
     def submit_exit(self, intent: TradeIntent, contract, cancel_stop=True,
@@ -211,14 +271,14 @@ class ExecutionManager:
                     legacy UNTAGGED stop (empty orderRef) so a pre-tagging
                     position still gets its stop cancelled on exit.
         """
-        for o in list(self.ib.openOrders()):
-            if o.contract.symbol != symbol or o.order.orderType != 'STP':
+        for t in list(self.ib.openTrades()):
+            if t.contract.symbol != symbol or t.order.orderType != 'STP':
                 continue
-            oref = getattr(o.order, 'orderRef', '')
+            oref = getattr(t.order, 'orderRef', '')
             if ref is not None and oref not in ('', ref):
                 continue
             try:
-                self.ib.cancelOrder(o)
+                self.ib.cancelOrder(t.order)
             except Exception as e:  # noqa: BLE001
                 print(f"[exec] cancel stop failed ({symbol}): {e}")
 
@@ -229,10 +289,10 @@ class ExecutionManager:
         legacy untagged stop)."""
         action = 'SELL' if side == 'LONG' else 'BUY'
         return any(
-            o.contract.symbol == symbol and o.order.action == action
-            and o.order.orderType == 'STP'
-            and (ref is None or getattr(o.order, 'orderRef', '') in ('', ref))
-            for o in self.ib.openOrders())
+            t.contract.symbol == symbol and t.order.action == action
+            and t.order.orderType == 'STP'
+            and (ref is None or getattr(t.order, 'orderRef', '') in ('', ref))
+            for t in self.ib.openTrades())
 
     def current_stop_price(self, symbol: str, side: str, ref: str = None):
         """The tightest resting protective-stop price for `symbol`+`side` (or
@@ -240,12 +300,12 @@ class ExecutionManager:
         (Long stop = SELL stop; short = BUY.)"""
         action = 'SELL' if side == 'LONG' else 'BUY'
         prices = []
-        for o in self.ib.openOrders():
-            if (o.contract.symbol == symbol and o.order.orderType == 'STP'
-                    and o.order.action == action):
-                if ref is not None and getattr(o.order, 'orderRef', '') not in ('', ref):
+        for t in self.ib.openTrades():
+            if (t.contract.symbol == symbol and t.order.orderType == 'STP'
+                    and t.order.action == action):
+                if ref is not None and getattr(t.order, 'orderRef', '') not in ('', ref):
                     continue
-                px = getattr(o.order, 'auxPrice', None)
+                px = getattr(t.order, 'auxPrice', None)
                 if px is not None:
                     prices.append(float(px))
         if not prices:

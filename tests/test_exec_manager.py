@@ -31,9 +31,12 @@ class _Fill:
 
 
 class FakeTrade:
-    def __init__(self, status='Filled', fills=None):
+    def __init__(self, status='Filled', fills=None, order=None, orderId=1):
         self._status = status
         self.fills = fills or []
+        # .order carries the actual ib_insync Order (with .orderId) so bracket
+        # code can read trade.order.orderId for the parentId link.
+        self.order = order if order is not None else type('O', (), {'orderId': orderId})()
 
     @property
     def orderStatus(self):
@@ -58,22 +61,39 @@ class FakeIB:
         self.open = []         # resting orders (stops)
         self.cancelled = []
         self.slept = 0
+        self._order_id = 0
 
     def sleep(self, s):
         self.slept += s
 
     def placeOrder(self, contract, order):
+        self._order_id += 1
+        order.orderId = self._order_id      # mirror IBKR's id assignment
         self.placed.append(order)
         fills = [_Fill(self.fill_shares, self.fill_price)] if self.fill_status == 'Filled' else []
-        return FakeTrade(self.fill_status, fills)
+        return FakeTrade(self.fill_status, fills, order=order, orderId=self._order_id)
 
     def openOrders(self):
         return list(self.open)
 
+    def openTrades(self):
+        # production code iterates openTrades() (Trade objects carry BOTH
+        # .contract and .order). These fakes are Trade-like, so openTrades()
+        # returns them directly.
+        return list(self.open)
+
     def cancelOrder(self, o):
-        self.cancelled.append(o)
-        if o in self.open:
-            self.open.remove(o)
+        # o is an Order (production passes trade.order); map back to the
+        # Trade-like in self.open so test assertions on the trade still hold.
+        trade = o if o in self.open else None
+        if trade is None:
+            for t in self.open:
+                if t.order is o:
+                    trade = t
+                    break
+        if trade is not None:
+            self.open.remove(trade)
+        self.cancelled.append(trade if trade is not None else o)
 
 
 def make_manager(ib, table, scope='live'):
@@ -190,6 +210,59 @@ def test_submit_entry_always_places_stop(fake_table):
     res = mgr.submit_entry(make_intent(qty=1, stop_price=90.0), None)
     assert res.status == 'FILLED'
     assert any(o.orderType == 'STP' for o in ib.placed)
+
+
+# ---- native bracket orders (PART 2.1: broker-side stop, no naked-position window) ----
+def test_bracket_submits_parent_then_linked_stop(fake_table):
+    ib = FakeIB(fill_status='Filled', fill_shares=1, fill_price=100.0)
+    mgr = make_manager(ib, fake_table)
+    res = mgr.submit_entry(make_intent(qty=1, stop_price=90.0, tag='MES_DONCHIAN'), None)
+    assert res.status == 'FILLED'
+    parent = [o for o in ib.placed if o.orderType == 'MKT'][0]
+    stop = [o for o in ib.placed if o.orderType == 'STP'][0]
+    # parent held (transmit=False); stop is a broker-side child (parentId + transmit)
+    assert parent.transmit is False
+    assert stop.parentId == parent.orderId
+    assert stop.transmit is True
+    assert stop.orderRef == 'MES_DONCHIAN'
+    assert stop.ocaGroup == f'BRKT-{res.signal_id}'
+
+
+def test_bracket_with_take_profit_adds_oca_target(fake_table):
+    ib = FakeIB(fill_status='Filled', fill_shares=1, fill_price=100.0)
+    mgr = make_manager(ib, fake_table)
+    res = mgr.submit_entry(make_intent(qty=1, stop_price=90.0), None, take_profit=120.0)
+    assert res.status == 'FILLED'
+    mkt = [o for o in ib.placed if o.orderType == 'MKT']
+    stp = [o for o in ib.placed if o.orderType == 'STP']
+    lmt = [o for o in ib.placed if o.orderType == 'LMT']
+    assert len(mkt) == 1 and len(stp) == 1 and len(lmt) == 1
+    stop, target = stp[0], lmt[0]
+    # stop + target share one OCA group (one fill cancels the other); the LAST
+    # leg (target) transmits the whole chain.
+    assert stop.ocaGroup == target.ocaGroup == f'BRKT-{res.signal_id}'
+    assert stop.parentId == target.parentId == mkt[0].orderId
+    assert stop.transmit is False and target.transmit is True
+
+
+def test_bracket_keeps_stop_resting_on_unknown_fill(fake_table):
+    # On an uncertain (timeout) fill the bracket stop is LEFT resting — it is the
+    # only protection if the entry actually filled. Never stripped on UNKNOWN.
+    ib = FakeIB(fill_status='Submitted')
+    mgr = make_manager(ib, fake_table)
+    res = mgr.submit_entry(make_intent(qty=1, stop_price=90.0), None, fill_timeout=0.01)
+    assert res.status == 'UNKNOWN'
+    assert any(o.orderType == 'STP' for o in ib.placed)
+
+
+def test_bracket_partial_fill_resizes_stop_to_filled_qty(fake_table):
+    ib = FakeIB(fill_status='Filled', fill_shares=1, fill_price=100.0)
+    mgr = make_manager(ib, fake_table)
+    res = mgr.submit_entry(make_intent(qty=3, stop_price=90.0), None)
+    assert res.status == 'PARTIAL'
+    # bracket stop (qty 3) placed, then a corrected stop (qty 1) re-rested
+    stops = [o for o in ib.placed if o.orderType == 'STP']
+    assert stops[-1].totalQuantity == 1
 
 
 # ---- submit_exit ----

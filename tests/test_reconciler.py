@@ -61,6 +61,11 @@ class FakeIB:
             raise RuntimeError("connection lost")
         return self._orders
 
+    def openTrades(self):
+        if self.fail_orders:
+            raise RuntimeError("connection lost")
+        return self._orders
+
     def executions(self):
         if self.fail_executions:
             raise RuntimeError("connection lost")

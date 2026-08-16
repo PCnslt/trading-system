@@ -172,12 +172,12 @@ def flatten_ibkr(ib, symbols, table, tags, today, mode='PAPER'):
     from ib_insync import MarketOrder
 
     ib.sleep(1)  # let reqPositions populate after connect
-    for o in list(ib.openOrders()):
-        if o.contract.symbol in symbols and o.order.orderType == 'STP':
+    for t in list(ib.openTrades()):
+        if t.contract.symbol in symbols and t.order.orderType == 'STP':
             try:
-                ib.cancelOrder(o)
+                ib.cancelOrder(t.order)
             except Exception as e:
-                print(f"[control] cancel stop failed ({o.contract.symbol}): {e}")
+                print(f"[control] cancel stop failed ({t.contract.symbol}): {e}")
     for p in list(ib.positions()):
         if p.contract.symbol in symbols and int(p.position) != 0:
             qty = abs(int(p.position))
