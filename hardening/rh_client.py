@@ -19,6 +19,17 @@ TRANSPORT (verified 2026-08-16, ground truth):
   ``{"content":[{"type":"text","text":"<inner JSON string>"}]}`` — the inner
   string is itself JSON and is unwrapped here.
 
+TOKEN OWNERSHIP — SINGLE WRITER (owner lock, 2026-08-16):
+  The Robinhood ``refresh_token`` is SINGLE-USE / rotating: every refresh mints a
+  NEW refresh_token and immediately REVOKES the old access token too. Two
+  processes sharing one token store therefore poison each other. **ONLY this VPS
+  may hold a live Robinhood token** under ``/trading/robinhood/*``. The laptop MCP
+  is **RETIRED for trading** — the laptop may only READ SSM to confirm state,
+  never refresh or write. (Robinhood's hosted MCP exposes a SINGLE well-known
+  OAuth ``client_id`` — DCR cannot mint a per-process client — so single-writer
+  discipline is enforced in code here, not by credential separation. See
+  research/ROBINHOOD_IBKR_RESEARCH.md.)
+
 TOKEN LIFECYCLE (source of truth = SSM; this VPS owns it):
   - ``token_endpoint`` (``meta_json``) = ``https://api.robinhood.com/oauth2/token/``.
   - Public client, ``token_endpoint_auth_method=none`` → NO client_secret.
@@ -77,6 +88,12 @@ LOCAL_TOKEN_FILE = os.path.expanduser("~/.rh-token-backup.json")
 
 # Refresh proactively when the access token has less than this much life left.
 REFRESH_MARGIN_S = 12 * 3600  # 12h
+
+# Double-refresh race guard: after a successful refresh, a second thread that was
+# already waiting on the lock (e.g. it also caught a 401 with the SAME dead token)
+# reuses the first thread's fresh token instead of rotating the refresh_token a
+# second time. Windows longer than this are treated as a genuine new refresh.
+REFRESH_RACE_COOLDOWN_S = 30
 
 # Robinhood's protective-stop order types are whole-share only (fractional qty is
 # accepted for MARKET orders in regular hours; stop_market/stop_limit need integer
@@ -177,7 +194,7 @@ def _save_ssm_token(token: dict, region=None) -> None:
         "refresh_token": token.get("refresh_token", ""),
         "token_type": token.get("token_type", "Bearer"),
         "scope": token.get("scope", "internal"),
-        "expires_at": repr(token.get("expires_at", 0.0)),
+        "expires_at": str(int(token.get("expires_at", 0) or 0)),
         "expires_in": str(int(token.get("expires_in", 0))),
     }
     for key, value in writes.items():
@@ -325,6 +342,7 @@ class RHClient:
         self._refresh_margin = refresh_margin if refresh_margin is not None \
             else REFRESH_MARGIN_S
         self._lock = threading.Lock()
+        self._refreshed_at = None  # last successful refresh epoch (race guard)
         self._token = self._load_token()
         self._ssm = _load_ssm_creds(region)  # static fields (client_id, meta, …)
         self._token_endpoint = self._resolve_token_endpoint()
@@ -375,6 +393,16 @@ class RHClient:
         still leaves the token on disk (never stranded). Single-flight via a lock.
         """
         with self._lock:
+            # Race guard: if another thread already refreshed while we waited on
+            # the lock, reuse its (fresh) token instead of rotating the
+            # refresh_token a second time. Two threads can both hit a 401 with
+            # the SAME dead token — only the first should rotate it. (A raw
+            # expires_at re-check is WRONG here: a revoked token can still be
+            # within its exp window, so freshness is judged by the last-refresh
+            # marker, not the clock.)
+            if self._refreshed_at is not None and \
+                    (self._now() - self._refreshed_at) < REFRESH_RACE_COOLDOWN_S:
+                return self._token["access_token"]
             rt = self._token.get("refresh_token")
             if not rt:
                 raise RHAuthError("no refresh_token — re-OAuth required")
@@ -419,6 +447,7 @@ class RHClient:
                 print(f"[rh_client] WARNING: SSM writeback failed (token on local "
                       f"file only): {e!r}", flush=True)
             self._token = new_token
+            self._refreshed_at = self._now()
             return at
 
     def _client_id(self) -> str:
@@ -692,3 +721,51 @@ class RHClient:
             args["stop_price"] = str(stop_price)
         raw = self._tool("review_equity_order", **args)
         return raw.get("data") or raw
+
+    # ---- empirical fractional-stop check (READ-ONLY — places NO order) ----
+    def check_fractional_stop(self, symbol: str, stop_price: float,
+                              account_number: str | None = None,
+                              dollar_amount: str | None = "1.00",
+                              quantity: str | None = "0.5",
+                              time_in_force: str = "gfd") -> dict:
+        """Empirically settle whole-share-vs-fractional stops — places NO order.
+
+        Calls ``review_equity_order`` (Robinhood's SIMULATE path) with a SELL
+        ``stop_market`` for BOTH a fractional ``dollar_amount`` AND a fractional
+        share ``quantity`` and reports whether the broker accepts a protective
+        stop on a sub-1-share position. This is data, not assumption — the whole
+        point of ``place_equity_entry`` reversing sub-1-share fills is the
+        (previously unverified) claim that Robinhood stops are whole-share only.
+
+        Returns a structured dict:
+            {"symbol", "side": "sell", "order_type": "stop_market", "stop_price",
+             "checks": [{label, accepted, review|detail}, ...],
+             "conclusion": "ACCEPTED" | "REJECTED" | "UNKNOWN"}
+        Never places an order; any MCP tool error is captured as ``accepted=False``.
+        """
+        sp = float(stop_price)
+        checks = []
+        for label, kw in (("dollar_amount", {"dollar_amount": dollar_amount}),
+                          ("fractional_qty", {"quantity": quantity})):
+            entry = {"label": label, "accepted": None}
+            try:
+                r = self.review_equity_order(
+                    symbol, "sell", "stop_market", account_number=account_number,
+                    stop_price=f"{sp:.4f}", time_in_force=time_in_force, **kw)
+                entry["accepted"] = True
+                entry["review"] = r
+            except (RHOrderError, RHError) as e:  # simulate-path rejection
+                entry["accepted"] = False
+                entry["detail"] = str(e)[:400]
+            checks.append(entry)
+
+        accepted = [c for c in checks if c.get("accepted") is True]
+        rejected = [c for c in checks if c.get("accepted") is False]
+        if accepted:
+            conclusion = "ACCEPTED"
+        elif rejected and len(rejected) == len(checks):
+            conclusion = "REJECTED"
+        else:
+            conclusion = "UNKNOWN"
+        return {"symbol": symbol.upper(), "side": "sell", "order_type": "stop_market",
+                "stop_price": sp, "checks": checks, "conclusion": conclusion}

@@ -14,6 +14,7 @@ import pytest
 from hardening import rh_client
 from hardening.rh_client import (
     RHClient,
+    RHOrderError,
     RHStopPlacementFailed,
     RHStopRequired,
     make_ref_id,
@@ -202,3 +203,61 @@ def test_refresh_persists_local_before_ssm(ssm_and_token, monkeypatch):
     assert order == ["local", "ssm"]                      # local FIRST (crash-safe)
     assert ssm_writes[0]["refresh_token"] == "new_rt"     # SSM got the rotated token
     assert ssm_writes[0]["expires_at"] > time.time()      # expires_at recomputed
+
+
+# ---- refresh race guard (double-refresh on two threads racing a 401) ----
+def test_refresh_race_guard_skips_redundant_rotation(ssm_and_token, monkeypatch):
+    c = make_client({})
+    urlopen_calls = []
+
+    def fake_urlopen(req, timeout=None):
+        urlopen_calls.append(1)
+        body = json.dumps({
+            "access_token": "new_at",
+            "token_type": "Bearer",
+            "expires_in": 335466,
+            "scope": "internal",
+            "refresh_token": "new_rt",
+        }).encode()
+
+        class R:
+            def read(self):
+                return body
+            def __enter__(self):
+                return self
+            def __exit__(self, *a):
+                return False
+        return R()
+
+    monkeypatch.setattr(rh_client.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.setattr(rh_client, "_save_local_token", lambda t: None)
+    monkeypatch.setattr(rh_client, "_save_ssm_token", lambda t, region=None: None)
+
+    at1 = c.refresh()
+    at2 = c.refresh()  # immediate second call (racing thread) — must NOT rotate again
+
+    assert at1 == "new_at"
+    assert at2 == "new_at"                 # reused the first thread's fresh token
+    assert len(urlopen_calls) == 1         # only ONE token rotation
+
+
+# ---- empirical fractional-stop check (read-only, no order) ----
+def test_check_fractional_stop_accepted(ssm_and_token):
+    def review(args):
+        return {"data": {"quote": {}, "alerts": []}}
+    c = make_client({"review_equity_order": review})
+    r = c.check_fractional_stop("SPY", 100.0)
+    assert r["conclusion"] == "ACCEPTED"
+    assert all(ch["accepted"] is True for ch in r["checks"])
+    # read-only: the only tool touched is review_equity_order, never placement
+    assert {name for name, _ in c._transport.tool_calls} == {"review_equity_order"}
+
+
+def test_check_fractional_stop_rejected(ssm_and_token):
+    def review(args):
+        raise RHOrderError("stop orders require whole shares")
+    c = make_client({"review_equity_order": review})
+    r = c.check_fractional_stop("SPY", 100.0)
+    assert r["conclusion"] == "REJECTED"
+    assert all(ch["accepted"] is False for ch in r["checks"])
+    assert {name for name, _ in c._transport.tool_calls} == {"review_equity_order"}

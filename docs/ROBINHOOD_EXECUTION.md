@@ -36,12 +36,14 @@ Wraps the **Robinhood MCP gateway** (see §4 for why MCP, not REST). Methods:
 3. **Idempotency:** every placement carries a deterministic `ref_id` (UUIDv5 from a
    stable `client_order_ref`), so re-sending the same intent is deduped upstream.
 
-### `infra/rh_oauth.py` — re-authentication recovery
+### `infra/rh_oauth.py` — re-authentication (VPS single-writer)
 
-Interactive PKCE `authorization_code` flow → writes fresh tokens to SSM. Run on a
-machine with a browser + Robinhood login (the laptop), NOT this headless VPS.
-**This is the recovery path when the token dies** (see §6 — the token is currently
-DEAD and must be re-authed).
+Interactive PKCE `authorization_code` flow, now **VPS-owned**: it DCR-registers
+(singleton client), prints the authorization URL + the `ssh -L` port-forward, and
+listens on the loopback port so the OWNER completes browser consent from the
+laptop. Persists the fresh token local-file-first then SSM. **The laptop MCP is
+retired for trading** — the VPS is the single writer of the live token. CLI:
+`--check` (read-only state) and `--reauth`. See `docs/ROBINHOOD-ACCESS.md`.
 
 ### `bot/live_equities.py` — EXECUTION MODE
 
@@ -153,10 +155,12 @@ the old access token** (`invalid_grant` / `token revoked`), and the rotated valu
 was not persisted before the process exited. Result: the `refresh_token` and
 `access_token` in SSM are both now **invalid**.
 
-**Recovery:** run `python3 infra/rh_oauth.py` on the laptop (browser + Robinhood
-login), which re-auths via PKCE and writes fresh tokens to SSM. Until then, the
-Robinhood lane cannot read the account or place orders. The `rh_client` itself is
-correct and validated — it will work the moment fresh tokens are in SSM.
+**Recovery:** run `python3 infra/rh_oauth.py --reauth` on the VPS (it prints the
+authorization URL + `ssh -L 58245:127.0.0.1:58245 ubuntu@52.7.95.127` port-forward;
+the owner completes browser consent from the laptop), which re-auths via PKCE and
+writes fresh tokens to SSM. Until then, the Robinhood lane cannot read the account
+or place orders. The `rh_client` itself is correct and validated — it will work the
+moment fresh tokens are in SSM.
 
 **Lesson (encoded in the client):** refresh writeback is crash-safe — persist the
 rotated token to the **local fallback file first, then SSM**, before returning.

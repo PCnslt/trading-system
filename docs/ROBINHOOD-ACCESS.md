@@ -22,6 +22,15 @@ The `access_token` is a JWT (ES256) whose claims carry the entitlement snapshot:
 The token is bound to the MCP agent, not the public API. The **only** client-facing
 surface is the MCP server — access goes `MCP initialize → tools/list → tools/call`.
 
+**Singleton client (verified 2026-08-16):** the DCR
+`registration_endpoint` returns the SAME well-known `client_id`
+(`LtLiNmbs9owbYfWgBlC68Z2VujIPuvGoAiSYr8xW`) regardless of the submitted
+`client_name`/`redirect_uri` — Robinhood's hosted MCP has ONE shared OAuth client,
+so a **separate per-process client_id cannot be registered**. (It does echo back
+the caller's loopback `redirect_uri`, so the port is caller-chosen.) Because there
+is one shared client, token safety is enforced by **single-writer discipline**, not
+credential separation: only this VPS holds/rotates the live token.
+
 ## Access module
 
 `infra/robinhood.py` (read-only, no order placement):
@@ -46,25 +55,29 @@ recovery is a **fresh authorization_code flow** (browser login + 2FA). This is
 owner/laptop-gated — the redirect_uri is `http://127.0.0.1:58244/callback`
 (localhost on the *laptop*), and the login requires Robinhood credentials + 2FA.
 
-## Recovery (owner action — pick ONE)
+## Recovery (owner action — VPS single-writer re-auth)
 
-**A. Re-sync the laptop's CURRENT tokens (fastest).** The laptop Hermes is already
-trading live with valid tokens. Push them to SSM from any machine with the instance
-role (or a short-lived `aws` CLI with `ssm:PutParameter`):
+Re-auth is now **VPS-owned** (the laptop MCP is retired for trading and must NOT
+rotate the token — that is exactly how the store got poisoned). On the VPS:
 
 ```
-access_token  -> /trading/robinhood/access_token
-refresh_token -> /trading/robinhood/refresh_token
-expires_in    -> /trading/robinhood/expires_in
-expires_at    -> /trading/robinhood/expires_at
-scope         -> /trading/robinhood/scope
-token_json    -> /trading/robinhood/token_json   # the full OAuth token response
+python3 infra/rh_oauth.py --check     # read-only token/client state + MCP liveness
+python3 infra/rh_oauth.py --reauth    # DCR (singleton client) + PKCE + loopback listener
 ```
 
-(all `SecureString`, `Overwrite=true`). Then re-run `python infra/robinhood.py`.
+`--reauth` DCR-registers, prints the authorization URL **and** the port-forward
+command, then listens on `127.0.0.1:<port>/callback`. The owner completes consent
+from the laptop (browser + 2FA) in two steps:
 
-**B. Re-authorize from scratch.** On the laptop: `hermes mcp login robinhood`
-(opens the browser, full OAuth + 2FA), then do step A with the fresh tokens.
+```
+# laptop terminal (forward the loopback port to the VPS):
+ssh -L 58245:127.0.0.1:58245 ubuntu@52.7.95.127
+# then open the printed https://robinhood.com/oauth?... URL in the laptop browser
+```
+
+After consent, the script exchanges the code and persists the fresh token to the
+LOCAL file first, then SSM (`/trading/robinhood/*`) — single-writer, crash-safe.
+The script never opens a browser or performs the login itself.
 
 ## Order-readiness semantics
 
