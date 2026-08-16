@@ -59,6 +59,9 @@ CRON_TZ=America/New_York
 #   reconcile-daemon.service     broker reconciliation (clientId 76) every 45s -> RECONCILE/system
 #                                 (MATCH/MISMATCH/UNKNOWN) + CRITICAL on non-MATCH. Read-only,
 #                                 never places orders or mutates CONTROL.
+#   ibgateway-live.service       IB Gateway (headless LIVE U26949861) — DISABLED until funded.
+#                                 Second GWClient on :100, settings dir Jts-live/ (tradingMode=l),
+#                                 live API port 4001 default. Do NOT enable. See docs/IBGATEWAY-LIVE-OPS.md.
 
 # ---- one-time / on-demand data-lake jobs (not scheduled) ----
 #   bot/futures_contracts.py  contract resolver + rollover  -> CONTRACT#<sym> + S3 contracts/*

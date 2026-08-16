@@ -30,6 +30,20 @@ Execution-layer hardening is **done** (3 phases):
    (missing/orphaned stop = MISMATCH → halt). `exec_manager.submit_entry` refuses
    any unprotected entry fail-closed.
 
+## Live paths wired (BOTH brokers — OFF by default, 2026-08-16)
+
+- **IBKR LIVE gateway** (`U26949861`): second GWClient on `:100`, settings dir
+  `/home/ubuntu/Jts-live` (`tradingMode=l`), systemd `ibgateway-live.service`
+  (**DISABLED**). Live API port = **4001** default (paper = 4002). ⚠️ Login
+  screen "Trading Mode" defaults to Paper and is NOT driven by jts.ini — must be
+  switched to "Live Trading" at first login, then verify
+  `managedAccounts()==['U26949861']`. See `docs/IBGATEWAY-LIVE-OPS.md`.
+- **Robinhood LIVE client** (`hardening/rh_client.py`, committed `77fbb1e`): OAuth
+  via SSM `/trading/robinhood/*` (MCP-gateway transport); live orders gated behind
+  **`RH_EXECUTION_MODE=LIVE` + `RH_LIVE_ENABLED=true`** (both default OFF,
+  fail-closed). Current SSM token is **REVOKED** (rotated refresh not persisted) →
+  laptop re-auth via `infra/rh_oauth.py`. See `docs/ROBINHOOD-LIVE.md`.
+
 ## Active edges
 
 | Edge | Status | Note |

@@ -1,0 +1,17 @@
+[Unit]
+Description=IB Gateway (headless LIVE trading, account U26949861)
+After=network.target
+
+# DO NOT enable/start this unit while the paper ibgateway.service is logged in
+# under the SAME username — IBKR disallows two concurrent sessions per username
+# and the live login would terminate the paper session. Use a separate
+# "additional username" (Account Management) and approve IB Key 2FA on first login.
+[Service]
+User=ubuntu
+Environment=DISPLAY=:100
+ExecStart=/home/ubuntu/ibgateway-live-start.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

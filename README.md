@@ -34,4 +34,11 @@ Never-lose-money: every entry rests a hard protective stop; reconciler halts on 
 missing stop on any open position. Crypto deep history (`crypto-hist/`, 6.9y) +
 futures-options chain scaffold landed (both research-grade, 0 crypto promotes).
 Kill-switch + dashboard live.
+**Live paths wired on BOTH brokers, OFF by default:** IBKR live gateway
+(`ibgateway-live.service`, DISABLED, live port 4001 — `docs/IBGATEWAY-LIVE-OPS.md`)
+and Robinhood live client (`hardening/rh_client.py`, gated behind
+`RH_EXECUTION_MODE=LIVE` + `RH_LIVE_ENABLED=true`, SSM OAuth —
+`docs/ROBINHOOD-LIVE.md`). Paper remains the operating default; no
+live order is possible until the owner funds + permissions + 2FA (IBKR) and
+re-auths Robinhood.
 See `.hermes/plans/trading-system-checklist.md`.
