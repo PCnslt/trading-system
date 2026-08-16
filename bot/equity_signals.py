@@ -49,12 +49,16 @@ UNIVERSE = {
 }
 
 # Families promoted to "paper-forward" status by the equities edge sweep
-# (research/EQUITIES_SWEEP.md). A promoted entry carries promoted=True; everything
-# else stays candidate. Execution stays 'NONE' either way (Robinhood manual).
+# (research/EQUITIES_SWEEP.md §7 verdict rollup). A promoted entry carries
+# promoted=True; everything else stays candidate. Execution stays 'NONE' either
+# way (Robinhood manual — owner directs, correct).
 #   MR_RSI2       = RSI(2)<10 buy-the-dip (the champion — robust in BOTH regimes)
+#                   VALIDATED 11/15 symbols (adds XLY — was missing from the §6
+#                   prose list but is P in the per-symbol table: 1.71/1.74 n=109).
 #   MOM_DONCHIAN  = 20d breakout, gated by close > 200d MA (regime-conditional)
+#                   VALIDATED 9/15 symbols (regime-conditional).
 PROMOTED = {
-    'MR_RSI2': ['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'XLF', 'XLK', 'XLV', 'XLP', 'XLI'],
+    'MR_RSI2': ['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'XLF', 'XLK', 'XLV', 'XLP', 'XLY', 'XLI'],
     'MOM_DONCHIAN': ['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'XLF', 'XLK', 'XLY', 'XLI'],
 }
 

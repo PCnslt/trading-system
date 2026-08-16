@@ -118,7 +118,7 @@ def set_control(table, **fields):
     return item
 
 
-BOT_KEYS = ('live', 'live_bondsfx', 'live_intraday')
+BOT_KEYS = ('live', 'live_bondsfx', 'live_intraday', 'live_gc')
 
 
 def ack_flatten(table, bot_key):

@@ -197,6 +197,39 @@ def test_reconcile_old_fill_not_flagged(fake_table):
     assert r.status == 'MATCH', r.reason
 
 
+# ---- GC tags (bidirectional — side MUST be stored, fail-closed otherwise) ----
+def test_reconcile_match_gc_long_with_stop(fake_table):
+    pos_row(fake_table, 'GC_DONCHIAN', 1, side='LONG')
+    ib = FakeIB(positions=[FakePos('GC', 1)],
+                orders=[FakeOrder('GC', 'SELL', 'STP', 1)])
+    r = reconcile(ib, fake_table, today_iso=TODAY)
+    assert r.status == 'MATCH', r.reason
+
+
+def test_reconcile_match_gc_short_with_stop(fake_table):
+    pos_row(fake_table, 'GC_TSMOM', 1, side='SHORT')
+    ib = FakeIB(positions=[FakePos('GC', -1)],
+                orders=[FakeOrder('GC', 'BUY', 'STP', 1)])
+    r = reconcile(ib, fake_table, today_iso=TODAY)
+    assert r.status == 'MATCH', r.reason
+
+
+def test_reconcile_mismatch_gc_missing_stop(fake_table):
+    pos_row(fake_table, 'GC_DONCHIAN', 1, side='LONG')
+    ib = FakeIB(positions=[FakePos('GC', 1)])   # no stop -> MISMATCH
+    r = reconcile(ib, fake_table, today_iso=TODAY)
+    assert r.status == 'MISMATCH'
+    assert 'stop mismatch' in r.reason
+
+
+def test_reconcile_unknown_gc_side_missing(fake_table):
+    # GC is bidirectional: an open position with NO side is unresolvable -> UNKNOWN
+    pos_row(fake_table, 'GC_DONCHIAN', 1)   # no side stored
+    ib = FakeIB(positions=[FakePos('GC', 1)])
+    r = reconcile(ib, fake_table, today_iso=TODAY)
+    assert r.status == 'UNKNOWN'
+
+
 # ---- UNKNOWN (fail-closed) cases ----
 def test_reconcile_unknown_broker_positions_fail(fake_table):
     r = reconcile(FakeIB(fail_positions=True), fake_table, today_iso=TODAY)

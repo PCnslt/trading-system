@@ -100,8 +100,13 @@ def test_flatten_not_cleared_until_all_bots_ack(fake_table):
     control.clear_flatten(fake_table)
     assert fake_table.items[('CONTROL', 'system')]['flatten'] == 'true'
 
-    # third (final) bot acks -> cleared
+    # third bot acks; still not cleared (live_gc is the 4th bot)
     control.ack_flatten(fake_table, 'live_intraday')
+    control.clear_flatten(fake_table)
+    assert fake_table.items[('CONTROL', 'system')]['flatten'] == 'true'
+
+    # fourth (final) bot acks -> cleared
+    control.ack_flatten(fake_table, 'live_gc')
     control.clear_flatten(fake_table)
     assert fake_table.items[('CONTROL', 'system')]['flatten'] == 'false'
     assert 'flatten_acked' not in fake_table.items[('CONTROL', 'system')]

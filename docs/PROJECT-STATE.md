@@ -8,10 +8,11 @@
 
 ## Current phase
 
-**Futures phase-1 (paper forward-test).** One validated edge is being paper-
-forwarded toward live capital; everything else is shelved/tabled (never deleted —
-optionality is preserved). Stocks/options (Robinhood) are live-ish on the laptop
-side; crypto is paper-signal research-grade (LOWEST live-priority).
+**Futures phase-1 (paper forward-test).** Two validated futures edges are being
+paper-forwarded toward live capital (index-LONG + gold momentum); everything else
+is shelved/tabled (never deleted — optionality is preserved). Stocks/options
+(Robinhood) are live-ish on the laptop side; crypto is paper-signal research-grade
+(LOWEST live-priority).
 
 Execution-layer hardening is **done** (3 phases):
 1. Persistent risk ledger (`RISK#`) — restart-safe daily loss cap.
@@ -29,7 +30,7 @@ Execution-layer hardening is **done** (3 phases):
 |---|---|---|
 | **index-LONG** (Donchian + RSI2-LONG, `live.py`) | ✅ PROMOTED | Sole live-cap candidate. Donchian PF 1.56/1.52/1.43@3t; RSI2-LONG 1.99/2.57/1.88@3t (corr 0.002). |
 | **intraday MES** (FADESHORT + DONCH15, `live_intraday.py`) | ▶️ paper | RTH entries, EOD flatten 15:45 ET. |
-| **gold momentum** (GC Donchian L/S + TSMOM, `gc_signals.py`) | ▶️ paper-signal | Promoted (EDGE_SWEEP). Donchian 1.45/1.81 OOS/1.31 IB, 3-tick 1.42; TSMOM 1.37/1.73/1.99, 3-tick 1.35. Signal-only (GC L1 delayed). |
+| **gold momentum** (GC Donchian L/S + TSMOM, `live_gc.py`) | ✅ paper-EXEC | Promoted (EDGE_SWEEP) → IBKR paper execution (clientId 78, ~19:10 ET). Donchian 1.45/1.81 OOS/1.31 IB, 3-tick 1.42; TSMOM 1.37/1.73/1.99, 3-tick 1.35. Donchian = chandelier 3·ATR trail; TSMOM = fixed 3·ATR stop. GC full = $100/pt (~$23k risk/contract @ 3·ATR → $1.5M fwd-test sleeve; MGC micro is the realistic live size). |
 | **equities RSI2-dip + Donchian(200d)** (`equity_signals.py`) | ▶️ paper-signal | Promoted (EQUITIES_SWEEP). RSI2 champion (both regimes); Donchian gated by close>200d-MA. Robinhood stays manual. |
 | **crypto Donchian-20+200d** (`crypto_paper.py`) | ▶️ paper-signal | Promoted (CRYPTO_SWEEP) but buy-and-hold proxy; LOWEST live-priority. |
 | **bonds fade-SHORT** (ZB/ZN, `live_bondsfx.py`) | 📦 SHELVED | Dies at 1-tick slip. Code kept + disarmed no-op; cron paused. Revisit only if cost/regime materially changes. |

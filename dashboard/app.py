@@ -148,7 +148,7 @@ with tab_sched:
 | 18:30 | yf_collect.py (ETFs/sectors/futures/**fx+crosses**/crypto — daily + 1h) | system crontab |
 | 18:45 | newsapi_ingest.py | system crontab |
 | **19:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2) | Hermes cron |
-| 19:10 | gc_signals.py (gold momentum, signal-only) | Hermes cron |
+| 19:10 | live_gc.py (gold momentum — PAPER EXEC: GC Donchian L/S + TSMOM) | Hermes cron |
 | 19:15 | equity_signals.py (equities, signal-only) | Hermes cron |
 | 19:20 | daily_collect.py (futures bars) | system crontab |
 | 19:45 | daily trading summary → Telegram | Hermes cron |""")

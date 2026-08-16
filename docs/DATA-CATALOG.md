@@ -98,6 +98,7 @@ The **data engine** (`data_engine/`, a separate decoupled project) owns the
 | 75 | `data/daily_collect.py` | daily delta collector |
 | 76 | `hardening/reconciler.py` | broker reconciliation daemon |
 | 77 | `data/options_chains.py` | options chain metadata |
+| 78 | `bot/live_gc.py` | GC gold momentum paper execution |
 | 90 | `data/backfill_futures_bars.py` | legacy backfill (kept) |
 | 50 | `data/ibkr_full_backfill.py` | full-depth IBKR backfill (equities/futures/crypto/options) |
 | 91–94 | ad-hoc probes | one-off gateway probes (not scheduled) |

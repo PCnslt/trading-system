@@ -36,7 +36,7 @@ CRON_TZ=America/New_York
 #   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 13-20 * * 1-5
 #   "Paper signals — equities"         script paper_equity_signals.sh  @ 15 23 * * *   (signals only; no execution; deliver=telegram)
 #   "Paper signals — crypto"           script paper_crypto_signals.sh  @ */30 * * * *  (signals only; no execution; deliver=local)
-#   "Paper signals — gold momentum"    script paper_gc_signals.sh      @ 10 23 * * *   (signals only; no execution; deliver=telegram)
+#   "Paper execution — gold momentum" script paper_gc_exec.sh         @ 10 23 * * *   (PAPER EXEC: GC Donchian L/S chandelier + TSMOM fixed-stop, clientId 78; deliver=telegram)
 #   "Paper fwd — crypto Donch200"      script paper_crypto_paper.sh    @ */30 * * * *  (signals only; no execution; deliver=local; buy-and-hold proxy flag)
 #   "Daily trading summary"            prompt (status_report.py)       @ 45 23 * * *
 #   "IB Gateway health watchdog"       script ibgw_health.sh           @ */30 * * * *

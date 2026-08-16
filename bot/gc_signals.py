@@ -1,5 +1,13 @@
 """Gold (GC) momentum paper-SIGNAL lane — futures, signal-only (NO execution).
 
+SUPERSEDED 2026-08-16: this lane was promoted to paper EXECUTION — see
+`bot/live_gc.py`. The `paper_gc_signals.sh` cron is retired; `live_gc.py` writes
+the SAME `SIGNAL#GC_DONCHIAN` / `SIGNAL#GC_TSMOM` keys plus `TRADE#`/`POSITION#`
+and routes orders to IBKR paper (GC contract, clientId 78). This file is kept for
+reference/optionality (it still runs correctly if invoked by hand).
+
+Original purpose below.
+
 Promoted by research/EDGE_SWEEP.md: the single strongest, best-confirmed futures
 edge is GOLD MOMENTUM — Donchian long/short (full PF 1.45, OOS 1.81, IBKR ~3y
 1.31, 3-tick 1.42) and TSMOM sign-of-12m-return (1.37 / 1.73 / 1.99 / 1.35).

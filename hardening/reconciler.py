@@ -32,6 +32,9 @@ TRACKED_TAGS = {
     'MNQ_DONCHIAN': 'LONG', 'MNQ_RSI2': 'LONG',
     # intraday MES
     'MES_FADESHORT': 'SHORT', 'MES_DONCH15': None,
+    # gold momentum (bidirectional — side MUST be stored in the POSITION row,
+    # like MES_DONCH15; None here means "resolve from the row or fail closed")
+    'GC_DONCHIAN': None, 'GC_TSMOM': None,
     # bonds fade-SHORT (KILLED at Gate-1, but a lingering position must still resolve)
     'ZB_RSI2SHORT': 'SHORT', 'ZB_BBANDSHORT': 'SHORT',
     'ZN_RSI2SHORT': 'SHORT', 'ZN_BBANDSHORT': 'SHORT',
