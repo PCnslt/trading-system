@@ -107,3 +107,12 @@ live.py change: rsi2_entry requires close>200d SMA (fail-closed on NaN), compute
 
 - **Summary**: live_gc.py now env-drives the contract: GC_CONTRACT (default GC), GC_EXCHANGE (default COMEX), GC_POINT_VALUE (default 100.0; MGC -> 10.0). New pure seam resolve_contract_config() resolves (contract, exchange, point_value) from env/args; SYMBOL=GC_CONTRACT so DynamoDB tags (POSITION#/SIGNAL#/TRADE#), flatten, venue string, and front_month_for() all follow the contract. front_month_for(MGC) confirmed == 202608 (same COMEX metals Feb/Apr/Jun/Aug/Oct/Dec cycle as GC). Full GC stays the paper default; MGC is opt-in via GC_CONTRACT=MGC + GC_RISK_BUDGET=<real account>. No paper-config change, no orders placed, LIVE untouched. Tests: 6 added (MGC point value 10.0 vs GC 100.0, GC_POINT_VALUE env override, per-point realized_pnl scaling 1/10, stop-distance dollar risk ~$2.28k vs ~$22.8k). Full suite 171 passed.
 - **Commits**: `04c0d8f`
+
+---
+
+## 2026-08-16T14:00:43-04:00 — Validate Connors RSI(2) stock mean-reversion for Robinhood lane (validation only, no live orders)
+
+- **Summary**: Rigorous non-data-mined validation on fixed liquidity-ranked universe (top-50 S&P100 by avg dollar volume, yfinance split+div-adjusted 1962-2026). Honest fills: next-open entry, intraday-GTC 2xATR stop, 5-day time stop, revert exit; cost 0/5/10bps per side; walk-forward OOS with train-only threshold selection. RESULT: edge is REAL and cost-surviving — PF 1.54 full / 1.47 OOS at thr=2 (67.5% win, 2-day hold), 1.44 @5bps, 1.35 @10bps, OOS decay only -4.7%. Threshold selection stable (always thr=2, no data-mining). NOT a 2023-25 bull artifact (weakest in bears: 2008 PF 0.36, 2022 0.81) and NOT mega-cap concentrated (40/50 names PF>1). Trailing 1xATR ratchet FAILS vs fixed stop (PF 1.44->1.39, win 66->59%, stop-outs double). Drawdown-first caveats: worst trade -37.9% (BKNG 9/11 gap-through), 18-trade losing streak, compounded portfolio maxDD ~-58% to -69%. VERDICT: PROMOTE thr=2 + fixed stop as sized-down satellite w/ regime guard, NOT a capital-preservation core.
+- **Commits**: `2bd2ea0`
+- **Blockers**:
+  - For capital-preservation directive: (1) bear-market decay (2008/2022 negative) -> evaluate index-level regime gate (SPX>SMA200) before entry, measure not assume; (2) gap-through tail risk -> cap position size $25-50/trade on ~$700.
