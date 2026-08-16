@@ -16,7 +16,7 @@ Families (all logged as CANDIDATE until a Gate-1 sweep promotes them):
     MOM_MA200     close vs 200-day MA
     MOM_CROSS     50-day vs 200-day MA
 
-Runs daily after US close (yf refreshes ~22:30 UTC). Dedupe: RUN#equity_signals/<date>.
+Runs daily after US close (yf refreshes ~18:30 ET). Dedupe: RUN#equity_signals/<date>.
 Forward-test history: one S3 snapshot per run under research/scan-results/equity-signals/.
 
 Paper only. LIVE env var is unused here — there is no execution path in this file.

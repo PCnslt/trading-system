@@ -22,6 +22,7 @@ import json
 import os
 import re
 import datetime as dt
+from zoneinfo import ZoneInfo
 
 import boto3
 import streamlit as st
@@ -30,6 +31,7 @@ from boto3.dynamodb.conditions import Key, Attr
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 DYNAMO_TABLE = os.getenv("DYNAMODB_TABLE", "trading-data")
 S3_BUCKET = os.getenv("S3_BUCKET", "trading-datalake-920641308584")
+NY = ZoneInfo("America/New_York")   # display timezone (ET)
 
 _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 _GATE5_LOG = os.path.join(_REPO_ROOT, "docs", "GATE5_LOG.md")
@@ -106,7 +108,7 @@ def _ts_hms(ts_epoch):
     if not ts_epoch:
         return "—"
     try:
-        return dt.datetime.fromtimestamp(int(ts_epoch), dt.timezone.utc).strftime("%H:%M:%S")
+        return dt.datetime.fromtimestamp(int(ts_epoch), NY).strftime("%H:%M:%S")
     except (ValueError, OSError, OverflowError):
         return "—"
 
@@ -338,7 +340,7 @@ def _quote_tile(sym, price, change, sub, note):
 def _render_quotes():
     st.subheader("🟢 Real-time quotes")
     # futures
-    st.markdown("**Futures — L1** (CME/CBOT, RTH 13:30–20:00 UTC)")
+    st.markdown("**Futures — L1** (CME/CBOT, RTH 09:30–16:00 ET)")
     prev = _futures_prev_closes()
     fcols = st.columns(len(FUTURES_QUOTE_SYMS))
     for col, sym in zip(fcols, FUTURES_QUOTE_SYMS):
@@ -358,7 +360,7 @@ def _render_quotes():
                 sub = f"bid {bb} · ask {aa} · {_age_str(_ts(q))} ago"
                 note = f"L1 (clientId 74). Prev close {pc} ({prev.get(sym, {}).get('date')})"
             else:
-                note = "No L1 snapshot yet — recorder RTH-idle (first session Mon 13:30 UTC)"
+                note = "No L1 snapshot yet — recorder RTH-idle (first session Mon 09:30 ET)"
             _quote_tile(sym, price, change, sub, note)
     # crypto
     st.markdown("**Crypto — Binance.US**")
@@ -393,7 +395,7 @@ def _render_feed():
             if stop:
                 lbl += f" · stop {stop:,.2f}"
             reason = str(it.get("reason", ""))[:80]
-            st.markdown(f"{lbl} · `{_ts_hms(_ts(it))} UTC` · {reason}")
+            st.markdown(f"{lbl} · `{_ts_hms(_ts(it))} ET` · {reason}")
         else:
             direction = it.get("signal", "—")
             close = _num(it.get("close"))
@@ -405,7 +407,7 @@ def _render_feed():
             if mode:
                 lbl += f" · `{mode}`"
             reason = str(it.get("reason", ""))[:90]
-            st.markdown(f"{lbl} · `{_ts_hms(_ts(it))} UTC` · {reason}")
+            st.markdown(f"{lbl} · `{_ts_hms(_ts(it))} ET` · {reason}")
 
 
 def _render_inflow():
@@ -418,8 +420,8 @@ def _render_inflow():
         if d.get("error"):
             rows.append((name, "⚠️ read error", "—", ""))
             continue
-        last = dt.datetime.fromtimestamp(d["last_ts"], dt.timezone.utc).strftime(
-            "%H:%M UTC") if d.get("last_ts") else "—"
+        last = dt.datetime.fromtimestamp(d["last_ts"], NY).strftime(
+            "%H:%M ET") if d.get("last_ts") else "—"
         ttl_suffix = " (≥)" if d.get("truncated") else ""
         rows.append((name, f"{d.get('today', 0)}{ttl_suffix} new today",
                      last, f"total {d.get('total', 0)}"))
@@ -448,9 +450,9 @@ def _render_gate5():
     rst = rec.get("status", "no-data")
     rts = _ts_hms(_ts(rec))
     if rst == "MATCH":
-        st.success(f"Reconcile: `MATCH` @ {rts} UTC — broker and internal state agree")
+        st.success(f"Reconcile: `MATCH` @ {rts} ET — broker and internal state agree")
     else:
-        st.error(f"Reconcile: `{rst}` @ {rts} UTC — fail-closed (bots halt)")
+        st.error(f"Reconcile: `{rst}` @ {rts} ET — fail-closed (bots halt)")
         if rec.get("reason"):
             st.caption(rec.get("reason"))
     # (a)-(d) criteria — live signal for (a), log-tracked for the rest
@@ -491,7 +493,7 @@ def _render_positions():
 def render_pulse():
     """The whole Live Pulse panel, auto-refreshing every 5s."""
     st.caption(f"Auto-refresh 5s · read-only · "
-               f"updated {now_utc().strftime('%H:%M:%S')} UTC · "
+               f"updated {dt.datetime.now(NY).strftime('%H:%M:%S')} ET · "
                f"DynamoDB `{DYNAMO_TABLE}` + S3 `{S3_BUCKET}`")
     _render_quotes()
     st.divider()
@@ -547,7 +549,7 @@ def _render_l1_tile(sym):
 def _render_honest_limits():
     st.subheader("⚠️ Honest tick-granularity boundary")
     st.info("""
-**Second-by-second L1 is available ONLY for the 23 CME+CBOT symbols, RTH Mon–Fri (13:30–20:00 UTC).**
+**Second-by-second L1 is available ONLY for the 23 CME+CBOT symbols, RTH Mon–Fri (09:30–16:00 ET).**
 
 | Coverage | Count | Symbols | Tick granularity |
 |---|---|---|---|
@@ -564,7 +566,7 @@ subscriptions** (CME energy/metals L1 + CME FX-futures L1).
 @st.fragment(run_every="3s")
 def render_data_hot():
     st.caption(f"Auto-refresh 3s · read-only · DynamoDB `{DYNAMO_TABLE}` · "
-               f"updated {now_utc().strftime('%H:%M:%S')} UTC")
+               f"updated {dt.datetime.now(NY).strftime('%H:%M:%S')} ET")
     _render_honest_limits()
     st.divider()
     st.subheader("🟢 Live L1 quotes — all 23 symbols (`QUOTE#<sym>` sk=`latest`)")
@@ -694,8 +696,8 @@ def render_data_cold():
         if d.get("error"):
             rows.append((name, "⚠️ read error", "—", "—"))
             continue
-        last = dt.datetime.fromtimestamp(d["last_ts"], dt.timezone.utc).strftime(
-            "%Y-%m-%d %H:%M UTC") if d.get("last_ts") else "—"
+        last = dt.datetime.fromtimestamp(d["last_ts"], NY).strftime(
+            "%Y-%m-%d %H:%M ET") if d.get("last_ts") else "—"
         ttl = "≥" if d.get("truncated") else ""
         rows.append((name, f"{ttl}{d.get('total', 0)}", last, d.get("last_key") or "—"))
     st.table([("prefix", "objects", "latest write", "latest key")] + rows)
@@ -714,5 +716,5 @@ def render_data_cold():
         st.table([("ibkr/ sub-prefix", "objects")] + irows)
 
     st.warning("`futures-ticks/` = 0 objects — the tick recorder has not yet captured a live RTH session "
-               "(deployed after Friday RTH close + IB Gateway down since Sat 06:11 UTC). First real capture: "
+               "(deployed after Friday RTH close + IB Gateway down since Sat 02:11 ET). First real capture: "
                "the next RTH session after the gateway logs back in.")

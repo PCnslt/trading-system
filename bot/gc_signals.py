@@ -7,7 +7,7 @@ Both agree across yfinance (16y) and IBKR futures-bars on the SAME direction and
 survive 3-tick slippage.
 
 This lane forward-tests those signals on GC daily (yfinance GC=F — same % action
-as the GC contract) at EOD, daily like live.py (23:00 UTC cadence). It writes
+as the GC contract) at EOD, daily like live.py (19:00 ET cadence). It writes
 SIGNAL#GC_DONCHIAN / SIGNAL#GC_TSMOM to DynamoDB (sk = UTC date, overwritten each
 cycle) and snapshots history to S3 research/scan-results/gc-signals/.
 
@@ -21,7 +21,7 @@ Strategies:
   TSMOM        sign of 12-month return -> LONG (>0) / SHORT (<0)
                (monthly rebalance in backtest; reported here as current direction)
 
-Runs daily after US close (yf refreshes ~22:30 UTC). Dedupe: RUN#gc_signals/<date>.
+Runs daily after US close (yf refreshes ~18:30 ET). Dedupe: RUN#gc_signals/<date>.
 """
 import argparse
 import os

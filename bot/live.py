@@ -25,7 +25,7 @@ Logging: DynamoDB pk tagged per strategy —
   SIGNAL#<sym>_<STRAT> / TRADE#<sym>_<STRAT> / POSITION#<sym>_<STRAT>
   (e.g. SIGNAL#MES_DONCHIAN, SIGNAL#MES_RSI2). A 'strategy' attribute is also
   written on each item. Paper only — LIVE env var stays false.
-Run daily via cron 23:00 UTC.
+Run daily via cron 19:00 ET.
 """
 import os
 import sys

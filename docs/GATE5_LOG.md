@@ -24,7 +24,7 @@
 ## Window
 
 - **Declared:** 2026-08-14 (gate STARTED)
-- **Target:** 10 RTH sessions (Mon–Fri, 13:30–20:00 UTC)
+- **Target:** 10 RTH sessions (Mon–Fri, 09:30–16:00 ET)
 - **First counted session:** Mon 2026-08-17
 - **Sessions completed:** 0 / 10
 - **Counter resets to 0** on any (a)–(d) failure → root-cause, fix, restart window.

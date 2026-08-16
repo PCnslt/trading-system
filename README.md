@@ -25,7 +25,7 @@ dashboard/   Streamlit app
 
 ## Status
 BUILDING — futures phase (paper forward-test). 2 bots live on cron:
-`live.py` (index, 23:00 UTC — PROMOTED) · `live_intraday.py` (MES, 15-min RTH).
+`live.py` (index, 19:00 ET — PROMOTED) · `live_intraday.py` (MES, 15-min RTH).
 `live_bondsfx.py` (bonds ZB/ZN) SHELVED at Gate-1 (dies at 1-tick slippage) — code kept + disarmed no-op.
 Execution hardening live: persistent risk ledger (`RISK#`) · broker reconciliation
 (`reconcile-daemon` systemd, 45s → `RECONCILE/system`) · execution manager +

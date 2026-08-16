@@ -7,7 +7,9 @@
 #     Managed via `hermes` / ~/.hermes/cron/jobs.json. Do NOT also put bots here —
 #     double-scheduling caused clientId collisions (70/71/72) at 23:00/23:05.
 #
-# All times ET (America/New_York). Paths absolute; python is the repo venv.
+# System-crontab times are ET (America/New_York) via CRON_TZ below. The Hermes-cron
+# block further down is annotated in UTC pending a gateway restart (see its TZ note).
+# Paths absolute; python is the repo venv.
 CRON_TZ=America/New_York
 
 # ---- data ingestion (system crontab) ----
@@ -22,20 +24,27 @@ CRON_TZ=America/New_York
 20 19 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/daily_collect.py >> /home/ubuntu/trading-system/data/daily_collect.log 2>&1
 
 # ---- bot execution (Hermes cron — NOT here) ----
-#   "Paper signals — index futures"    script paper_index_futures.sh   @ 0 19 * * *
-#   "Paper signals — bonds"            script paper_bonds.sh           @ 5 19 * * *   ⛔ PAUSED 2026-08-14 (Gate-1 SHELVED)
-#   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 09-16 * * 1-5
-#   "Paper signals — equities"         script paper_equity_signals.sh  @ 15 19 * * *   (signals only; no execution; deliver=telegram)
+#   ⚠️ Hermes-cron TZ note: the Hermes gateway (user systemd svc) CACHES its
+#   timezone at startup and does NOT pick up a live /etc/localtime change. Until
+#   it is restarted (`systemctl --user restart hermes-gateway`), these jobs fire
+#   on UTC wall-clock — so the exprs below stay in UTC to preserve market-hours
+#   intent (e.g. "0 23" = 19:00 ET). AFTER the restart (which reads config.yaml
+#   `timezone: America/New_York`), re-express them to ET: 23:xx→19:xx, 18:00→14:00,
+#   intraday 13-20→09-16. The intraday bot's CODE already self-gates in ET.
+#   "Paper signals — index futures"    script paper_index_futures.sh   @ 0 23 * * *
+#   "Paper signals — bonds"            script paper_bonds.sh           @ 5 23 * * *   ⛔ PAUSED 2026-08-14 (Gate-1 SHELVED)
+#   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 13-20 * * 1-5
+#   "Paper signals — equities"         script paper_equity_signals.sh  @ 15 23 * * *   (signals only; no execution; deliver=telegram)
 #   "Paper signals — crypto"           script paper_crypto_signals.sh  @ */30 * * * *  (signals only; no execution; deliver=local)
-#   "Paper signals — gold momentum"    script paper_gc_signals.sh      @ 10 19 * * *   (signals only; no execution; deliver=telegram)
+#   "Paper signals — gold momentum"    script paper_gc_signals.sh      @ 10 23 * * *   (signals only; no execution; deliver=telegram)
 #   "Paper fwd — crypto Donch200"      script paper_crypto_paper.sh    @ */30 * * * *  (signals only; no execution; deliver=local; buy-and-hold proxy flag)
-#   "Daily trading summary"            prompt (status_report.py)       @ 45 19 * * *
+#   "Daily trading summary"            prompt (status_report.py)       @ 45 23 * * *
 #   "IB Gateway health watchdog"       script ibgw_health.sh           @ */30 * * * *
 #   "Broker reconcile watchdog"        script reconcile_watchdog.sh    @ */5 * * * *
-#   "Weekly strategy scan + refine"    prompt (strategy_scan.py)       @ 0 14 * * 0    ⛔ PAUSED 2026-08-14 (screening CLOSED)
+#   "Weekly strategy scan + refine"    prompt (strategy_scan.py)       @ 0 18 * * 0    ⛔ PAUSED 2026-08-14 (screening CLOSED)
 #
-# The intraday bot (live_intraday.py) self-gates internally:
-#   entries 09:30-15:30 ET, EOD flatten 15:45 ET, skip outside RTH.
+# The intraday bot (live_intraday.py) self-gates internally on ET wall-clock
+# (zoneinfo America/New_York): entries 09:30-15:30 ET, EOD flatten 15:45 ET.
 
 # ---- systemd services (persistent, NOT cron) ----
 #   ibgateway.service            IB Gateway (headless paper :4002, native auto-restart)

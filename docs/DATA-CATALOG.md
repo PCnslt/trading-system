@@ -127,4 +127,4 @@ The **data engine** (`data_engine/`, a separate decoupled project) owns the
    ./venv/bin/python bot/backfill_bars.py --symbols <NEW>   # futures-bars/
    ./venv/bin/python data/options_chains.py       # OPTCHAIN# + options/ (if options=True)
    ```
-3. `data/daily_collect.py` (cron 23:20 UTC) picks it up automatically next tick.
+3. `data/daily_collect.py` (cron 19:20 ET) picks it up automatically next tick.

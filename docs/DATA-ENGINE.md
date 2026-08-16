@@ -116,7 +116,7 @@ system crontab under the `# ---- DATA ENGINE ----` delimiter (trading entries ar
 untouched). It is **data ingestion** → system crontab, per the trading convention
 (never Hermes cron, which is bot execution only).
 
-| Cron (UTC) | Job |
+| Cron (ET) | Job |
 |---|---|
 | `0 12 * * 0` | universe refresh (weekly) |
 | `15 1 * * *` | daily bars — bounded batch `--limit 2000` |

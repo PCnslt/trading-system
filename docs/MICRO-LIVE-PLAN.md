@@ -29,7 +29,7 @@
 2. **Live account permissions** — futures trading permission + order-type permissions (MKT + GTC STP) must be confirmed on the LIVE account (paper DUR193467 is not evidence of live entitlements).
 3. **Live market data** — live account needs CME L1 real-time (separate entitlement from paper; paper has it, live must be verified).
 4. **Gateway swap** — exec manager + reconciler run identically live (clientId/broker config unchanged except account), but the live gateway/credential swap must be smoke-tested with one round-trip before micro-live stays on.
-5. **Timing** — no flip during a data-collection backfill or a gateway 2FA window (Sun ~13:00 UTC).
+5. **Timing** — no flip during a data-collection backfill or a gateway 2FA window (Sun ~09:00 ET).
 
 ## Not yet needed
 

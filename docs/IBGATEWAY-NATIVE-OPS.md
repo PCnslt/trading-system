@@ -12,10 +12,15 @@ Daily re-login uses IB's first-party auto-restart + token re-use; the weekly
 - **Pin build 10.45.1j**: `INSTALL4J_ADD_VM_PARAMS="-Dtwslaunch.autoupdate.serviceImpl=twslaunch.autoupdate.DummyAutoUpdateService"`
   (no-op updater; last `-D` on the java command line wins, so it overrides the
   launcher's `Install4jAutoUpdateService`).
-- **Daily restart 04:00 UTC**: Gateway's native "Auto restart" (Global Configuration
-  → Lock and Exit → Auto restart + time). Stores an encrypted SOFT session token
-  (`AutoRestartDescriptor` / "autorestart file") and re-logs-in without password or 2FA.
-- **Weekly cold restart Sunday 13:00 UTC**: `ibgateway-weekly.timer` →
+- **Daily restart 00:00 ET (midnight)**: Gateway's native "Auto restart" (Global
+  Configuration → Lock and Exit → Auto restart + time). Stores an encrypted SOFT
+  session token (`AutoRestartDescriptor` / "autorestart file") and re-logs-in
+  without password or 2FA. The GUI time is set to "04:00 AM" and the gateway's
+  internal `jts.ini [Logon] TimeZone` is GMT (`Africa/Abidjan`), so it fires
+  04:00 UTC = 00:00 ET during EDT. To land on 00:00 ET in EST too, set the GUI
+  time to 00:00 + gateway TimeZone to America/New_York (owner action — left
+  as-is here to avoid disrupting the running gateway).
+- **Weekly cold restart Sunday 09:00 ET**: `ibgateway-weekly.timer` →
   `ibgateway-weekly.service` (`systemctl restart ibgateway`). IBKR invalidates security
   tokens Sunday ~1:00am ET, so this restart lands AFTER invalidation → full login + 2FA.
 - **API**: port 4002, paper account DUR193467. `jts.ini` already has
@@ -23,7 +28,7 @@ Daily re-login uses IB's first-party auto-restart + token re-use; the weekly
 
 ## Hang-recovery watchdog (alive-but-socket-dead)
 
-**Known failure mode (2026-08-16 — 7h outage):** the 04:00 native auto-restart can
+**Known failure mode (2026-08-16 — 7h outage):** the 00:00 ET native auto-restart can
 leave the gateway `active (running)` while the API socket (port 4002) never opens.
 That is a **HANG, not a crash**. systemd `Restart=always` only fires on process EXIT,
 so a hung process sits dead forever without intervention — exactly what happened
@@ -49,7 +54,7 @@ The watchdog **never bypasses 2FA** — it only detects the hang and alerts.
 
 ## Weekly 2FA re-login (auto-triggered — do NOT try to bypass)
 
-Sunday 13:00 UTC the timer restarts the gateway, then the weekly service
+Sunday 09:00 ET the timer restarts the gateway, then the weekly service
 auto-runs the login helper ~60s later (`ExecStartPost` → `sleep 60` →
 `DISPLAY=:99 /home/ubuntu/ibgateway-login.sh`). The helper types the password and
 clicks "Paper Log In" — a **full login**, which is the ONLY thing that fires the
@@ -80,12 +85,12 @@ if 2FA is then required — it never auto-bypasses the phone approval.
 4. `grep -i "Daily auto-restart" ~/Jts/launcher.log | tail -1` — "not enabled" on a fresh
    login is EXPECTED (that message is about the *current* session's restart context, not
    the global config). Confirm the auto-restart *time* is set: it was configured to
-   04:00 AM and persists in the encrypted settings.
-5. MES paper round-trip fills only when CME Globex is open (Sun 22:00 → Fri 21:00 UTC).
+   04:00 AM (GMT) and persists in the encrypted settings — that is 00:00 ET during EDT.
+5. MES paper round-trip fills only when CME Globex is open (Sun 18:00 → Fri 17:00 ET).
    `bot/execution_test.py` proves the full path; re-run during market hours for a fill.
-6. Weekly timer: `systemctl list-timers ibgateway-weekly.timer` → next = Sunday 13:00 UTC.
+6. Weekly timer: `systemctl list-timers ibgateway-weekly.timer` → next = Sunday 09:00 ET.
 7. Pin intact: `pgrep -af GWClient | grep -o 'DummyAutoUpdateService'` → present.
-8. Post-restart token re-login: after the 04:00 UTC auto-restart, the one-shot Hermes cron
+8. Post-restart token re-login: after the 00:00 ET auto-restart, the one-shot Hermes cron
    check runs `~/.hermes/scripts/ibgw_restart_check.sh` (port 4002 + GWClient process +
    read-only `managedAccounts()==['DUR193467']`) and reports to Telegram. Reuse it to
    verify any restart without re-deriving the checks.

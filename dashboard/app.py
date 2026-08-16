@@ -6,6 +6,7 @@ bot reads. No arbitrary order entry here.
 import os
 import sys
 import datetime as dt
+from zoneinfo import ZoneInfo
 
 import boto3
 import streamlit as st
@@ -20,6 +21,7 @@ load_dotenv()
 
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
 DYNAMO_TABLE = os.getenv("DYNAMODB_TABLE", "trading-data")
+NY = ZoneInfo("America/New_York")   # display timezone (ET)
 
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
 table = dynamodb.Table(DYNAMO_TABLE)
@@ -97,20 +99,20 @@ with tab_data_cold:
 
 # ============================ 24/7 SCHEDULE TAB ============================
 with tab_sched:
-    st.subheader("🗓️ 24/7 Schedule — the machine's rhythm (all times UTC)")
+    st.subheader("🗓️ 24/7 Schedule — the machine's rhythm (all times ET)")
     st.caption("Source of truth: system crontab (`infra/crontab.txt` + `data_engine/crontab.txt`) "
                "and Hermes cron (`~/.hermes/cron/jobs.json`). Everything below is live on this VPS.")
 
     st.markdown("#### 🌍 Market sessions — who's open when")
-    st.markdown("""| Market | Venue | Session | UTC window |
+    st.markdown("""| Market | Venue | Session | ET window |
 |---|---|---|---|
 | Crypto | Binance.US | **24/7/365** | always |
-| Forex spot | interbank | 24/5 | Sun **21:00** → Fri **21:00** (reopens Sun ~17:00 ET) |
-| Futures | CME Globex | 24/5 | Sun **22:00** → Fri **21:00** (reopens Sun 17:00 CT / 18:00 ET) |
-| US Equities (RTH) | NYSE/Nasdaq | Mon–Fri | **14:30 → 21:00** (09:30–16:00 ET) |""")
+| Forex spot | interbank | 24/5 | Sun **17:00** → Fri **17:00** |
+| Futures | CME Globex | 24/5 | Sun **18:00** → Fri **17:00** (reopens Sun 17:00 CT) |
+| US Equities (RTH) | NYSE/Nasdaq | Mon–Fri | **09:30 → 16:00** |""")
 
-    st.markdown("#### ⏱️ The 24/7 clock — what fires when (UTC)")
-    st.markdown("""| UTC | What runs | Layer |
+    st.markdown("#### ⏱️ The 24/7 clock — what fires when (ET)")
+    st.markdown("""| ET | What runs | Layer |
 |---|---|---|
 | **every 45s** | reconcile-daemon → `RECONCILE/system` (broker vs state) | systemd |
 | **every 5m** | reconcile watchdog → Telegram on non-MATCH | Hermes cron |
@@ -118,46 +120,46 @@ with tab_sched:
 | **every 30m** | IB Gateway health watchdog → Telegram | Hermes cron |
 | **every 30m** | crypto signal lanes (sweep + Donch200) — signal-only, local | Hermes cron |
 | **every 30m** | market_research.py → news sentiment (`NEWS#`) | system crontab |
-| **Mon–Fri */15, 13:00–20:00** | intraday MES (FADESHORT + DONCH15); bot self-gates entries 13:30–19:30, flatten 19:45 | Hermes cron |
-| **Mon–Fri 13:30–20:00** | futures L1 tick recorder (clientId 74) → `futures-ticks/` | systemd |
-| 01:15 | ~~data engine: US stocks daily (~6.9k)~~ ⛔ PAUSED — pivoted to IBKR | system crontab |
-| 02:00 | ~~data engine: liquid rank top-1000~~ ⛔ PAUSED (list still used by IBKR collector) | system crontab |
-| 02:30 / 02:45 | ~~data engine: 1h/1m intraday~~ ⛔ PAUSED — pivoted to IBKR | system crontab |
+| **Mon–Fri */15, 09:00–16:45** | intraday MES (FADESHORT + DONCH15); bot self-gates entries 09:30–15:30, flatten 15:45 | Hermes cron |
+| **Mon–Fri 09:30–16:00** | futures L1 tick recorder (clientId 74) → `futures-ticks/` | systemd |
+| 21:15 | ~~data engine: US stocks daily (~6.9k)~~ ⛔ PAUSED — pivoted to IBKR | system crontab |
+| 22:00 | ~~data engine: liquid rank top-1000~~ ⛔ PAUSED (list still used by IBKR collector) | system crontab |
+| 22:30 / 22:45 | ~~data engine: 1h/1m intraday~~ ⛔ PAUSED — pivoted to IBKR | system crontab |
 | — (resumable) | **IBKR full-depth backfill** → `ibkr/*` (futures daily → crypto → equities daily 20y+ → 1-min) | `run_ibkr_full_backfill.sh` |
-| 04:00 | IB Gateway native auto-restart (token re-login, no 2FA) | systemd |
-| Sun 12:00 | ~~data engine: universe refresh (~7k)~~ ⛔ PAUSED (universe list still cached + used by IBKR collector) | system crontab |
-| Sun 13:00 | IB Gateway weekly cold restart → 2FA re-login | systemd timer |
-| 21:00 | ingest.py (daily aggregates) | system crontab |
-| 21:45 | options_chains.py (futures options metadata) | system crontab |
-| 22:00 | fred_collect.py (macro) | system crontab |
-| 22:15 | fmp_ingest.py (quote/profile) | system crontab |
-| 22:30 | yf_collect.py (ETFs/sectors/futures/**fx+crosses**/crypto — daily + 1h) | system crontab |
-| 22:45 | newsapi_ingest.py | system crontab |
-| **23:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2) | Hermes cron |
-| 23:10 | gc_signals.py (gold momentum, signal-only) | Hermes cron |
-| 23:15 | equity_signals.py (equities, signal-only) | Hermes cron |
-| 23:20 | daily_collect.py (futures bars) | system crontab |
-| 23:45 | daily trading summary → Telegram | Hermes cron |""")
+| 00:00 | IB Gateway native auto-restart (token re-login, no 2FA) | systemd |
+| Sun 08:00 | ~~data engine: universe refresh (~7k)~~ ⛔ PAUSED (universe list still cached + used by IBKR collector) | system crontab |
+| Sun 09:00 | IB Gateway weekly cold restart → 2FA re-login | systemd timer |
+| 17:00 | ingest.py (daily aggregates) | system crontab |
+| 17:45 | options_chains.py (futures options metadata) | system crontab |
+| 18:00 | fred_collect.py (macro) | system crontab |
+| 18:15 | fmp_ingest.py (quote/profile) | system crontab |
+| 18:30 | yf_collect.py (ETFs/sectors/futures/**fx+crosses**/crypto — daily + 1h) | system crontab |
+| 18:45 | newsapi_ingest.py | system crontab |
+| **19:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2) | Hermes cron |
+| 19:10 | gc_signals.py (gold momentum, signal-only) | Hermes cron |
+| 19:15 | equity_signals.py (equities, signal-only) | Hermes cron |
+| 19:20 | daily_collect.py (futures bars) | system crontab |
+| 19:45 | daily trading summary → Telegram | Hermes cron |""")
 
     st.markdown("#### 🔴 Honest 24/7 gap (stated plainly)")
     st.warning("""**Saturday = crypto only.** Crypto is the *only* market trading on Saturdays, and
 **crypto has 0 validated edge** (the promoted Donchian-20+200d is a buy-and-hold proxy,
 LOWEST live-priority) **and the owner distrusts it** → it runs as a **paper-only signal
 lane** (execution `NONE`, no live trades). **Everything else reopens Sunday evening** —
-forex ~21:00 UTC, futures Globex 22:00 UTC, equities Monday.
+forex ~17:00 ET, futures Globex 18:00 ET, equities Monday.
 
 **This is not passivity — it's the market calendar + no-edge.** The machine never stops:
 crypto ticks, news, health watchdogs, and the reconcile daemon run 24/7/365 regardless.""")
     st.info("""**Sunday-globex correction:** futures are NOT closed until Monday — CME Globex
-**reopens Sunday 22:00 UTC** (17:00 CT / 18:00 ET). `live.py` fires **daily at 23:00 UTC
+**reopens Sunday 18:00 ET** (17:00 CT). `live.py` fires **daily at 19:00 ET
 (includes Sunday)**, so tonight it evaluates the freshly-reopened Sunday globex session
 (~1h of new price action). It does **not** skip Sunday.""")
 
     st.markdown("#### ⏸️ Paused (kept, not running)")
     st.markdown("""| Job | Why |
 |---|---|
-| Paper signals — bonds (23:05) | SHELVED (Gate-1: dies at 1-tick slip) |
-| Weekly strategy scan (Sun 18:00) | screening CLOSED (Gate-1) |""")
+| Paper signals — bonds (19:05 ET) | SHELVED (Gate-1: dies at 1-tick slip) |
+| Weekly strategy scan (Sun 14:00 ET) | screening CLOSED (Gate-1) |""")
 
 # ============================ LIVE TAB ============================
 with tab_live:
@@ -367,8 +369,8 @@ with tab_road:
 | IBKR | Native IB Gateway auto-restart + token re-login (IBC removed, 263bd24) | done |
 | IBKR | MES paper round-trip filled | done |
 | IBKR | Real-time CME/CBOT L1 → paper DUR193467 | done |
-| Bots | live.py (index MES/MNQ, 23:00 UTC) — PROMOTED | done |
-| Bots | live_bondsfx.py (bonds ZB/ZN, 23:05 UTC) | SHELVED (Gate-1: dies at 1-tick slip; code kept + disarmed) |
+| Bots | live.py (index MES/MNQ, 19:00 ET) — PROMOTED | done |
+| Bots | live_bondsfx.py (bonds ZB/ZN, 19:05 ET) | SHELVED (Gate-1: dies at 1-tick slip; code kept + disarmed) |
 | Bots | live_intraday.py (intraday MES, */15 RTH) | done |
 | Bots | Kill switch (control.py) read by all 3 bots before order | done |
 | Bots | Cross-bot guard (intraday stands down if daily holds MES) | done |
@@ -392,7 +394,7 @@ with tab_road:
 | Risk | Daily loss cap fully functional end-to-end (persisted accounting, checked before every entry, survives restart) | done |
 | Strategy | ES breakout backtest PF 2.73, MaxDD -7.9% | done |
 | Strategy | Walk-forward/OOS: Donchian long PF 2.08/2.16 (ES/NQ n=59/53), ADX 2.55/1.77 (thin) | done |
-| Strategy | First paper signals fired (index 23:00 + bonds 23:05 UTC — flat, no entry, expected) | done |
+| Strategy | First paper signals fired (index 19:00 + bonds 19:05 ET — flat, no entry, expected) | done |
 | Strategy | Gate-1 decision: index LONG PROMOTED, bonds fade-SHORT SHELVED, BBAND_INDEX_LONG TABLED, screening CLOSED | done |
 | Strategy | Gate-5 paper-forward validation (index-LONG) — 10 RTH-session execution-correctness gate | STARTED (docs/GATE5_LOG.md) |
 | Data | Historical backfill → S3 futures-bars: 12 sym (ES/NQ/MES/MNQ/RTY/YM/ZB/ZN/ZF/ZT/UB/TN), daily ~3y index / ~16mo rates + intraday 1h/15m/5m/1m | done |
@@ -494,7 +496,7 @@ Tracking: **`docs/GATE5_LOG.md`** · counter resets on any (a)–(d) failure.
     | 2 | Live futures + order-type permissions (MKT + GTC STP) | OWNER | ⬜ |
     | 3 | Live CME L1 real-time entitlement | OWNER | ⬜ |
     | 4 | Gateway/credential swap smoke-test (one live round-trip) | VPS prep | ⬜ |
-    | 5 | No flip during backfill / Sun 2FA window (13:00 UTC) | VPS prep | ⬜ |
+    | 5 | No flip during backfill / Sun 2FA window (09:00 ET) | VPS prep | ⬜ |
 
     > #1–#3 are OWNER actions; #4–#5 are VPS preps. This is a **visibility checklist**,
     > not an execution plan — nothing here is resolved unilaterally. Micro-live stays
@@ -505,11 +507,11 @@ Tracking: **`docs/GATE5_LOG.md`** · counter resets on any (a)–(d) failure.
     _r = _recon[0] if _recon else {}
     _rst = _r.get("status", "no-data")
     try:
-        _rts = dt.datetime.fromtimestamp(int(_r.get("ts")), dt.UTC).strftime("%Y-%m-%d %H:%M UTC") if _r.get("ts") else "—"
+        _rts = dt.datetime.fromtimestamp(int(_r.get("ts")), NY).strftime("%Y-%m-%d %H:%M ET") if _r.get("ts") else "—"
     except (TypeError, ValueError, OSError):
         _rts = "—"
     _ricon = "✅" if _rst == "MATCH" else "⚠️ fail-closed (bots halt on non-MATCH)"
     st.markdown(f"- Reconcile daemon (45s → `RECONCILE/system`): `{_rst}` @ {_rts} {_ricon}")
     st.markdown("- Window: declared 2026-08-14 · first counted RTH session Mon 2026-08-17 · 0/10 sessions.")
 
-st.caption(f"Updated {dt.datetime.now(dt.UTC).strftime('%Y-%m-%d %H:%M')} UTC · Data: DynamoDB `trading-data` · S3 `trading-datalake-920641308584`")
+st.caption(f"Updated {dt.datetime.now(NY).strftime('%Y-%m-%d %H:%M')} ET · Data: DynamoDB `trading-data` · S3 `trading-datalake-920641308584`")
