@@ -1,0 +1,11 @@
+[Unit]
+Description=Check every 10 min whether to resume the IBKR full-depth backfill
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=10min
+Persistent=true
+Unit=ibkr-backfill-resume.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,6 @@
+[Unit]
+Description=IBKR backfill resume trigger (gateway-aware: start only when port 4002 is up)
+
+[Service]
+Type=oneshot
+ExecStart=/home/ubuntu/trading-system/gateway_resume.sh

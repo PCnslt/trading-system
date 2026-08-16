@@ -114,6 +114,37 @@ class GatewayDown(BaseException):
     symbol as FAILED."""
 
 
+def _is_gateway_conn_error(e):
+    """True if `e` is a gateway connection failure — NOT a per-symbol data error
+    and NOT an S3/botocore error. Builtin ConnectionError covers ib_insync's
+    'Not connected' / ConnectionRefusedError; the message checks catch
+    socket-level failures that don't subclass ConnectionError."""
+    if isinstance(e, ConnectionError):
+        return True
+    msg = str(e).lower()
+    return any(k in msg for k in ('not connected', 'connection refused',
+                                  'errno 111', 'broken pipe', 'socket closed',
+                                  'no connection'))
+
+
+def _raise_if_gateway_conn_error(e):
+    """Raise GatewayDown for a gateway connection failure so the phase exits
+    NON-ZERO (systemd Restart=on-failure relaunches; checkpoint resumes) instead
+    of being swallowed as a per-symbol 'FAILED' and churning the whole universe.
+    Non-connection errors return normally so the caller's per-symbol handling
+    (gapped / no security definition / retry) still applies."""
+    if _is_gateway_conn_error(e):
+        raise GatewayDown(f'gateway connection lost: {e!r}') from e
+
+
+def _phase_failed(res):
+    """FATAL if any item errored (failed>0) OR the phase wrote ZERO objects while
+    still attempting work (ok==0 and gapped>0 -> '0 data = failure, never
+    complete'). ok==gapped==failed==0 means every key was already done from a
+    prior run (resume skip) -> healthy."""
+    return res['failed'] > 0 or (res['ok'] == 0 and res['gapped'] > 0)
+
+
 _s3 = None
 
 
@@ -340,28 +371,33 @@ def collect_equity_daily(ib, syms, dry_run=False, state=None):
                 mark_done(state, key, len(out), first, last)
                 print(f"  [{i + 1}/{len(syms)}] {sym}: {len(out)} bars {first}..{last}", flush=True)
         except Exception as e:
-            failed += 1
-            print(f"  [{i + 1}/{len(syms)}] {sym}: FAILED {e!r}", flush=True)
+            _raise_if_gateway_conn_error(e)
             if 'no security definition' in str(e).lower():
+                empty += 1
                 gaps.append(sym)
                 mark_done(state, key, 0, gapped=True)
+                print(f"  [{i + 1}/{len(syms)}] {sym}: no security definition (GAPPED)", flush=True)
+            else:
+                failed += 1
+                print(f"  [{i + 1}/{len(syms)}] {sym}: FAILED {e!r}", flush=True)
         if (i + 1) % 100 == 0:
             save_state(state)
             print(f"  [checkpoint] saved at {i + 1} symbols (ok={ok} empty={empty} failed={failed})", flush=True)
         time.sleep(PACING_S)
     save_state(state)
     print(f"[equities/daily] ok={ok} empty={empty} failed={failed}", flush=True)
-    return ok, empty, failed, gaps
+    return {'phase': 'equities/daily', 'ok': ok, 'gapped': empty, 'failed': failed}
 
 
 def collect_equity_1min(ib, syms, dry_run=False, state=None):
     print(f"\n=== EQUITIES 1-MIN ({len(syms)} symbols, {EQUITY_1MIN_MONTHS} months) ===", flush=True)
-    ok = failed = 0
+    ok = failed = gapped = 0
     for i, sym in enumerate(syms):
         con = Stock(sym, 'SMART', 'USD')
         try:
             ib.qualifyContracts(con)
         except Exception as e:
+            _raise_if_gateway_conn_error(e)
             print(f"  [{i + 1}/{len(syms)}] {sym}: qualify FAILED {e!r}", flush=True)
             failed += 1
             continue
@@ -373,10 +409,12 @@ def collect_equity_1min(ib, syms, dry_run=False, state=None):
             try:
                 df = load_bars_df(ib, con, dur, '1 min', end=end)
                 if df.empty:
+                    gapped += 1
                     mark_done(state, key, 0, gapped=True)
                     continue
                 out = min_out(df, y, m)
                 if out.empty:
+                    gapped += 1
                     mark_done(state, key, 0, gapped=True)
                     continue
                 if not dry_run:
@@ -385,14 +423,15 @@ def collect_equity_1min(ib, syms, dry_run=False, state=None):
                 n_sym += len(out)
                 mark_done(state, key, len(out))
             except Exception as e:
+                _raise_if_gateway_conn_error(e)
                 failed += 1
                 print(f"    {sym} {y}-{m:02d}: FAILED {e!r}", flush=True)
             time.sleep(PACING_S)
         print(f"  [{i + 1}/{len(syms)}] {sym}: {n_sym} 1-min bars total", flush=True)
         save_state(state)
     save_state(state)
-    print(f"[equities/1min] ok={ok} failed={failed}", flush=True)
-    return ok, failed
+    print(f"[equities/1min] ok={ok} gapped={gapped} failed={failed}", flush=True)
+    return {'phase': 'equities/1min', 'ok': ok, 'gapped': gapped, 'failed': failed}
 
 
 # ================= FUTURES =================
@@ -405,7 +444,8 @@ def _resolve_contfuture(ib, sym, exchange):
     try:
         cf = ib.qualifyContracts(ContFuture(sym, exchange, 'USD'))
         return cf[0] if cf else None
-    except Exception:
+    except Exception as e:
+        _raise_if_gateway_conn_error(e)
         return None
 
 
@@ -413,7 +453,8 @@ def _resolve_front(ib, sym, exchange):
     from bot.futures_contracts import resolve_front
     try:
         return resolve_front(ib, sym, exchange)
-    except Exception:
+    except Exception as e:
+        _raise_if_gateway_conn_error(e)
         return None
 
 
@@ -443,6 +484,7 @@ def collect_futures_daily(ib, dry_run=False, state=None):
                         gaps.append(sym)
                         mark_done(state, key_cont, 0, gapped=True)
                 except Exception as e:
+                    _raise_if_gateway_conn_error(e)
                     failed += 1
                     print(f"  [{i + 1}/{len(specs)}] {sym}: CONTFUT FAILED {e!r}", flush=True)
             else:
@@ -457,7 +499,8 @@ def collect_futures_daily(ib, dry_run=False, state=None):
             cd = ib.reqContractDetails(Future(sym, exchange=exchange))
             if not cd and exchange != '':
                 cd = ib.reqContractDetails(Future(sym, exchange=''))
-        except Exception:
+        except Exception as e:
+            _raise_if_gateway_conn_error(e)
             cd = []
         for c in cd[:6]:  # current chain, front ~6 expiries
             exp = c.contract.lastTradeDateOrContractMonth
@@ -467,6 +510,7 @@ def collect_futures_daily(ib, dry_run=False, state=None):
             try:
                 df = load_bars_df(ib, c.contract, FUTURES_DAILY_DUR, '1 day', timeout=DAILY_TIMEOUT)
                 if df.empty:
+                    empty += 1
                     mark_done(state, key, 0, gapped=True)
                     continue
                 out = daily_out(df)
@@ -476,13 +520,14 @@ def collect_futures_daily(ib, dry_run=False, state=None):
                 mark_done(state, key, len(out), out['date'].iloc[0], out['date'].iloc[-1])
                 print(f"    {sym} {exp}: {len(out)} bars {out['date'].iloc[0]}..{out['date'].iloc[-1]}", flush=True)
             except Exception as e:
+                _raise_if_gateway_conn_error(e)
                 failed += 1
                 print(f"    {sym} {exp}: FAILED {e!r}", flush=True)
             time.sleep(PACING_S)
         save_state(state)
     save_state(state)
     print(f"[futures/daily] ok={ok} empty={empty} failed={failed}", flush=True)
-    return ok, empty, failed, gaps
+    return {'phase': 'futures/daily', 'ok': ok, 'gapped': empty, 'failed': failed}
 
 
 def collect_futures_1min(ib, dry_run=False, state=None):
@@ -491,11 +536,14 @@ def collect_futures_1min(ib, dry_run=False, state=None):
     syms = [s for s in FUTURES_1MIN_SYMBOLS if s in exmap]
     print(f"\n=== FUTURES 1-MIN ({len(syms)} liquid symbols, front contract, "
           f"{FUTURES_1MIN_MONTHS} months) ===", flush=True)
-    ok = failed = 0
+    ok = failed = gapped = 0
     for i, sym in enumerate(syms):
         exchange = exmap[sym]
         con = _resolve_front(ib, sym, exchange)
         if con is None:
+            gapped += 1
+            for (y, m, _end, _dur) in month_windows(FUTURES_1MIN_MONTHS):
+                mark_done(state, f'futures/1min/{sym}/{y}-{m:02d}', 0, gapped=True)
             print(f"  [{i + 1}/{len(syms)}] {sym}: no front contract (GAPPED)", flush=True)
             continue
         n_sym = 0
@@ -506,10 +554,12 @@ def collect_futures_1min(ib, dry_run=False, state=None):
             try:
                 df = load_bars_df(ib, con, dur, '1 min', end=end, use_rth=True)
                 if df.empty:
+                    gapped += 1
                     mark_done(state, key, 0, gapped=True)
                     continue
                 out = min_out(df, y, m)
                 if out.empty:
+                    gapped += 1
                     mark_done(state, key, 0, gapped=True)
                     continue
                 if not dry_run:
@@ -518,14 +568,15 @@ def collect_futures_1min(ib, dry_run=False, state=None):
                 n_sym += len(out)
                 mark_done(state, key, len(out))
             except Exception as e:
+                _raise_if_gateway_conn_error(e)
                 failed += 1
                 print(f"    {sym} {y}-{m:02d}: FAILED {e!r}", flush=True)
             time.sleep(PACING_S)
         print(f"  [{i + 1}/{len(syms)}] {sym}: {n_sym} 1-min bars total", flush=True)
         save_state(state)
     save_state(state)
-    print(f"[futures/1min] ok={ok} failed={failed}", flush=True)
-    return ok, failed
+    print(f"[futures/1min] ok={ok} gapped={gapped} failed={failed}", flush=True)
+    return {'phase': 'futures/1min', 'ok': ok, 'gapped': gapped, 'failed': failed}
 
 
 # ================= CRYPTO (micros) =================
@@ -559,24 +610,29 @@ def collect_crypto_daily(ib, dry_run=False, state=None):
             mark_done(state, key, len(out), out['date'].iloc[0], out['date'].iloc[-1])
             print(f"  {sym}: {len(out)} bars {out['date'].iloc[0]}..{out['date'].iloc[-1]}", flush=True)
         except Exception as e:
+            _raise_if_gateway_conn_error(e)
             failed += 1
             print(f"  {sym}: FAILED {e!r}", flush=True)
         time.sleep(PACING_S)
     save_state(state)
     print(f"[crypto/daily] ok={ok} empty={empty} failed={failed}", flush=True)
-    return ok, empty, failed, gaps
+    return {'phase': 'crypto/daily', 'ok': ok, 'gapped': empty, 'failed': failed}
 
 
 def collect_crypto_1min(ib, dry_run=False, state=None):
     print(f"\n=== CRYPTO MICROS 1-MIN ({CRYPTO_SYMBOLS}, {CRYPTO_1MIN_MONTHS} months) ===", flush=True)
-    ok = failed = 0
+    ok = failed = gapped = 0
     for sym in CRYPTO_SYMBOLS:
         try:
             cd = ib.reqContractDetails(Future(sym, exchange='CME'))
             con = cd[0].contract if cd else None
-        except Exception:
+        except Exception as e:
+            _raise_if_gateway_conn_error(e)
             con = None
         if con is None:
+            gapped += 1
+            for (y, m, _end, _dur) in month_windows(CRYPTO_1MIN_MONTHS):
+                mark_done(state, f'crypto/1min/{sym}/{y}-{m:02d}', 0, gapped=True)
             print(f"  {sym}: no contract (GAPPED)", flush=True)
             continue
         n_sym = 0
@@ -587,10 +643,12 @@ def collect_crypto_1min(ib, dry_run=False, state=None):
             try:
                 df = load_bars_df(ib, con, dur, '1 min', end=end, use_rth=True)
                 if df.empty:
+                    gapped += 1
                     mark_done(state, key, 0, gapped=True)
                     continue
                 out = min_out(df, y, m)
                 if out.empty:
+                    gapped += 1
                     mark_done(state, key, 0, gapped=True)
                     continue
                 if not dry_run:
@@ -599,14 +657,15 @@ def collect_crypto_1min(ib, dry_run=False, state=None):
                 n_sym += len(out)
                 mark_done(state, key, len(out))
             except Exception as e:
+                _raise_if_gateway_conn_error(e)
                 failed += 1
                 print(f"    {sym} {y}-{m:02d}: FAILED {e!r}", flush=True)
             time.sleep(PACING_S)
         print(f"  {sym}: {n_sym} 1-min bars total", flush=True)
         save_state(state)
     save_state(state)
-    print(f"[crypto/1min] ok={ok} failed={failed}", flush=True)
-    return ok, failed
+    print(f"[crypto/1min] ok={ok} gapped={gapped} failed={failed}", flush=True)
+    return {'phase': 'crypto/1min', 'ok': ok, 'gapped': gapped, 'failed': failed}
 
 
 # ================= OPTIONS =================
@@ -617,7 +676,7 @@ def collect_options(ib, dry_run=False, state=None):
     print("  Chains metadata: already collected (options_chains.py -> options/<sym>/chains.json).", flush=True)
     print("  Historical option BARS: NOT entitled on paper DUR193467 (separate paid", flush=True)
     print("  subscription). Tagged 'shallow by design'. Skipping reqHistoricalData on options.", flush=True)
-    return 0, 0
+    return {'phase': 'options', 'ok': 0, 'gapped': 0, 'failed': 0}
 
 
 # ================= verify / gaps =================
@@ -671,12 +730,21 @@ def main():
 
     state = load_state()
     ib = IB()
+
+    # --- connect (FATAL on any failure: gateway down / 2FA gap) ---
     try:
         ib.connect(IBKR_HOST, IBKR_PORT, clientId=CLIENT_ID, timeout=15, readonly=True)
-        print(f"connected clientId={CLIENT_ID} accounts={ib.managedAccounts()} "
-              f"(READ-ONLY; dry_run={args.dry_run}, pacing={PACING_S}s)", flush=True)
-        ib.sleep(2)
+    except Exception as e:
+        print(f"\nGATEWAY UNREACHABLE at connect ({IBKR_HOST}:{IBKR_PORT}): {e!r}", flush=True)
+        print("Exiting NON-ZERO — systemd Restart=on-failure relaunches; checkpoint resumes.", flush=True)
+        print("If this persists after 2FA, the gateway needs the user's phone approval (no auto-loop).", flush=True)
+        sys.exit(1)
+    print(f"connected clientId={CLIENT_ID} accounts={ib.managedAccounts()} "
+          f"(READ-ONLY; dry_run={args.dry_run}, pacing={PACING_S}s)", flush=True)
+    ib.sleep(2)
 
+    res = None
+    try:
         if args.mode == 'equities':
             liquid = (args.kind == '1min')
             syms = equity_symbols(liquid=liquid)
@@ -686,30 +754,42 @@ def main():
             if args.limit:
                 syms = syms[:args.limit]
             if args.kind == 'daily':
-                collect_equity_daily(ib, syms, args.dry_run, state)
+                res = collect_equity_daily(ib, syms, args.dry_run, state)
             else:
-                collect_equity_1min(ib, syms, args.dry_run, state)
+                res = collect_equity_1min(ib, syms, args.dry_run, state)
         elif args.mode == 'futures':
             if args.kind == 'daily':
-                collect_futures_daily(ib, args.dry_run, state)
+                res = collect_futures_daily(ib, args.dry_run, state)
             else:
-                collect_futures_1min(ib, args.dry_run, state)
+                res = collect_futures_1min(ib, args.dry_run, state)
         elif args.mode == 'crypto':
             if args.kind == 'daily':
-                collect_crypto_daily(ib, args.dry_run, state)
+                res = collect_crypto_daily(ib, args.dry_run, state)
             else:
-                collect_crypto_1min(ib, args.dry_run, state)
+                res = collect_crypto_1min(ib, args.dry_run, state)
         elif args.mode == 'options':
-            collect_options(ib, args.dry_run, state)
+            res = collect_options(ib, args.dry_run, state)
     except GatewayDown as e:
         save_state(state)
-        print(f"\nGATEWAY DOWN: {e} — exiting non-zero (systemd will relaunch; "
-              f"checkpoint resumes).", flush=True)
+        print(f"\nGATEWAY DOWN: {e} — exiting NON-ZERO (systemd relaunches; checkpoint resumes).", flush=True)
         sys.exit(1)
     finally:
         ib.disconnect()
 
-    print("\nDONE. Trading side untouched: no orders, no DynamoDB, no RUN#/SIGNAL/POSITION.", flush=True)
+    # --- honest per-phase report + exit code ---
+    if res is None:
+        print("ERROR: no phase result produced.", flush=True)
+        sys.exit(1)
+    done = res['ok'] + res['gapped']
+    print(f"\n[{res['phase']}] done={done} (written={res['ok']}, gapped={res['gapped']}) "
+          f"failed={res['failed']} pending={res['failed']}", flush=True)
+    if _phase_failed(res):
+        print(f"[{res['phase']}] INCOMPLETE — exiting NON-ZERO so systemd relaunches and "
+              f"the checkpoint resumes (failed={res['failed']}, wrote={res['ok']}).", flush=True)
+        print("Trading side untouched: no orders, no DynamoDB, no RUN#/SIGNAL/POSITION.", flush=True)
+        sys.exit(1)
+    print(f"[{res['phase']}] COMPLETE.", flush=True)
+    print("DONE. Trading side untouched: no orders, no DynamoDB, no RUN#/SIGNAL/POSITION.", flush=True)
 
 
 if __name__ == '__main__':
