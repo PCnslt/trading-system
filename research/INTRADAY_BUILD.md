@@ -44,6 +44,19 @@ edge through churn; a swing edge should exit on the close that proves the thesis
 wrong, with a wide broker-side stop sized for the catastrophe, not the noise
 ("stops work except when you need them most").
 
+## No-feedback OOS discipline + regime-filter skepticism (binding)
+
+- **NO-FEEDBACK (anti-curve-fitting):** once an edge's out-of-sample (OOS) data
+  has been *looked at* for tuning, tuning is FINISHED. Any parameter change made
+  after seeing OOS results is curve-fitting, not improvement. OOS returning
+  ~50% of the in-sample metric is NORMAL — not a defect, and never a trigger to
+  re-tune. A single train/test split has no more "peeks"; if a parameter must
+  change, the edge starts over with fresh, untouched OOS.
+- **Regime filters (ADX) — expect NO-GO.** `research/BOOK_SCAN.md` already
+  tested ADX>25 gating + golden/death cross + 5/8/13 EMA crossover: ALL NO-GO
+  under the capital-preservation rubric. Treat new regime filters as
+  guilty-until-proven-useful — most do not improve net-of-cost performance.
+
 ## Evaluation ranking (NEW STANDARD — supersedes the PF-based promote bar)
 
 Rank every strategy **primarily** by:
