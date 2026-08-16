@@ -71,6 +71,10 @@ FADE_BOLL_N = 20
 FADE_BOLL_K = 2.0
 FADE_STOP_ATR = 2.0
 ATR_N = 14
+KAMA_N = 10              # efficiency-ratio lookback (bars)
+KAMA_FAST = 2            # fast EMA period (fast smoothing constant)
+KAMA_SLOW = 30           # slow EMA period (slow smoothing constant)
+KAMA_STOP_ATR = 2.0      # 2xATR hard stop
 
 CACHE_DIR = '/tmp/intraday_validate_cache'
 
@@ -381,12 +385,73 @@ def make_fadeshort(df):
     return run_engine(o, h, l, c, days, enter_fn, exit_fn, stop_fn)
 
 
+def kama(c, n=KAMA_N, fast=KAMA_FAST, slow=KAMA_SLOW):
+    """Kaufman Adaptive Moving Average (efficiency-ratio adaptive trend line).
+
+    ER = |change over n| / sum(|bar-to-bar change| over n); SC = (ER*(f-s)+s)^2;
+    KAMA[i] = KAMA[i-1] + SC*(price[i]-KAMA[i-1]). Fast in trends, flat in chop —
+    attacks whipsaw drawdown. Returns np array aligned to `c` (NaN warmup).
+    """
+    c = pd.Series(np.asarray(c, dtype=float))
+    m = len(c)
+    out = np.full(m, np.nan)
+    if m < n + 2:
+        return out
+    change = c.diff(n).abs().to_numpy()                       # |c[i]-c[i-n]|
+    vol = c.diff().abs().rolling(n).sum().to_numpy()          # sum of n abs returns
+    fast_sc = 2.0 / (fast + 1.0)
+    slow_sc = 2.0 / (slow + 1.0)
+    out[n - 1] = c.iloc[:n].mean()                            # seed
+    for i in range(n, m):
+        er = change[i] / vol[i] if vol[i] > 0 else 0.0
+        sc = (er * (fast_sc - slow_sc) + slow_sc) ** 2
+        out[i] = out[i - 1] + sc * (c.iloc[i] - out[i - 1])
+    return out
+
+
+def make_kama(df):
+    """KAMA trend-follow: long on close crossing above KAMA, short below;
+    exit on close crossing back; 2xATR hard stop."""
+    o = df['open'].to_numpy(); h = df['high'].to_numpy()
+    l = df['low'].to_numpy(); c = df['close'].to_numpy()
+    days = list(df['day'])
+    k = kama(c)
+    atr = wilder_atr(df['high'], df['low'], df['close'], ATR_N).to_numpy()
+
+    def enter_fn(i):
+        if i < 2 or np.isnan(k[i]) or np.isnan(k[i - 1]):
+            return 0
+        if c[i] > k[i] and c[i - 1] <= k[i - 1]:
+            return 1
+        if c[i] < k[i] and c[i - 1] >= k[i - 1]:
+            return -1
+        return 0
+
+    def exit_fn(i, pos, entry_px, entry_i, stop):
+        if np.isnan(k[i]):
+            return False
+        if pos == 1 and c[i] < k[i]:
+            return True
+        if pos == -1 and c[i] > k[i]:
+            return True
+        return False
+
+    def stop_fn(i, entry_px, side):
+        if np.isnan(atr[i]):
+            return None
+        return (entry_px - KAMA_STOP_ATR * atr[i] if side == 1
+                else entry_px + KAMA_STOP_ATR * atr[i])
+
+    return run_engine(o, h, l, c, days, enter_fn, exit_fn, stop_fn)
+
+
 STRATEGIES = {
     'ORB':      dict(fn=make_orb,      tf='5min'),
     'MOM':      dict(fn=make_mom,      tf='5min'),
     'VWAP':     dict(fn=make_vwap,     tf='5min'),
     'DONCH15':  dict(fn=make_donch15,  tf='15min'),
     'FADESHORT': dict(fn=make_fadeshort, tf='5min'),
+    'KAMA':     dict(fn=make_kama,     tf='5min'),
 }
 
 
