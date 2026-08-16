@@ -189,3 +189,19 @@ Cron: Hermes job 'Paper signals - Robinhood equities RSI2' @ 20 23 * * * UTC (19
 - **Blockers**:
   - Robinhood: re-auth owner-gated (laptop browser OAuth + 2FA) — run infra/rh_oauth.py on laptop, or re-sync current laptop tokens to SSM /trading/robinhood/*.
   - IBKR live: owner creates ADDITIONAL username (Account Management) for U26949861, then first live login + IB Key 2FA.
+
+---
+
+## 2026-08-16T15:30:53-04:00 — Enable LIVE trading capability on BOTH brokers (IBKR + Robinhood) — paper stays default
+
+- **Summary**: Wired LIVE on both brokers; PAPER remains the operating default. No live order placed.
+
+IBKR: second live GWClient on DISPLAY=:100 + isolated settings dir /home/ubuntu/Jts-live (jts.ini tradingMode=l), relocated via -DjtsConfigDir override — VERIFIED: launcher.log logs settings dir /home/ubuntu/Jts-live, paper :4002 untouched throughout. systemd ibgateway-live.service is DISABLED. Live API port = 4001 default (paper = 4002). CRITICAL: login-screen Trading Mode dropdown DEFAULTS to Paper and is NOT driven by jts.ini (l and live both still show Paper) — must switch to Live Trading at first login, then verify managedAccounts()==['U26949861']. Full steps: docs/IBGATEWAY-LIVE-OPS.md.
+
+Robinhood: canonical client = hardening/rh_client.py (commit 77fbb1e, 10 tests) wired into bot/live_equities.py. Live flags = RH_EXECUTION_MODE=LIVE AND RH_LIVE_ENABLED=true (both default OFF; RH_LIVE_ACCOUNT=515821577). SSM OAuth token is REVOKED (rotated refresh not persisted) -> laptop re-auth via infra/rh_oauth.py. docs/ROBINHOOD-LIVE.md.
+- **Commits**: `a5656b7`
+- **Blockers**:
+  - USER: fund U26949861 (IBKR live) — gateway is wired but cannot trade until funded.
+  - USER: enable live futures + options trading permissions AND CME L1 (real-time) market data on U26949861.
+  - USER: IBKR live 2FA first login — approve IB Key push; switch Trading Mode to Live first, then verify managedAccounts()==['U26949861'].
+  - USER: Robinhood re-auth — SSM /trading/robinhood/* token REVOKED; run infra/rh_oauth.py on the laptop to re-authenticate.
