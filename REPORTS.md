@@ -116,3 +116,10 @@ live.py change: rsi2_entry requires close>200d SMA (fail-closed on NaN), compute
 - **Commits**: `2bd2ea0`
 - **Blockers**:
   - For capital-preservation directive: (1) bear-market decay (2008/2022 negative) -> evaluate index-level regime gate (SPX>SMA200) before entry, measure not assume; (2) gap-through tail risk -> cap position size $25-50/trade on ~$700.
+
+---
+
+## 2026-08-16T14:08:48-04:00 — SQS VPS→laptop channel + full system sweep (laptop-task)
+
+- **Summary**: PASS — both workstreams complete. (A) Direct VPS→laptop channel: FIFO queue vps-to-laptop.fifo created (queue policy: VPS role SendMessage + account-root Receive/Delete; scoped inline IAM policy sqs-publish-vps-to-laptop). append_report() now mirrors every report to SQS (MessageDeduplicationId=sha256(ts|task)). infra/laptop_inbox.py = laptop long-poll (20s) subscriber, dedupe by message_id/MessageId, never crash-loops, plain venv loop. docs/COMMUNICATION.md covers schema/start/IAM + why SQS over IoT Core MQTT / API Gateway WS. Verified end-to-end: VPS publish → laptop_inbox --once received + deduped (2nd run=0 msgs). (B) Full sweep GREEN: tests 171 passed; systemd ibgateway/dashboard/tick-recorder/reconcile-daemon/reports active+enabled, backfill+watchdogs timer-driven (5 timers active); git pushed ahead=0/behind=0, author PCnslt; paper CONTROL=RUNNING, RECONCILE=MATCH (streak 0), gateway :4002 LISTENING, LIVE=false; risk_pct=0.01 + vol_target_pct=0.01 landed in bot/risk.py, bot/*.py py_compile clean; architecture diagram renders (assets/architecture.html via dashboard Architecture tab, HTTP 200).
+- **Commits**: `01f4cbb`
