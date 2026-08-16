@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-16T12:49:37-04:00",
+  "updated": "2026-08-16T13:10:05-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -56,6 +56,28 @@
         "76aa3b7ad87d3e077cadc5b23d39636039d59869"
       ],
       "blockers": []
+    },
+    {
+      "ts": "2026-08-16T13:10:00-04:00",
+      "task": "Stop IBKR 1-min backfill at weekend; confirm equities-daily COMPLETE (ground truth)",
+      "summary": "Equities-daily backfill genuinely COMPLETE (done=1536, written=1450, gapped=86, failed=0) — flag data/ibkr_daily.COMPLETE touched at 13:07 EDT. Watcher detected phase-4 (futures-1min header) and touched flag, but its 'systemctl stop' ran WITHOUT sudo and FAILED silently while printing 'STOPPED' — service kept running into the 1-min phase. Manually stopped via sudo -n (now inactive). 1-min phase wrote ZERO bars before stop (only connected + banner), so no partial/contaminated data. Pause flag data/ibkr_1min_paused present → gateway_resume.sh gate (line 31) verified to hold service down; unpause-timer clears flag Sat 2026-08-22 00:01 ET, then 1-min resumes next weekend window. FIXED watcher to sudo -n systemctl stop + fail loudly (exit 1) instead of false STOPPED.",
+      "commits": [
+        "91f7d0568d81fbcf30b87073ca61d7779537fd04"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-16T13:10:05-04:00",
+      "task": "Rigorous self-audit of trading code & logic (10 items, owner skeptical)",
+      "summary": "STOP-ENFORCEMENT PASS (bracket wired in live.py/live_gc.py/live_intraday.py; refuse-no-stop fail-closed). SIZING/LOSS-CAPS PASS (vol overlay + risk_pct + 2%*budget daily halt + kill-switch, end-to-end traced). PAPER/LIVE ISOLATION PASS (gateway :4002 only, LIVE=false, U26949861 never used for orders, account_mode_ok double-gate). ERROR HANDLING PASS (bracket transmit=False = fail-closed on gateway death; UNKNOWN-on-timeout never naked; idempotent conditional write). CONCURRENCY PASS (clientIds 50-91 no overlap; 23:00/23:05 collision gone). TIMEZONE PASS (ZoneInfo America/New_York RTH/EOD; one latent 20-24h ET edge not live-triggered). TESTS 159/159 pass, cover stop/sizing/bracket paths. STRATEGY: only validated edges place paper orders; intraday+crypto signal-only; bonds disarmed. Fixed: submit_entry validate-stop-before-accept + regression test. GAPS needing owner: (1) reconcile detects missing/orphaned stop but does not auto-halt CONTROL or re-rest stop; (2) live_bondsfx.py dead code has raw no-stop shorts (inert, disarmed); (3) $150 cap is actually 2%*budget=$1k/$500 not literal $150; (4) execution_test.py naked manual round-trip.",
+      "commits": [
+        "c56486928bcce5e944f9d5a11a151a51e05d8c72"
+      ],
+      "blockers": [
+        "GAP-1: reconcile_daemon detects MISMATCH but does NOT auto-flip CONTROL=PAUSED or re-rest a missing stop — enforcement is next-bot-run + Telegram alert. Owner decision required (auto-kill on transient UNKNOWN would halt whole system).",
+        "GAP-2: bot/live_bondsfx.py:259,285 raw no-stop shorts + no exec_manager (INERT, main() is no-op) — must refactor onto exec_manager before any re-enable.",
+        "GAP-3: '$150 daily loss cap' is not literal in code — enforced cap is max_daily_loss_pct(2%)*budget = $1,000 (live) / $500 (intraday). Confirm or lower."
+      ]
     }
   ]
 }
