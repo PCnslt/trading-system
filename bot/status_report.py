@@ -1,4 +1,4 @@
-"""Read-only paper status report for the daily summary cron (23:45 UTC).
+"""Read-only paper status report for the daily summary cron (19:45 ET).
 
 Prints a concise, plain-text report from DynamoDB (table trading-data):
 
@@ -18,6 +18,7 @@ and/or the RUN# marker — NEVER on SIGNAL#/TRADE# presence. A flat session
 import os
 import re
 import datetime as dt
+from zoneinfo import ZoneInfo
 
 import boto3
 from dotenv import load_dotenv
@@ -26,6 +27,7 @@ load_dotenv()
 
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
+NY = ZoneInfo('America/New_York')   # display timezone (ET)
 
 INTRA_TAGS = ['MES_FADESHORT', 'MES_DONCH15']
 # strategy tag -> implied side when a POSITION row stores no explicit 'side'
@@ -176,14 +178,14 @@ def _sk_time(it):
     ts = it.get('ts')
     if ts:
         try:
-            return dt.datetime.fromtimestamp(int(ts), dt.timezone.utc).strftime('%H:%M:%S')
+            return dt.datetime.fromtimestamp(int(ts), NY).strftime('%H:%M:%S')
         except (ValueError, OSError, OverflowError):
             pass
     sk = it.get('sk', '')
     if '#' in sk:
         try:
             return dt.datetime.fromtimestamp(int(sk.split('#', 1)[1]),
-                                             dt.timezone.utc).strftime('%H:%M:%S')
+                                             NY).strftime('%H:%M:%S')
         except (ValueError, OSError, OverflowError):
             pass
     try:

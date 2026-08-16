@@ -1,8 +1,8 @@
 [Unit]
-Description=IB Gateway weekly cold restart timer (Sunday 13:00 UTC)
+Description=IB Gateway weekly cold restart timer (Sunday 09:00 ET)
 
 [Timer]
-OnCalendar=Sun *-*-* 13:00:00
+OnCalendar=Sun *-*-* 09:00:00 America/New_York
 Persistent=true
 Unit=ibgateway-weekly.service
 

@@ -28,16 +28,17 @@ Execution: IBKR paper MES, front-month, dynamic roll. clientId=72 (distinct
 from live.py's 70 and live_bondsfx.py's 71).
 State: POSITION#MES_<STRAT> / 'current', keyed by session_date so a new day
 starts flat. Only ONE intraday strategy holds MES at a time (global gate) —
-avoids netting the same contract. EOD flatten from 19:45 UTC (15:45 ET).
+avoids netting the same contract. EOD flatten from 15:45 ET.
 
-Schedule: cron every 15 min during RTH (13:30-20:00 UTC weekdays). The bot
-re-gates internally: entries 13:30-19:30 UTC, flatten from 19:45 UTC.
+Schedule: cron every 15 min during RTH (09:30-16:00 ET weekdays). The bot
+re-gates internally: entries 09:30-15:30 ET, flatten from 15:45 ET.
 Paper only — LIVE env var stays false.
 """
 import os
 import sys
 import time
 import datetime as dt
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -70,11 +71,12 @@ LIVE = os.getenv('LIVE', 'false').lower() == 'true'
 CONTRACT = {'symbol': 'MES', 'exchange': 'CME', 'point_value': 5.0}
 DURATION = '5 D'      # enough warmup for 20-bar Bollinger (5m) + 20-bar Donchian (15m)
 
-# session window (UTC). MES RTH 9:30-16:00 ET == 13:30-20:00 UTC.
-RTH_OPEN_UTC = dt.time(13, 30)
-RTH_CLOSE_UTC = dt.time(20, 0)
-ENTRY_CUTOFF_UTC = dt.time(19, 30)   # no new entries in the last 30 min
-EOD_FLATTEN_UTC = dt.time(19, 45)    # flatten any open position from 15:45 ET
+# session window (America/New_York). MES RTH 09:30-16:00 ET, DST-aware via zoneinfo.
+NY = ZoneInfo('America/New_York')
+RTH_OPEN = dt.time(9, 30)
+RTH_CLOSE = dt.time(16, 0)
+ENTRY_CUTOFF = dt.time(15, 30)   # no new entries in the last 30 min
+EOD_FLATTEN = dt.time(15, 45)    # flatten any open position from 15:45 ET
 
 # FADESHORT (5m) params
 FADE_RSI2_OVERBOUGHT = 90.0
@@ -206,8 +208,8 @@ def front_month(now=None):
     return f"{now.year + 1}03"
 
 
-def now_utc():
-    return dt.datetime.now(dt.timezone.utc)
+def now_et():
+    return dt.datetime.now(NY)
 
 
 # ===== DynamoDB helpers =====
@@ -230,7 +232,7 @@ def _archive_bars(sname, barsize, df):
         return
     try:
         slug = barsize.replace(' mins', 'min')       # '5 mins' -> '5min'
-        date = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d')
+        date = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d')  # S3 key date stays UTC (storage convention)
         records = [{'date': idx.isoformat(), 'open': float(r['Open']),
                     'high': float(r['High']), 'low': float(r['Low']),
                     'close': float(r['Close']), 'volume': float(r['Volume'])}
@@ -286,9 +288,9 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
     entry_px = float(state['entry']) if state.get('entry') else None
 
     now_t = now.time()
-    in_window = RTH_OPEN_UTC <= now_t < RTH_CLOSE_UTC
-    eod = now_t >= EOD_FLATTEN_UTC
-    entry_allowed = in_window and now_t < ENTRY_CUTOFF_UTC
+    in_window = RTH_OPEN <= now_t < RTH_CLOSE
+    eod = now_t >= EOD_FLATTEN
+    entry_allowed = in_window and now_t < ENTRY_CUTOFF
 
     entry_side, ereason = strat['entry'](detail)
 
@@ -401,7 +403,7 @@ def _exit(dynamo, ib, con, tag, sname, side, pos, reason, exit_px, today, mode,
     action = 'SELL' if side == 'LONG' else 'BUY'
     exit_intent = TradeIntent(scope='live_intraday', tag=tag, symbol='MES', action=action,
                               side=side, qty=pos, order_type='MKT', stop_price=0.0,
-                              contract_month=front_month(), bar_time=now_utc().isoformat(),
+                              contract_month=front_month(), bar_time=now_et().isoformat(),
                               signal_reason=reason)
     res = exec_mgr.submit_exit(exit_intent, con, cancel_stop=True)
     if res.status == 'DUPLICATE':
@@ -414,7 +416,7 @@ def _exit(dynamo, ib, con, tag, sname, side, pos, reason, exit_px, today, mode,
     actual_px = res.avg_px if res.avg_px > 0 else exit_px
     if risk is not None and entry_px is not None:
         risk.record_close(realized_pnl(side, entry_px, actual_px, CONTRACT['point_value'], pos))
-    log_dynamo(dynamo, f"TRADE#{tag}", now_utc().isoformat(), {
+    log_dynamo(dynamo, f"TRADE#{tag}", now_et().isoformat(), {
         'side': 'EXIT', 'qty': pos, 'exit_px': str(round(actual_px, 2)),
         'reason': reason, 'strategy': sname, 'ts': int(time.time())})
     log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
@@ -426,7 +428,7 @@ def _exit(dynamo, ib, con, tag, sname, side, pos, reason, exit_px, today, mode,
 # ===== main =====
 def main():
     dynamo = boto3.resource('dynamodb', region_name='us-east-1').Table(DYNAMO_TABLE)
-    now = now_utc()
+    now = now_et()
     today = now.date().isoformat()
     mode = 'LIVE' if LIVE else 'PAPER'
 

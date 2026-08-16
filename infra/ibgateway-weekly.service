@@ -1,5 +1,5 @@
 [Unit]
-Description=IB Gateway weekly cold restart (Sunday 13:00 UTC, triggers 2FA re-login)
+Description=IB Gateway weekly cold restart (Sunday 09:00 ET, triggers 2FA re-login)
 
 [Service]
 Type=oneshot

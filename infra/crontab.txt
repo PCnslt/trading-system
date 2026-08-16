@@ -7,34 +7,35 @@
 #     Managed via `hermes` / ~/.hermes/cron/jobs.json. Do NOT also put bots here —
 #     double-scheduling caused clientId collisions (70/71/72) at 23:00/23:05.
 #
-# All times UTC. Paths absolute; python is the repo venv.
+# All times ET (America/New_York). Paths absolute; python is the repo venv.
+CRON_TZ=America/New_York
 
 # ---- data ingestion (system crontab) ----
 */10 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/crypto_tick.py >> /home/ubuntu/trading-system/data/crypto.log 2>&1
-0 21 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/ingest.py >> /home/ubuntu/trading-system/data/ingest.log 2>&1
+0 17 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/ingest.py >> /home/ubuntu/trading-system/data/ingest.log 2>&1
 */30 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/market_research.py >> /home/ubuntu/trading-system/data/research.log 2>&1
-45 21 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/options_chains.py >> /home/ubuntu/trading-system/data/options_chains.log 2>&1
-0 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/fred_collect.py >> /home/ubuntu/trading-system/data/fred.log 2>&1
-15 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/fmp_ingest.py >> /home/ubuntu/trading-system/data/fmp.log 2>&1
-30 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/yf_collect.py >> /home/ubuntu/trading-system/data/yf.log 2>&1
-45 22 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/newsapi_ingest.py >> /home/ubuntu/trading-system/data/newsapi.log 2>&1
-20 23 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/daily_collect.py >> /home/ubuntu/trading-system/data/daily_collect.log 2>&1
+45 17 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/options_chains.py >> /home/ubuntu/trading-system/data/options_chains.log 2>&1
+0 18 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/fred_collect.py >> /home/ubuntu/trading-system/data/fred.log 2>&1
+15 18 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/fmp_ingest.py >> /home/ubuntu/trading-system/data/fmp.log 2>&1
+30 18 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/yf_collect.py >> /home/ubuntu/trading-system/data/yf.log 2>&1
+45 18 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/newsapi_ingest.py >> /home/ubuntu/trading-system/data/newsapi.log 2>&1
+20 19 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/daily_collect.py >> /home/ubuntu/trading-system/data/daily_collect.log 2>&1
 
 # ---- bot execution (Hermes cron — NOT here) ----
-#   "Paper signals — index futures"    script paper_index_futures.sh   @ 0 23 * * *
-#   "Paper signals — bonds"            script paper_bonds.sh           @ 5 23 * * *   ⛔ PAUSED 2026-08-14 (Gate-1 SHELVED)
-#   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 13-20 * * 1-5
-#   "Paper signals — equities"         script paper_equity_signals.sh  @ 15 23 * * *   (signals only; no execution; deliver=telegram)
+#   "Paper signals — index futures"    script paper_index_futures.sh   @ 0 19 * * *
+#   "Paper signals — bonds"            script paper_bonds.sh           @ 5 19 * * *   ⛔ PAUSED 2026-08-14 (Gate-1 SHELVED)
+#   "Paper signals — intraday MES"     script paper_intraday.sh        @ */15 09-16 * * 1-5
+#   "Paper signals — equities"         script paper_equity_signals.sh  @ 15 19 * * *   (signals only; no execution; deliver=telegram)
 #   "Paper signals — crypto"           script paper_crypto_signals.sh  @ */30 * * * *  (signals only; no execution; deliver=local)
-#   "Paper signals — gold momentum"    script paper_gc_signals.sh      @ 10 23 * * *   (signals only; no execution; deliver=telegram)
+#   "Paper signals — gold momentum"    script paper_gc_signals.sh      @ 10 19 * * *   (signals only; no execution; deliver=telegram)
 #   "Paper fwd — crypto Donch200"      script paper_crypto_paper.sh    @ */30 * * * *  (signals only; no execution; deliver=local; buy-and-hold proxy flag)
-#   "Daily trading summary"            prompt (status_report.py)       @ 45 23 * * *
+#   "Daily trading summary"            prompt (status_report.py)       @ 45 19 * * *
 #   "IB Gateway health watchdog"       script ibgw_health.sh           @ */30 * * * *
 #   "Broker reconcile watchdog"        script reconcile_watchdog.sh    @ */5 * * * *
-#   "Weekly strategy scan + refine"    prompt (strategy_scan.py)       @ 0 18 * * 0    ⛔ PAUSED 2026-08-14 (screening CLOSED)
+#   "Weekly strategy scan + refine"    prompt (strategy_scan.py)       @ 0 14 * * 0    ⛔ PAUSED 2026-08-14 (screening CLOSED)
 #
 # The intraday bot (live_intraday.py) self-gates internally:
-#   entries 13:30-19:30 UTC, EOD flatten 19:45 UTC, skip outside RTH.
+#   entries 09:30-15:30 ET, EOD flatten 15:45 ET, skip outside RTH.
 
 # ---- systemd services (persistent, NOT cron) ----
 #   ibgateway.service            IB Gateway (headless paper :4002, native auto-restart)
@@ -44,7 +45,7 @@
 #                                 backfill; Telegram-alerts + stops if 2FA needed.
 #   trading-dashboard.service    Streamlit dashboard :8501
 #   futures-tick-recorder.service L1 tick recorder (clientId 74) -> S3 futures-ticks + QUOTE#
-#                                 RTH-gated 13:30-20:00 UTC Mon-Fri; reconnects on gateway restart.
+#                                 RTH-gated 09:30-16:00 ET Mon-Fri; reconnects on gateway restart.
 #   reconcile-daemon.service     broker reconciliation (clientId 76) every 45s -> RECONCILE/system
 #                                 (MATCH/MISMATCH/UNKNOWN) + CRITICAL on non-MATCH. Read-only,
 #                                 never places orders or mutates CONTROL.
@@ -54,7 +55,7 @@
 #   bot/session_calendar.py   session calendar + RTH hours  -> SESSION#<sym> + S3 sessions/*
 #   bot/backfill_bars.py      historical-bar backfill (42-sym registry, daily+intraday) -> S3 futures-bars/*
 #   data/options_chains.py    options-on-futures chain metadata -> OPTCHAIN#<sym> + S3 options/*
-#                             (scheduled daily 21:45; also runnable on demand)
+#                             (scheduled daily 17:45 ET; also runnable on demand)
 #   data/ibkr_full_backfill.py  FULL-DEPTH IBKR backfill -> S3 ibkr/* (parquet, quality=BROKER)
 #                             clientId 50. Long-running, resumable (data/ibkr_backfill_state.json).
 #                             Phases: futures daily (CONTFUT+per-contract) -> crypto micros daily ->
@@ -76,8 +77,8 @@
 #   data/fred_collect.py      FRED macro series -> S3 macro/<series>.json (no IBKR)
 
 # ---- market calendar (corrected 2026-08-15) ----
-#   Futures are NOT closed until Monday. CME Globex reopens Sunday 22:00 UTC
-#   (17:00 CT / 18:00 ET); forex spot reopens Sunday ~21:00 UTC (17:00 ET).
-#   live.py fires daily 23:00 UTC (NO weekend skip) -> evaluates the Sunday globex
+#   Futures are NOT closed until Monday. CME Globex reopens Sunday 18:00 ET
+#   (17:00 CT); forex spot reopens Sunday ~17:00 ET.
+#   live.py fires daily 19:00 ET (NO weekend skip) -> evaluates the Sunday globex
 #   session ~1h after reopen. Saturday = crypto only (paper-signal, 0 validated edge).
 
