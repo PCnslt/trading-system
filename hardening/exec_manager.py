@@ -161,17 +161,19 @@ class ExecutionManager:
            the position); on a PARTIAL fill re-rest a stop sized to the FILLED qty.
         A fill timeout -> UNKNOWN (never assume rejected).
         """
-        if not self.intents.accept(intent):
-            return ExecutionResult('DUPLICATE', signal_id=intent.signal_id,
-                                   intent_id=intent.intent_id,
-                                   detail='signal already accepted (idempotent)')
-
-        # NEVER-LOSE-MONEY: no unprotected position, ever. Refuse fail-closed.
+        # NEVER-LOSE-MONEY: validate the protective stop BEFORE consuming the
+        # idempotency key. A rejected no-stop entry must not burn the signal_id
+        # (a corrected retry with a stop would otherwise be blocked as DUPLICATE).
         if intent.stop_price <= 0:
             return ExecutionResult('REJECTED', signal_id=intent.signal_id,
                                    intent_id=intent.intent_id,
                                    detail='no protective stop supplied '
                                           '(never-lose-money: refuse unprotected entry)')
+
+        if not self.intents.accept(intent):
+            return ExecutionResult('DUPLICATE', signal_id=intent.signal_id,
+                                   intent_id=intent.intent_id,
+                                   detail='signal already accepted (idempotent)')
 
         trade = self._place_bracket(contract, intent, stop_tif, take_profit)
         res = self._confirm(trade, intent, fill_timeout)

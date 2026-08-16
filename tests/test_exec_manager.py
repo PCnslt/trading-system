@@ -203,6 +203,17 @@ def test_submit_entry_rejects_no_stop(fake_table):
     assert all(o.orderType != 'MKT' for o in ib.placed)   # nothing sent to broker
 
 
+def test_rejected_no_stop_does_not_burn_idempotency_key(fake_table):
+    # A no-stop rejection must NOT consume the signal_id — a corrected retry
+    # (same signal, now with a stop) is accepted and trades.
+    ib = FakeIB(fill_status='Filled', fill_shares=1, fill_price=100.0)
+    mgr = make_manager(ib, fake_table)
+    rejected = mgr.submit_entry(make_intent(qty=1, stop_price=0.0), None)
+    assert rejected.status == 'REJECTED'
+    retry = mgr.submit_entry(make_intent(qty=1, stop_price=90.0), None)
+    assert retry.status == 'FILLED'
+
+
 def test_submit_entry_always_places_stop(fake_table):
     # The stop is rested unconditionally (no has_stop opt-out anymore).
     ib = FakeIB(fill_status='Filled', fill_shares=1, fill_price=100.0)
