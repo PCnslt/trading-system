@@ -1,0 +1,13 @@
+[Unit]
+Description=Trading system return-channel reports (GET /reports on :8645)
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+ExecStart=/usr/bin/python3 /home/ubuntu/trading-system/reporting/report_server.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
