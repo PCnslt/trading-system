@@ -8,6 +8,12 @@ spec — the VPS does NOT place Robinhood orders).
 fractional shares ($0 commission) · **Objective (owner 2026-08-16):** CAPITAL
 PRESERVATION first — drawdown-first, validated edges only.
 
+> **Positioning (read first):** this is a **satellite**, not a capital-preservation
+> core. It has a real, cost-surviving edge (OOS PF 1.47) but **loses money in single
+> bear years** (2008 PF 0.36, 2022 0.81 at the selected threshold) and carries a
+> compounded maxDD ≈ −58–69% if run as a compounding book. Deploy it (a) paper-first,
+> (b) sized down, and (c) gated by an index regime filter — not as the account's core.
+
 This is the deployable spec for the strategy already validated as the **RSI2 champion**
 in `EQUITIES_SWEEP.md` (ETFs/sectors) and re-confirmed on individual large-caps in the
 `stock_mr_*` sweep (50 S&P100 names, 2006–2026). Nothing here is untested; every number
@@ -98,20 +104,36 @@ single-stock prices — see `SMALL_CAPITAL_OPPORTUNITIES.md` §cost note.)
 - **Walk-forward (threshold chosen from train only, expanding folds):** pooled OOS
   **PF 1.47** (n=1321) @0bps, **1.36** @5bps, **1.26** @10bps. All 5 folds positive
   (1.21 / 1.14 / 3.04 / 1.27 / 1.48 @0bps).
-- **Regime (thr=5):** pre-GFC 1.65 · GFC 1.40 · bull-grind 1.40 · COVID+bear 1.14 ·
-  bull-2023-25 1.33 — **positive in every regime, including 2008 and 2020-22.**
-- **Worst single trade −37.9%** (a gap-through-the-stop event on a single name). This
-  is why per-name position sizing (below) is the actual risk control, not the stop.
+- **Regime (thr=5, coarse buckets):** pre-GFC 1.65 · GFC 1.40 · bull-grind 1.40 ·
+  COVID+bear 1.14 · bull-2023-25 1.33. **BUT the coarse buckets mask bear-market decay —
+  see the honest per-year read below.**
+- **Per-year (honest, single-year):** the strategy is **negative in single bear years**:
+  2008 PF **0.36** (thr2) / 0.86 (thr5), 2022 PF **0.81** (both), plus 2018/2020/2025
+  ≈ 0.80–0.84 and 2001 0.63. Strong recovery years (2009 3.37, 2017 4.78) carry the
+  average. **Do not read "regime-robust" as "bear-proof."**
+- **Worst single trade −37.9%** (BKNG gap-through-the-stop), and an **18-trade losing
+  streak** was observed. Compounded portfolio maxDD ≈ **−58% to −69%** (equal-weight
+  compounding book; see the stock-MR validation report, commit `2bd2ea0`). These are the
+  drawdown-first numbers that matter most.
+- **Mitigation (mandatory, not optional):** (a) an **index-level regime gate** —
+  only take dip entries when `SPX > SMA200` — is the recommended fix for the bear-year
+  decay and is **not yet validated** (the per-name `close > SMA200` filter in §2 is
+  necessary but insufficient — 2008/2022 were negative even with it); (b) hard
+  per-name size cap (below); (c) run as a **satellite**, never the whole account.
 
 ## 5. Position sizing (capital-preservation control)
 
-- **Max 5% of account per name** (≈ $35 at $700), regardless of stop distance.
+- **Max ~5% of account per name** (≈ $25–50 at $700 — hard cap, matches the stock-MR
+  validation recommendation), regardless of stop distance.
 - **Target 10–20 concurrent names.** With ~20 names, the −37.9% worst-case single-name
   gap becomes a ≤ −1.9% portfolio event.
 - Per-trade risk ≈ 1% (owner spec): choose $ per name = `0.01 × capital / stop_pct`
-  **capped** at 5% of capital. A 2×ATR stop is typically 4–8% away, so the cap binds.
+  **capped** at ~5% of capital. A 2×ATR stop is typically 4–8% away, so the cap binds.
 - This is a **basket** strategy, not a single-bet strategy. Its edge is the 67–70%
-  win rate across many independent dip events.
+  win rate across many independent dip events — but that does **not** immunize it
+  against a broad bear market (all dips keep falling together).
+- **Run as a satellite** (e.g. ≤ half the account), never the whole book, until the
+  index-level regime gate (§4b) is validated and paper-traded.
 
 ## 6. Donchian(200d) variant (secondary, regime-gated)
 

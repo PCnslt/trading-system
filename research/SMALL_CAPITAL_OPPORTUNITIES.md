@@ -17,7 +17,7 @@ Every number is from a backtest with honest fills (entry/exit at signal close/ne
 
 | # | Strategy | Where | PF (honest cost) | win | Drawdown profile | Verdict |
 |---|---|---|---|---|---|---|
-| 1 | **RSI2 buy-the-dip** (large-caps + ETFs, fractional) | Robinhood | 1.47 OOS / 1.36 @5bps (basket); 2.04 OOS (SPY) | 67–70% | all regimes positive; worst trade −38% → ≤ −1.9% portfolio @20 names | **PROMOTE — deploy first** |
+| 1 | **RSI2 buy-the-dip** (large-caps + ETFs, fractional) | Robinhood | 1.47 OOS / 1.36 @5bps (basket); 2.04 OOS (SPY) | 67–70% | worst trade −38%; bear single-years 2008 PF 0.36 / 2022 0.81; compounded maxDD ≈ −58–69% | **PROMOTE — satellite, regime-gated** |
 | 2 | **Donchian 20d breakout** (ETFs only, SMA200-gated) | Robinhood | 1.50 OOS (SPY) / 1.05 @10bps | 57% | regime-dependent (0.89 pre-2009) | **HOLD — small diversifier** |
 | 3 | **Seasonal commodities** (month-of-year) | IBKR (post-deposit) | 1.20 full / 1.23 OOS (commodity-only) | 52% | cost-stable through 3 ticks; monthly hold | **POST-DEPOSIT — not now** |
 | 4 | Pairs / stat-arb (liquid pairs) | IBKR (needs shorting) | 1.29 → 1.14 @10bps | 62% | thin +0.4%/trade; requires short leg | NO-GO for now |
@@ -42,15 +42,22 @@ individual-large-cap confirmation the ETF sweep didn't have:
   - thr=2: full PF 1.54 (n=3064), win 67.5%; thr=5: PF 1.42 (n=7955).
   - Walk-forward OOS (threshold from train only): **PF 1.47** (n=1321), **1.36** @5bps,
     **1.26** @10bps. All 5 folds >1.0.
-  - **Positive in every regime** (1.14–1.65), including GFC 2008-09 (1.40) and
-    COVID+bear 2020-22 (1.14).
 - Trailing stop tested and **rejected** (lowers PF 1.54→1.50; raises stop-outs 17.5→34.8%).
-- **Risk to respect:** worst single trade −37.9% (gap-through-the-stop). Control via
-  **max 5% capital/name + 10–20 names**, never via a tighter stop.
+- **Honest drawdown profile (drawdown-first):** the coarse 2–3yr regime buckets are all
+  >1.0, but **single bear years are negative** — 2008 PF **0.36** (thr2) / 0.86 (thr5),
+  2022 PF **0.81**, plus 2018/2020/2025 ≈ 0.80–0.84. Worst single trade −37.9% (BKNG
+  gap-through), an 18-trade losing streak, and **compounded portfolio maxDD ≈ −58–69%**
+  if run as an equal-weight compounding book. Strong recovery years (2009 3.37,
+  2017 4.78) carry the average.
+- **Risk to respect:** the −37.9% worst trade is a gap-through-the-stop; control via
+  **max ~5% capital/name (≈ $25–50) + 10–20 names**, never a tighter stop. An
+  **index-level `SPX>SMA200` entry gate is recommended to address the bear-year decay —
+  not yet validated** (the per-name SMA200 filter was insufficient in 2008/2022).
 
-**Why it's #1:** highest PF, win rate, and cross-regime consistency of anything
-executable at $700, and the only strategy that survives both the 2008 and 2020–22 bears
-with PF well above 1.0. Drawdown is bounded by construction (basket + 2×ATR stop + 5d cap).
+**Why it's #1:** highest PF, win rate, and average-case consistency of anything
+executable at $700, with a clean walk-forward. **But it is not bear-proof** — it is the
+best *satellite* available, not a capital-preservation core. Deploy sized-down and
+regime-gated, paper-first.
 
 ## 2. Equities — momentum (second, thin)
 
