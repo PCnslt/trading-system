@@ -34,9 +34,12 @@ class RiskConfig:
     # --- Volatility overlay (1/realized-vol position scaling — HARD cap) ---
     # Co-equal with the protective stop: cap each position's expected DAILY
     # dollar-volatility at vol_target_pct * budget, so size scales as 1/realized
-    # vol and every position carries equal (bounded) volatility risk.
+    # vol and every position carries equal (bounded) volatility risk. Default
+    # 2% = SAME as risk_pct, so the two layers agree (a tighter vol budget than
+    # the stop budget would wrongly reject instruments the stop-based sizing
+    # already admits, e.g. MNQ on the $50k index sleeve).
     vol_scale_enabled: bool = True
-    vol_target_pct: float = 0.01       # target daily $-vol per position (fraction of budget)
+    vol_target_pct: float = 0.02       # target daily $-vol per position (fraction of budget)
 
     # --- Stops / targets ---
     risk_reward_ratio: float = 1.5     # TP distance = RR * SL distance
