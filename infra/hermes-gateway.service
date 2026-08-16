@@ -1,0 +1,50 @@
+# infra/hermes-gateway.service — AS-BUILT Hermes gateway unit (recovery artifact).
+#
+# This is the EXACT unit `hermes gateway install` writes to
+#   ~/.config/systemd/user/hermes-gateway.service
+# on this VPS (verified 2026-08-16). It is a USER systemd unit, NOT a system unit —
+# do NOT copy it into /etc/systemd/system/. The gateway needs the ubuntu user's
+# Hermes config (~/.hermes/), webhook subscriptions (webhook_subscriptions.json),
+# and Telegram/webhook secrets in ~/.hermes/.env, so it must run as the ubuntu
+# user under systemd --user.
+#
+# REBOOT SURVIVAL REQUIRES LINGER (already enabled on this VPS):
+#     loginctl enable-linger ubuntu
+#     loginctl show-user ubuntu | grep -i linger   # -> Linger=yes
+#
+# RESTORE / INSTALL:
+#     hermes gateway install              # writes + enables this unit
+#     loginctl enable-linger ubuntu       # persist across reboots / logout
+#     systemctl --user enable --now hermes-gateway
+#     systemctl --user status hermes-gateway
+#
+# Restart=always so the webhook (:8644) + Telegram + Hermes cron recover from any
+# crash or exit. Do NOT restart the live gateway outside a maintenance window.
+
+[Unit]
+Description=Hermes Agent Gateway - Messaging Platform Integration
+After=network-online.target
+Wants=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+ExecStart=/home/ubuntu/.hermes/hermes-agent/venv/bin/python -m hermes_cli.main gateway run
+WorkingDirectory=/home/ubuntu/.hermes
+Environment="PATH=/home/ubuntu/.hermes/hermes-agent/venv/bin:/home/ubuntu/.hermes/hermes-agent/node_modules/.bin:/home/ubuntu/.hermes/node/bin:/home/ubuntu/.hermes/node:/home/ubuntu/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+Environment="VIRTUAL_ENV=/home/ubuntu/.hermes/hermes-agent/venv"
+Environment="HERMES_HOME=/home/ubuntu/.hermes"
+Restart=always
+RestartSec=5
+RestartForceExitStatus=75
+RestartPreventExitStatus=78
+KillMode=mixed
+KillSignal=SIGTERM
+ExecReload=/bin/kill -USR1 $MAINPID
+ExecStopPost=-/home/ubuntu/.hermes/hermes-agent/venv/bin/python -m gateway.cgroup_cleanup
+TimeoutStopSec=60
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target

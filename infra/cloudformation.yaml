@@ -1,92 +1,143 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: >
-  24/7 multi-market trading system — VPS worker.
-  EC2 (t3.small) running IB Gateway + IBC (auto-login, auto-restart, API enabled),
-  the Python trading bot (yfinance data + IBKR execution), and the DynamoDB/S3 data lake.
-  Secrets (IBKR creds, API keys) live in SSM Parameter Store — never in this file.
+  24/7 multi-market trading system — VPS worker. AS-BUILT RECOVERY TEMPLATE
+  (2026-08-16). This documents the REAL running system; the live instance was built
+  MANUALLY (no /var/log/trading-bootstrap.log) and this template was NEVER deployed.
+  It is a recovery artifact only — do NOT deploy over the live stack. Native IB
+  Gateway GWClient (IBC removed 8/14); secrets are currently file-based (gitignored),
+  with SSM Parameter Store as the documented future target (not yet granted).
 
 Parameters:
   InstanceType:
     Type: String
     Default: t3.small
-    AllowedValues: [t3.small, t3.medium, t3.micro]
-    Description: EC2 instance type. t3.small (2GB) recommended for IB Gateway JVM.
+    AllowedValues: [t3.small, t3.medium]
+    Description: EC2 instance type. t3.small (2GB) = as-built.
 
   KeyName:
-    Type: AWS::EC2::KeyPair::KeyName
+    Type: String
     Default: trading-system
     Description: SSH key pair for admin access.
 
   SshCidr:
     Type: String
-    Default: 0.0.0.0/0
-    Description: CIDR allowed to SSH in (restrict to your home IP in prod).
+    Default: 100.36.195.7/32
+    Description: Laptop NAT IP allowed to SSH (as-built /32 rule; update on IP change).
 
-  IbcVersion:
+  WebhookCidr:
     Type: String
-    Default: 3.24.1
-    Description: IBC release version.
+    Default: 100.36.195.7/32
+    Description: Laptop NAT IP allowed to POST to the Hermes webhook (:8644).
 
-  IbcTwsMajorVrsn:
-    Type: String
-    Default: '1045'
-    Description: IB Gateway major version (no dots), e.g. 10.45 -> 1045.
+  AmiId:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id
+    Description: "Ubuntu 24.04 LTS AMI (as-built 24.04.4, kernel 6.17.0-1019-aws)."
 
   DataLakeBucket:
     Type: String
     Default: trading-datalake-920641308584
-    Description: S3 bucket for the data lake.
-
-  DynamoTable:
-    Type: String
-    Default: trading-data
-    Description: DynamoDB table for signals/ticks/trades.
+    Description: S3 data-lake bucket (as-built).
 
 Resources:
 
-  # ---------- IAM ----------
+  # ---------- IAM (least-privilege: S3 + DynamoDB + narrow ec2 read) ----------
+  # NOTE: the live role `trading-vps-role` could not be introspected from the
+  # instance (no iam:GetRolePolicy), so this policy encodes the VERIFIED effective
+  # permissions (probed 2026-08-16): S3 datalake OK, DynamoDB OK,
+  # ec2:DescribeSecurityGroups OK; ssm/cloudformation/ec2:DescribeInstances DENIED.
+  # Reconcile against the real role from a machine with IAM read access if exact
+  # policy text matters.
   TradingRole:
     Type: AWS::IAM::Role
     Properties:
+      RoleName: trading-vps-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
           - Effect: Allow
             Principal: { Service: ec2.amazonaws.com }
             Action: sts:AssumeRole
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
-        - arn:aws:iam::aws:policy/AmazonS3FullAccess
       Policies:
-        - PolicyName: ssm-trading-secrets
+        - PolicyName: trading-data-lake
           PolicyDocument:
             Version: '2012-10-17'
             Statement:
               - Effect: Allow
                 Action:
-                  - ssm:GetParameter
-                  - ssm:GetParameters
-                Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/trading/*
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:DeleteObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${DataLakeBucket}
+                  - !Sub arn:aws:s3:::${DataLakeBucket}/*
+              - Effect: Allow
+                Action:
+                  # tables auto-provision from bot/*.py (create_table if-not-exists),
+                  # so CreateTable + DescribeTable are required on rebuild.
+                  - dynamodb:CreateTable
+                  - dynamodb:DescribeTable
+                  - dynamodb:ListTables
+                  - dynamodb:GetItem
+                  - dynamodb:PutItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:Query
+                  - dynamodb:Scan
+                  - dynamodb:BatchGetItem
+                  - dynamodb:BatchWriteItem
+                Resource: !Sub arn:aws:dynamodb:${AWS::Region}:${AWS::AccountId}:table/*
+              # Narrow read grant — the VPS checks its own SG state for the return
+              # channel. NO ec2 write (cannot AuthorizeSecurityGroupIngress).
+              - Effect: Allow
+                Action:
+                  - ec2:DescribeSecurityGroups
+                Resource: '*'
+
+  # NOTE (secrets — target state, NOT current): migrate secrets to SSM Parameter
+  # Store and add the policy below. Today they are FILE-ONLY (gitignored
+  # /home/ubuntu/ibgateway-creds.env, /home/ubuntu/trading-system/.env,
+  # /home/ubuntu/.hermes/.env) and the role has NO ssm perms (verified AccessDenied).
+  #   - Effect: Allow
+  #     Action: [ssm:GetParameter, ssm:GetParameters]
+  #     Resource: !Sub arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/trading/*
 
   TradingInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
+      InstanceProfileName: trading-vps-role-instance-profile
       Roles: [!Ref TradingRole]
 
   # ---------- Network ----------
   TradingSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Trading VPS — SSH + Streamlit dashboard
+      GroupName: trading-system-sg
+      GroupDescription: Trading VPS — SSH + dashboard + webhook (as-built)
+      VpcId: vpc-0587e075606c52d68
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
           CidrIp: !Ref SshCidr
+          Description: SSH (laptop NAT /32)
         - IpProtocol: tcp
           FromPort: 8501
           ToPort: 8501
           CidrIp: 0.0.0.0/0
+          Description: Streamlit dashboard
+        - IpProtocol: tcp
+          FromPort: 8644
+          ToPort: 8644
+          CidrIp: !Ref WebhookCidr
+          Description: Hermes webhook (laptop-task inbound)
+        # 8645 (reports GET /reports) is NOT open as-built — the VPS role lacks
+        # ec2:AuthorizeSecurityGroupIngress, so the owner opens it manually:
+        #   aws ec2 authorize-security-group-ingress --group-id <sg> \
+        #     --ip-permissions IpProtocol=tcp,FromPort=8645,ToPort=8645,\
+        #     IpRanges='[{CidrIp=<LAPTOP_IP>/32}]'
+        # 4002 (IB API) is intentionally NEVER exposed externally.
 
   # ---------- Compute ----------
   TradingInstance:
@@ -94,139 +145,64 @@ Resources:
     Properties:
       InstanceType: !Ref InstanceType
       KeyName: !Ref KeyName
-      ImageId: '{{resolve:ssm:/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id}}'
+      ImageId: !Ref AmiId
+      AvailabilityZone: us-east-1b
       IamInstanceProfile: !Ref TradingInstanceProfile
       SecurityGroupIds: [!Ref TradingSecurityGroup]
       BlockDeviceMappings:
         - DeviceName: /dev/sda1
-          Ebs: { VolumeSize: 20, VolumeType: gp3 }
+          Ebs: { VolumeSize: 30, VolumeType: gp3 }
       UserData:
         Fn::Base64: !Sub |
           #!/bin/bash
           set -euo pipefail
+          # AS-BUILT bootstrap reconstruction (native GWClient — NO IBC). This is the
+          # recovery path documented in docs/RECOVERY.md; the live instance was built
+          # manually, so this is illustrative, not a verbatim historical log.
           exec > /var/log/trading-bootstrap.log 2>&1
-          echo "=== bootstrap start $(date) ==="
 
-          # --- 1. system packages ---
+          # --- base packages + swap ---
           apt-get update -y
           DEBIAN_FRONTEND=noninteractive apt-get install -y \
             openjdk-17-jre-headless xvfb openbox xdotool imagemagick tesseract-ocr \
             unzip git python3-venv python3-pip curl
+          fallocate -l 2G /swapfile; chmod 600 /swapfile; mkswap /swapfile; swapon /swapfile
+          grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
-          # --- 2. swap (2GB — the IB Gateway JVM needs headroom) ---
-          if [ ! -f /swapfile ]; then
-            fallocate -l 2G /swapfile || dd if=/dev/zero of=/swapfile bs=1M count=2048
-            chmod 600 /swapfile
-            mkswap /swapfile
-            swapon /swapfile
-            grep -q '/swapfile' /etc/fstab || echo '/swapfile none swap sw 0 0' >> /etc/fstab
-            echo "swap created"
-          fi
-
-          # --- 3. IB Gateway (standalone installer) ---
-          cd /tmp
-          curl -sL -o ibgateway.sh "https://download2.interactivebrokers.com/installers/ibgateway/stable-standalone/ibgateway-stable-standalone-linux-x64.sh"
-          chmod +x ibgateway.sh
-          ./ibgateway.sh -q -dir /home/ubuntu/ibgateway || echo "ibgateway installer returned non-zero (may still have installed)"
-
-          # --- 4. IBC (automates login + daily restart + API enable) ---
-          curl -sL -o /tmp/ibc.zip "https://github.com/IbcAlpha/IBC/releases/download/${IbcVersion}/IBCLinux-${IbcVersion}.zip"
-          unzip -oq /tmp/ibc.zip -d /home/ubuntu/ibc
-
-          # symlink so IBC finds the jars in its expected ~/Jts/ibgateway/<vrsn>/ layout
-          mkdir -p /home/ubuntu/Jts/ibgateway/${IbcTwsMajorVrsn} /home/ubuntu/ibc/logs
-          ln -sfn /home/ubuntu/ibgateway/jars /home/ubuntu/Jts/ibgateway/${IbcTwsMajorVrsn}/jars
-          ln -sfn /home/ubuntu/ibgateway/ibgateway.vmoptions /home/ubuntu/Jts/ibgateway/${IbcTwsMajorVrsn}/ibgateway.vmoptions
-          ln -sfn /home/ubuntu/ibgateway/.install4j /home/ubuntu/Jts/ibgateway/${IbcTwsMajorVrsn}/.install4j
-
-          # --- 5. IBC config (creds pulled from SSM Parameter Store) ---
-          IBKR_USERNAME=$(aws ssm get-parameter --name /trading/ibkr/username --with-decryption --query Parameter.Value --output text --region ${AWS::Region} 2>/dev/null || echo "")
-          IBKR_PASSWORD=$(aws ssm get-parameter --name /trading/ibkr/password --with-decryption --query Parameter.Value --output text --region ${AWS::Region} 2>/dev/null || echo "")
-          if [ -z "$IBKR_USERNAME" ]; then
-            echo "WARNING: SSM params /trading/ibkr/{username,password} missing — create them, then write /home/ubuntu/ibc/config.ini"
-          else
-            cat > /home/ubuntu/ibc/config.ini <<EOF
-          IbLoginId=${!IBKR_USERNAME}
-          IbPassword=${!IBKR_PASSWORD}
-          TradingMode=paper
-          AcceptIncomingConnectionAction=accept
-          ReadOnlyApi=no
-          AutoRestartTime=04:00 AM
-          ColdRestartTime=13:00
-          ReloginAfterSecondFactorAuthenticationTimeout=yes
-          SecondFactorAuthenticationTimeout=180
-          AcceptNonBrokerageAccountWarning=yes
-          DismissNSEComplianceNotice=yes
-          SuppressInfoMessages=yes
-          MinimizeMainWindow=yes
-          ExistingSessionDetectedAction=primary
-          StoreSettingsOnServer=no
-          EOF
-            echo "config.ini written"
-          fi
-
-          # --- 6. IBC launch script paths ---
-          sed -i "s/^TWS_MAJOR_VRSN=.*/TWS_MAJOR_VRSN=${IbcTwsMajorVrsn}/" /home/ubuntu/ibc/gatewaystart.sh
-          sed -i 's|^IBC_PATH=.*|IBC_PATH=/home/ubuntu/ibc|' /home/ubuntu/ibc/gatewaystart.sh
-          sed -i 's/^TWOFA_TIMEOUT_ACTION=.*/TWOFA_TIMEOUT_ACTION=restart/' /home/ubuntu/ibc/gatewaystart.sh
-          chmod +x /home/ubuntu/ibc/scripts/*.sh /home/ubuntu/ibc/*.sh
-
-          # --- 7. launcher wrapper (Xvfb + openbox + IBC) ---
-          cat > /home/ubuntu/ibgateway-start.sh <<'WRAP'
-          #!/bin/bash
-          export DISPLAY=:99
-          if ! pgrep -x Xvfb > /dev/null; then
-              Xvfb :99 -screen 0 1280x800x24 -ac +extension GLX +render -noreset &>/dev/null &
-              sleep 3
-          fi
-          if ! pgrep -x openbox > /dev/null; then
-              openbox &>/dev/null &
-              sleep 1
-          fi
-          exec /home/ubuntu/ibc/gatewaystart.sh -inline
-          WRAP
-          chmod +x /home/ubuntu/ibgateway-start.sh
-
-          # --- 8. systemd service ---
-          cat > /etc/systemd/system/ibgateway.service <<'SVC'
-          [Unit]
-          Description=IB Gateway (headless paper trading, IBC)
-          After=network.target
-
-          [Service]
-          User=ubuntu
-          Environment=DISPLAY=:99
-          ExecStart=/home/ubuntu/ibgateway-start.sh
-          Restart=on-failure
-          RestartSec=15
-
-          [Install]
-          WantedBy=multi-user.target
-          SVC
-          systemctl daemon-reload
-          systemctl enable ibgateway
-
-          # --- 9. trading-system repo + venv ---
-          cd /home/ubuntu
-          if [ ! -d /home/ubuntu/trading-system/.git ]; then
-            git clone https://github.com/PCnslt/trading-system.git /home/ubuntu/trading-system || true
-          fi
-          cd /home/ubuntu/trading-system 2>/dev/null && git pull --ff-only || true
+          # --- repo + venv (requirements.txt is the reproducible pin) ---
+          git clone git@github.com:PCnslt/trading-system.git /home/ubuntu/trading-system || true
+          cd /home/ubuntu/trading-system && git pull --ff-only || true
           python3 -m venv /home/ubuntu/trading-system/venv
           /home/ubuntu/trading-system/venv/bin/pip install -q --upgrade pip
-          /home/ubuntu/trading-system/venv/bin/pip install -q ib_insync yfinance boto3 python-dotenv pandas numpy
+          /home/ubuntu/trading-system/venv/bin/pip install -q -r /home/ubuntu/trading-system/requirements.txt
 
-          # --- 10. cron (data ingest + bot) ---
-          (crontab -l 2>/dev/null || true; cat <<'CRON'
-          */10 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/crypto_tick.py >> /home/ubuntu/trading-system/data/crypto.log 2>&1
-          0 21 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/ingest.py >> /home/ubuntu/trading-system/data/ingest.log 2>&1
-          5 21 * * * cd /home/ubuntu/trading-system/bot && /home/ubuntu/trading-system/venv/bin/python live.py >> /home/ubuntu/trading-system/bot/live.log 2>&1
-          10 21 * * * cd /home/ubuntu/trading-system/bot && /home/ubuntu/trading-system/venv/bin/python live_bondsfx.py >> /home/ubuntu/trading-system/bot/live_bondsfx.log 2>&1
-          CRON
-          ) | crontab -
+          # --- secrets: restore from laptop backup (file-only; see RECOVERY.md §5) ---
+          #   /home/ubuntu/ibgateway-creds.env   (IBG_USERNAME/IBG_PASSWORD, mode 600)
+          #   /home/ubuntu/trading-system/.env
+          #   (SSM Parameter Store /trading/ibkr/* is the documented future target.)
 
-          # --- 11. start gateway (IBC auto-login; approve 2FA push on phone) ---
-          systemctl start ibgateway || true
+          # --- IB Gateway (native GWClient, headless Xvfb :99 + openbox) ---
+          #   see docs/IBGATEWAY-NATIVE-OPS.md — install standalone, then the
+          #   /home/ubuntu/ibgateway-native-start.sh launcher (entry point
+          #   install4j.ibgateway.GWClient). systemd unit infra/ibgateway.service is
+          #   Restart=always (NOT on-failure — the native auto-restart exits 0).
+
+          # --- systemd (install the committed as-built units) ---
+          sudo cp /home/ubuntu/trading-system/infra/*.service /etc/systemd/system/ 2>/dev/null || true
+          sudo cp /home/ubuntu/trading-system/infra/*.timer   /etc/systemd/system/ 2>/dev/null || true
+          systemctl daemon-reload
+          systemctl enable ibgateway trading-dashboard futures-tick-recorder \
+            reconcile-daemon ibkr-backfill trading-reports ibgateway-hang-watchdog.timer \
+            ibgateway-weekly.timer ibkr-backfill-resume.timer
+          systemctl start ibgateway   # approve 2FA push on phone
+
+          # --- Hermes + gateway (user unit; survives reboot via linger) ---
+          curl -fsSL https://hermes-agent.nousresearch.com/install.sh | sudo -u ubuntu bash
+          sudo -u ubuntu hermes gateway install
+          loginctl enable-linger ubuntu
+
+          # --- cron (data ingestion; bots run via Hermes cron jobs.json) ---
+          sudo -u ubuntu crontab /home/ubuntu/trading-system/infra/crontab.txt
 
           echo "=== bootstrap complete $(date) ==="
 
@@ -235,6 +211,9 @@ Resources:
     Type: AWS::EC2::EIP
     Properties:
       Domain: vpc
+      Tags:
+        - Key: Name
+          Value: trading-vps-eip
 
   TradingEIPAssociation:
     Type: AWS::EC2::EIPAssociation
@@ -245,14 +224,17 @@ Resources:
 Outputs:
   InstanceId:
     Value: !Ref TradingInstance
+    Description: as-built i-00009f59dcb52f725
   PublicIp:
     Value: !Ref TradingEIP
+    Description: as-built 52.7.95.127
   SshCommand:
     Value: !Sub ssh -i ${KeyName}.pem ubuntu@${TradingEIP}
-  BootstrapLog:
-    Value: ssh ubuntu@<ip> 'sudo cat /var/log/trading-bootstrap.log'
+  RecoveryRunbook:
+    Value: https://github.com/PCnslt/trading-system/blob/main/docs/RECOVERY.md
   NextSteps:
     Value: >
-      1) Create SSM secrets: aws ssm put-parameter --name /trading/ibkr/username --type SecureString --value <user>
-      (and /trading/ibkr/password). 2) Approve the IBKR 2FA push on your phone after first boot.
-      3) Verify: ssh in, 'ss -tln | grep 4002' should show the API port listening.
+      1) Restore secrets from laptop backup (file-only). 2) Approve IBKR 2FA push.
+      3) Verify: ss -tln | grep -E '4002|8501|8644|8645'.
+      4) Restore ~/.hermes/cron/jobs.json + webhook_subscriptions.json.
+      5) Open SG :8645 for the return channel (owner action — role cannot).
