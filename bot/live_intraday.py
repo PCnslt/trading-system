@@ -33,6 +33,14 @@ avoids netting the same contract. EOD flatten from 15:45 ET.
 Schedule: cron every 15 min during RTH (09:30-16:00 ET weekdays). The bot
 re-gates internally: entries 09:30-15:30 ET, flatten from 15:45 ET.
 Paper only — LIVE env var stays false.
+
+EXECUTION MODE (2026-08-16, intraday-first Gate-1 validation): the backtest
+(research/intraday_validate.py -> INTRADAY_GATE1_VALIDATION.md) found NO cost-surviving
+intraday edge — all 5 candidates (ORB/MOM/VWAP/DONCH15/FADESHORT) are NO-GO or
+HOLD at 3-tick slippage + commission. Per "validated edges only +
+never-lose-money", this bot now runs SIGNAL-ONLY by default (bars + SIGNAL#
+still collected every run, no paper orders). Set INTRA_EXECUTION=paper to
+re-enable paper fills for a LATER validated edge.
 """
 import os
 import sys
@@ -68,6 +76,7 @@ DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 INTRA_RISK_BUDGET = float(os.getenv('INTRA_RISK_BUDGET', '25000'))  # intraday sleeve
 INTRA_RISK_PCT = 0.01     # 1% risk/trade MAX (owner: 0.5-1%, capital-preservation objective)
 LIVE = os.getenv('LIVE', 'false').lower() == 'true'
+EXECUTION_MODE = os.getenv('INTRA_EXECUTION', 'NONE').upper()   # 'NONE' | 'PAPER'
 
 CONTRACT = {'symbol': 'MES', 'exchange': 'CME', 'point_value': 5.0}
 DURATION = '5 D'      # enough warmup for 20-bar Bollinger (5m) + 20-bar Donchian (15m)
@@ -307,11 +316,18 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
         'close': str(round(detail['close'], 2)),
         'pos': pos, 'side': side or '', 'reason': ereason,
         'eod': eod, 'session_date': today, 'ts': int(time.time()),
+        'execution': EXECUTION_MODE,
     }
     for k in strat['sig_keys']:
         v = detail.get(k)
         sig[k] = str(round(v, 2)) if v is not None and not (isinstance(v, float) and np.isnan(v)) else ''
     log_dynamo(dynamo, f"SIGNAL#{tag}", now.isoformat(), sig)
+
+    if EXECUTION_MODE != 'PAPER':
+        # validated-edges-only: no intraday candidate cleared the Gate-1 cost
+        # stress (research/INTRADAY_GATE1_VALIDATION.md) — log the signal, place no orders.
+        print(f"[{now.isoformat()}] {mode} {tag} SIGNAL-ONLY ({sig['signal']}) {sig['reason']}")
+        return
 
     if pos > 0:
         # open position -> evaluate exit / EOD flatten
