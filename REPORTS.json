@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-16T13:10:05-04:00",
+  "updated": "2026-08-16T13:15:45-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -77,6 +77,19 @@
         "GAP-1: reconcile_daemon detects MISMATCH but does NOT auto-flip CONTROL=PAUSED or re-rest a missing stop — enforcement is next-bot-run + Telegram alert. Owner decision required (auto-kill on transient UNKNOWN would halt whole system).",
         "GAP-2: bot/live_bondsfx.py:259,285 raw no-stop shorts + no exec_manager (INERT, main() is no-op) — must refactor onto exec_manager before any re-enable.",
         "GAP-3: '$150 daily loss cap' is not literal in code — enforced cap is max_daily_loss_pct(2%)*budget = $1,000 (live) / $500 (intraday). Confirm or lower."
+      ]
+    },
+    {
+      "ts": "2026-08-16T13:15:45-04:00",
+      "task": "Risk-param drift fix (2%->1%) + architecture diagram refresh (laptop audit)",
+      "summary": "risk_pct default 0.02->0.01; vol_target_pct 0.02->0.01 (co-equal). pytest: 159 passed, 0 regressions. py_compile OK on live/live_gc/live_intraday/live_bondsfx/risk. git ahead=0/behind=0. architecture.html: 7 text edits (SSM /trading/* secrets, Return-channel GET /reports :8645, live_gc.py, native BRACKET orders, 1% risk/trade + 1% vol overlay, CloudFormation 'trading-system' Retain, SG 22/8644/8645 self-heal) - verified present + parses for st.components.v1.html. CORRECTIONS to laptop audit: (1) INTRA_RISK_PCT=0.01 is NOT dead code - it IS wired at live_intraday.py:513, so live_intraday already traded at 1%; (2) live_bondsfx.py also inherited 2% (missed by laptop) - now 1% via default. max_daily_loss_pct left 2% (pending owner). CRITICAL consequence: at 1% the current paper sleeves reject ALL entries - at 2% MES-RSI2=1ct + GC=1ct (MES-Donchian/MNQ already size=0); at 1% every lane size=0. Sleeve-vs-instrument decision for owner (SELF_REVIEW §5.1).",
+      "commits": [
+        "827a66b",
+        "1088f50"
+      ],
+      "blockers": [
+        "max_daily_loss_pct still 2% of budget - confirm exact daily-loss cap with owner ($150 prior vs %-of-budget).",
+        "At 1% risk/trade, the 50k index + 1.5M gold paper sleeves size=0 for all instruments - owner must decide: raise sleeves / MES-only / MGC micro, or keep 2% as explicit paper-only override."
       ]
     }
   ]
