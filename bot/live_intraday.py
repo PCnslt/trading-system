@@ -66,6 +66,7 @@ IBKR_PORT = int(os.getenv('IBKR_PORT', '4002'))
 CLIENT_ID = 72                                     # distinct from live.py(70)/bonds(71)
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 INTRA_RISK_BUDGET = float(os.getenv('INTRA_RISK_BUDGET', '25000'))  # intraday sleeve
+INTRA_RISK_PCT = 0.01     # 1% risk/trade MAX (owner: 0.5-1%, capital-preservation objective)
 LIVE = os.getenv('LIVE', 'false').lower() == 'true'
 
 CONTRACT = {'symbol': 'MES', 'exchange': 'CME', 'point_value': 5.0}
@@ -488,6 +489,7 @@ def main():
         # ledger HALTS the run (no new entries).
         try:
             risk = RiskEngine.load(RiskConfig(risk_budget_usd=INTRA_RISK_BUDGET,
+                                              risk_pct=INTRA_RISK_PCT,
                                               max_concurrent_positions=1),
                                    RiskLedger(dynamo, scope='live_intraday'))
         except RiskStateUnavailable as e:

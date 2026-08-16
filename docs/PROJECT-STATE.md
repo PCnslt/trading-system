@@ -2,11 +2,17 @@
 
 > **Both sides keep this current.** Laptop = research + Robinhood order placement.
 > VPS = build/backtest/deploy/monitor (IBKR paper). Commit every update so the
-> other side picks it up on next pull. Last updated: **2026-08-15**.
+> other side picks it up on next pull. Last updated: **2026-08-16**.
 
 ---
 
 ## Current phase
+
+**Objective (owner-clarified, 2026-08-16): CAPITAL PRESERVATION.** "The system should
+not lose money" — drawdown minimization is the #1 objective; returns are secondary; no
+asset class is a priority. **Horizon: intraday → 2–3-day swing.** See
+`research/INTRADAY_BUILD.md` for the full build spec and the new drawdown-first
+evaluation standard.
 
 **Futures phase-1 (paper forward-test).** Two validated futures edges are being
 paper-forwarded toward live capital (index-LONG + gold momentum); everything else
@@ -88,11 +94,22 @@ flag the gap and ask the owner whether to purchase the proper subscription.**
 - **index-LONG (sole promoted edge)**: uses 16y yfinance futures-continuous. **NOT
   stale** — same CME contracts, adequate depth. **No purchase needed now.**
 
+## Evaluation standard (NEW — applies to ALL future evaluation)
+
+Rank every strategy **primarily by maxDrawdown, worst-case, and consistency
+(win rate / longest losing streak) — NOT by PF/return.** A low-return but
+tiny-drawdown strategy outranks a high-return high-drawdown one. PF/Sharpe/return
+are reported but demoted to tie-breakers. Risk per trade: **0.5–1% max**, hard daily
+loss cap, mandatory stops + trailing (already fail-closed). No asset priority.
+
 ## Next actions (VPS)
 
-1. Paper-forward `live.py` (index edge) until **Gate 5** (paper validation) passes.
-2. Micro-live — min size, hard loss limit, tested kill + rollback.
-3. Optional: buy CME FX-futures entitlement to un-gap 6E/6J/6B/6A/6C/6S/6N.
+1. Paper-forward `live.py` (index edge) until **Gate 5** (paper validation) passes —
+   now judged on the drawdown-first bar above, not PF alone.
+2. Add 2–3-day short-swing variants (Donchian 2–3d lookback, 2–3d mean-reversion) to
+   the intraday/short-swing evaluation, alongside ORB/MOM/VWAP/DONCH15/FADESHORT.
+3. Micro-live — min size, hard loss limit, tested kill + rollback.
+4. Optional: buy CME FX-futures entitlement to un-gap 6E/6J/6B/6A/6C/6S/6N.
 
 ## Laptop's active research focus
 
