@@ -38,6 +38,10 @@
 
 # ---- systemd services (persistent, NOT cron) ----
 #   ibgateway.service            IB Gateway (headless paper :4002, native auto-restart)
+#                                Restart=always (NOT on-failure) — native restart exits 0.
+#   ibgateway-hang-watchdog.timer hang-recovery watchdog (every 2 min): port-4002 socket
+#                                 check; restarts ibgateway ONCE on >3min hang, then resumes
+#                                 backfill; Telegram-alerts + stops if 2FA needed.
 #   trading-dashboard.service    Streamlit dashboard :8501
 #   futures-tick-recorder.service L1 tick recorder (clientId 74) -> S3 futures-ticks + QUOTE#
 #                                 RTH-gated 13:30-20:00 UTC Mon-Fri; reconnects on gateway restart.

@@ -6,8 +6,12 @@ After=network.target
 User=ubuntu
 Environment=DISPLAY=:99
 ExecStart=/home/ubuntu/ibgateway-native-start.sh
-Restart=on-failure
-RestartSec=15
+# MUST be Restart=always (NOT on-failure): the native auto-restart exits CLEANLY
+# (status 0) after writing its soft token, then relies on systemd to relaunch.
+# on-failure ignores exit-0 -> gateway dies at 04:00 and never returns.
+# A hung-but-alive process is covered separately by ibgateway-hang-watchdog.timer.
+Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

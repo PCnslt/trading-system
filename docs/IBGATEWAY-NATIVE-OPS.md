@@ -21,6 +21,32 @@ Daily re-login uses IB's first-party auto-restart + token re-use; the weekly
 - **API**: port 4002, paper account DUR193467. `jts.ini` already has
   `ApiOnly=true`, `AcceptIncomingConnection=1` (persisted, survives restarts).
 
+## Hang-recovery watchdog (alive-but-socket-dead)
+
+**Known failure mode (2026-08-16 — 7h outage):** the 04:00 native auto-restart can
+leave the gateway `active (running)` while the API socket (port 4002) never opens.
+That is a **HANG, not a crash**. systemd `Restart=always` only fires on process EXIT,
+so a hung process sits dead forever without intervention — exactly what happened
+(verified: a manual restart at 11:49 brought 4002 up with NO 2FA, i.e. a hung
+process, not the weekly token floor).
+
+`ibgateway-hang-watchdog.{timer,service}` + `infra/ibgateway-hang-watchdog.sh` now
+auto-recover this. It is a **cheap `ss -ltn` socket check every 2 min** — no IB API
+call, no connection attempt.
+
+1. port 4002 closed for **>3 min** (3 consecutive checks) → `systemctl restart
+   ibgateway` **ONCE**, then wait 90s.
+2. port 4002 back → log `recovered from hang`, reset state, and run
+   `gateway_resume.sh` (resumes the IBKR backfill if it is inactive).
+3. port 4002 **still** closed → log `likely 2FA`, send a **Telegram alert** to the
+   owner, and **STOP** (do NOT restart in a loop — repeated restarts would only spam
+   2FA pushes).
+
+State persists in `data/ibgateway_watchdog.state` and resets automatically when 4002
+returns. The alert is retried until delivered (never silently dropped), and a slow
+post-restart login is tolerated because any later up-transition resets + resumes.
+The watchdog **never bypasses 2FA** — it only detects the hang and alerts.
+
 ## Weekly 2FA re-login (manual floor — do NOT try to bypass)
 
 Sunday 13:00 UTC the timer restarts the gateway. It lands on the login screen
@@ -35,6 +61,10 @@ DISPLAY=:99 /home/ubuntu/ibgateway-login.sh   # types password + clicks "Paper L
 Credentials live in `/home/ubuntu/ibgateway-creds.env` (chmod 600, not committed).
 The paper-trading disclaimer ("This is not a brokerage account…") is auto-accepted
 by the helper the first time it appears.
+
+If the gateway instead HANGS (running-but-socket-dead), the hang-recovery watchdog
+(`ibgateway-hang-watchdog.timer`) restarts it once and alerts you via Telegram only
+if 2FA is then required — it never auto-bypasses the phone approval.
 
 ## Verification checklist (run after any change)
 
@@ -53,6 +83,9 @@ by the helper the first time it appears.
    check runs `~/.hermes/scripts/ibgw_restart_check.sh` (port 4002 + GWClient process +
    read-only `managedAccounts()==['DUR193467']`) and reports to Telegram. Reuse it to
    verify any restart without re-deriving the checks.
+9. Hang watchdog: `systemctl list-timers ibgateway-hang-watchdog.timer` → next fire ≤2 min;
+   `journalctl -u ibgateway-hang-watchdog -n 20` → healthy checks are silent, state
+   transitions logged; `data/ibgateway_watchdog.state` → all-zero when healthy.
 
 ## Standing rule — NEVER DISCARD PAID DATA
 

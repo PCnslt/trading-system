@@ -1,0 +1,11 @@
+[Unit]
+Description=IB Gateway hang-recovery watchdog timer (every 2 min)
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=2min
+Persistent=true
+Unit=ibgateway-hang-watchdog.service
+
+[Install]
+WantedBy=timers.target

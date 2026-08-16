@@ -1,0 +1,9 @@
+[Unit]
+Description=IB Gateway hang-recovery watchdog (port 4002 alive-but-socket-dead)
+After=network.target
+
+[Service]
+Type=oneshot
+ExecStart=/home/ubuntu/trading-system/infra/ibgateway-hang-watchdog.sh
+# restart (~20s) + 90s wait + Telegram notify (~5s) fits comfortably in 180s.
+TimeoutStartSec=180
