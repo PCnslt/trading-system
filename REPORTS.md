@@ -74,3 +74,12 @@
 - **Blockers**:
   - max_daily_loss_pct still 2% of budget - confirm exact daily-loss cap with owner ($150 prior vs %-of-budget).
   - At 1% risk/trade, the 50k index + 1.5M gold paper sleeves size=0 for all instruments - owner must decide: raise sleeves / MES-only / MGC micro, or keep 2% as explicit paper-only override.
+
+---
+
+## 2026-08-16T13:28:04-04:00 — GAP-FIXES (SELF_AUDIT): close GAP-1/2/4 unprotected-position windows
+
+- **Summary**: Applied the three GAP fixes from research/SELF_AUDIT.md. GAP-1: reconcile_daemon.py now tracks a persisted MISMATCH streak and flips CONTROL/system to PAUSED after 2 consecutive 45s MISMATCH cycles (~90s), closing the unprotected-position window between detection and the next bot run (up to 15min intraday / 24h daily); UNKNOWN gateway blips never pause; PAUSED (not KILLED) so existing positions still manage to exit. Added tests/test_auto_pause.py (6 tests) locking the 2-cycle threshold. GAP-2: stripped the naked ib.placeOrder market-short/cover (no protective stop) from live_bondsfx.py, replaced with a fail-closed _order_path_removed() guard that raises and routes any re-enable through hardening.exec_manager; signal/backtest logic kept. GAP-4: execution_test.py now refuses to run (exit 2) without an explicit --i-know flag. Verified: 165 tests pass, guards exercised at runtime, reconcile-daemon restarted and live (RECONCILE/system now carries mismatch_streak).
+- **Commits**: `ca67818`
+- **Blockers**:
+  - GAP-3 remains open: owner 150-USD daily loss cap is not a literal in code; enforced cap is 2% x budget (1k live / 500 intraday). Owner decision needed — out of scope for this task.
