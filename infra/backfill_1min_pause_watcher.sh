@@ -27,9 +27,13 @@ for i in $(seq 1 2160); do   # 2160 * 5s = 3 h max
     echo "PHASE-4 REACHED (futures-1min header $F1_BASE -> $F1) @ $(date -u +%FT%TZ)"
     echo "  -> equities-daily genuinely complete; touching daily COMPLETE flag"
     touch "$DAILY_FLAG"
-    systemctl stop ibkr-backfill.service
-    echo "STOPPED ibkr-backfill.service (1-min paused this weekend)"
-    exit 0
+    if sudo -n systemctl stop ibkr-backfill.service; then
+      echo "STOPPED ibkr-backfill.service (1-min paused this weekend)"
+      exit 0
+    else
+      echo "ERROR: systemctl stop failed (rc=$?) — MANUAL STOP REQUIRED: sudo systemctl stop ibkr-backfill.service" >&2
+      exit 1
+    fi
   fi
   EQFAIL=$(grep -c "PHASE FAILED: --mode equities" "$LOG")
   if [ "$EQFAIL" -gt "$EQFAIL_BASE" ]; then
