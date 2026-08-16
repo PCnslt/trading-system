@@ -10,7 +10,7 @@
 </style>
 </head>
 <body>
-<svg viewBox="0 0 1500 1340" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trading system as-built architecture diagram">
+<svg viewBox="0 0 1500 1360" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trading system as-built architecture diagram">
   <defs>
     <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
       <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#0c1526" stroke-width="1"/>
@@ -57,7 +57,7 @@
 
   <!-- ============ LAPTOP ============ -->
   <g>
-    <rect x="40" y="120" width="300" height="580" rx="10" fill="#22d3ee" fill-opacity="0.05" stroke="#22d3ee" stroke-opacity="0.65" stroke-width="1.5"/>
+    <rect x="40" y="120" width="300" height="660" rx="10" fill="#22d3ee" fill-opacity="0.05" stroke="#22d3ee" stroke-opacity="0.65" stroke-width="1.5"/>
     <text x="56" y="148" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="14" font-weight="700" fill="#22d3ee">LAPTOP — DIRECTOR</text>
     <text x="56" y="166" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10.5" fill="#64748b">Hermes · research + live execution</text>
 
@@ -81,13 +81,18 @@
 
       <rect x="52" y="520" width="276" height="70" rx="8" fill="#22d3ee" fill-opacity="0.07" stroke="#22d3ee" stroke-opacity="0.3"/>
       <text x="64" y="542" font-size="11.5" font-weight="700" fill="#e2e8f0">Secrets</text>
-      <text x="64" y="562" font-size="10" fill="#94a3b8">.env · broker tokens (VPS-only)</text>
+      <text x="64" y="562" font-size="10" fill="#94a3b8">SSM Parameter Store /trading/* (SecureString)</text>
+      <text x="64" y="576" font-size="10" fill="#94a3b8">source of truth · .env fallback</text>
+
+      <rect x="52" y="604" width="276" height="70" rx="8" fill="#22d3ee" fill-opacity="0.07" stroke="#22d3ee" stroke-opacity="0.3"/>
+      <text x="64" y="626" font-size="11.5" font-weight="700" fill="#e2e8f0">Return channel</text>
+      <text x="64" y="646" font-size="10" fill="#94a3b8">GET /reports :8645 (HMAC pull)</text>
     </g>
 
     <!-- never-ssh annotation -->
-    <rect x="52" y="620" width="276" height="46" rx="8" fill="none" stroke="#fb7185" stroke-opacity="0.7" stroke-width="1.2" stroke-dasharray="4 3"/>
-    <text x="64" y="639" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10.5" font-weight="700" fill="#fb7185">NEVER SSHes to VPS</text>
-    <text x="64" y="655" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10" fill="#94a3b8">control plane = HMAC webhook only</text>
+    <rect x="52" y="688" width="276" height="46" rx="8" fill="none" stroke="#fb7185" stroke-opacity="0.7" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="64" y="707" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10.5" font-weight="700" fill="#fb7185">NEVER SSHes to VPS</text>
+    <text x="64" y="723" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="10" fill="#94a3b8">control plane = HMAC webhook only</text>
   </g>
 
   <!-- ============ VPS ============ -->
@@ -116,7 +121,7 @@
       <g font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="11" fill="#cbd5e1">
         <text x="446" y="414">live.py — index MES/MNQ · Donchian + RSI2 (19:00 ET)</text>
         <text x="446" y="432">live_intraday.py — MES RTH · FADESHORT + DONCH15</text>
-        <text x="446" y="450">gc_signals.py — gold momentum · signal-only</text>
+        <text x="446" y="450">live_gc.py — GC Donchian + TSMOM · paper</text>
         <text x="446" y="468">equity_signals.py — RSI2-dip + Donchian(200d) · signal-only</text>
         <text x="446" y="486">crypto_paper.py — Donchian 20+200d · signal-only</text>
         <text x="446" y="504">live_bondsfx.py — bonds ZB/ZN · SHELVED (disarmed)</text>
@@ -134,6 +139,7 @@
         <text x="446" y="677">stale-signal + data-health gate</text>
         <text x="446" y="695">session + account-id dedupe / idempotency</text>
         <text x="446" y="713" font-weight="700" fill="#fb7185">NEVER-LOSE-MONEY — refuse entry w/o protective stop</text>
+        <text x="446" y="731">1% risk/trade + 1% vol overlay (co-equal)</text>
       </g>
     </g>
 
@@ -146,6 +152,7 @@
         <text x="446" y="840">protective stop unconditional (orderRef-tagged)</text>
         <text x="446" y="858">timeout → UNKNOWN (never assume rejected)</text>
         <text x="446" y="876">idempotent TradeIntent (INTENT# conditional write)</text>
+        <text x="446" y="894">native BRACKET orders (broker-side stop survives crash)</text>
       </g>
     </g>
 
@@ -284,6 +291,7 @@
 
   <!-- ============ FOOTER ============ -->
   <text x="40" y="1318" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="9.5" fill="#475569">AS-BUILT · 2026-08-16 · futures phase-1 (paper) · assets/architecture.html · solid = trade path · dashed = broker-truth / state · no target-only layers</text>
+  <text x="40" y="1332" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="9.5" fill="#475569">CloudFormation 'trading-system' (imported · DeletionPolicy Retain) · SG 22/8644/8645 auto-updated by laptop cron (IP-change self-heal)</text>
 </svg>
 </body>
 </html>
