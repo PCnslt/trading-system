@@ -205,3 +205,22 @@ Robinhood: canonical client = hardening/rh_client.py (commit 77fbb1e, 10 tests) 
   - USER: enable live futures + options trading permissions AND CME L1 (real-time) market data on U26949861.
   - USER: IBKR live 2FA first login — approve IB Key push; switch Trading Mode to Live first, then verify managedAccounts()==['U26949861'].
   - USER: Robinhood re-auth — SSM /trading/robinhood/* token REVOKED; run infra/rh_oauth.py on the laptop to re-authenticate.
+
+---
+
+## 2026-08-16T18:42:16-04:00 — Robinhood single-writer token architecture + empirical fractional-stop check (defect fix)
+
+- **Summary**: DCR client_id: LtLiNmbs...r8xW (full id in SSM, redacted here). NOTE: DCR returns a SINGLETON well-known client_id — Robinhood hosted MCP has ONE shared OAuth client; a separate per-process VPS client_id CANNOT be registered (verified by 2x DCR POSTs with different names/ports -> same client_id). Fix is therefore SINGLE-WRITER discipline, not credential separation: ONLY the VPS holds/rotates the live token; laptop MCP retired for trading (may only READ SSM to confirm).
+
+OWNER RE-AUTH STEPS (token is currently REVOKED — MCP 401 "token revoked"):
+  1. VPS:    python3 infra/rh_oauth.py --reauth
+  2. Laptop: ssh -L 58245:127.0.0.1:58245 ubuntu@52.7.95.127
+  3. Laptop browser: open the printed https://robinhood.com/oauth?... URL, log in + 2FA.
+     The script catches the redirect on the VPS loopback and persists local-file-first then SSM.
+
+FRACTIONAL-STOP VERIFICATION: BLOCKED. Helper check_fractional_stop() (review_equity_order simulate path, NO order placed) built + unit-tested (accept/reject paths), but the live check cannot run until re-auth. After re-auth run: python3 infra/rh_check_fractional_stop.py --symbol SPY. This settles whole-share-vs-fractional with data, not assumption.
+
+Also: expires_at now stored as plain number string (was repr(float)); refresh() gained a race guard (no double-rotation when two threads race a 401). No live orders placed. Live IBKR gateway stayed DISABLED. Paper remains default. 184 tests pass.
+- **Commits**: `b783a545850f83a944d21ee7e23f05d2680ae6b6`
+- **Blockers**:
+  - Robinhood token is REVOKED — owner must run infra/rh_oauth.py --reauth (browser consent) before the equities lane can read the account or the fractional-stop check can run.
