@@ -24,6 +24,21 @@ Resources:
         - arn:aws:iam::aws:policy/AdministratorAccess
         - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      # Scoped publish policy for the VPS->laptop SQS return channel
+      # (vps-to-laptop.fifo). Mirrors the inline policy applied by
+      # infra/create_sqs_channel.py; the QUEUE itself is app-managed (like the
+      # data layer) and documented in docs/COMMUNICATION.md + docs/RECOVERY.md.
+      Policies:
+        - PolicyName: sqs-publish-vps-to-laptop
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sqs:SendMessage
+                  - sqs:GetQueueUrl
+                  - sqs:GetQueueAttributes
+                Resource: !Sub arn:aws:sqs:${AWS::Region}:${AWS::AccountId}:vps-to-laptop.fifo
 
   TradingInstanceProfile:
     Type: AWS::IAM::InstanceProfile

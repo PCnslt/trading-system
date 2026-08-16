@@ -111,6 +111,10 @@ IpRanges='[{CidrIp=<LAPTOP_IP>/32,Description="Laptop return-channel pull"}]'
   Prefixes: `ibkr/equities|futures|crypto`, `futures-bars/`, `futures-ticks/`,
   `contracts/`, `sessions/`, `options/`, `yf/`, `crypto-hist/`, `macro/`,
   `news/`, `research/scan-results/`.
+- **SQS — `vps-to-laptop.fifo`** (VPS→laptop return channel, app-managed).
+  Created idempotently by `infra/create_sqs_channel.py`; queue policy +
+  `sqs-publish-vps-to-laptop` inline role policy applied there too. Laptop
+  long-polls via `infra/laptop_inbox.py`. Full spec: `docs/COMMUNICATION.md`.
 - **DynamoDB — 19 tables, auto-provisioned by `bot/*.py` code** (`boto3 create_table`
   if-not-exists), so a rebuild re-creates them. Names (verified `ListTables`):
 

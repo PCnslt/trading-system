@@ -123,6 +123,15 @@ def append_report(
     os.makedirs(os.path.dirname(JSON_PATH), exist_ok=True)
     _atomic_write(JSON_PATH, json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
     _atomic_write(MD_PATH, _render_md(reports))
+
+    # Mirror to the VPS→laptop SQS channel (best-effort; never blocks/fails the append).
+    try:
+        from reporting.sqs_publisher import publish_report
+    except Exception:  # noqa: BLE001 — channel is an optional fast-path
+        publish_report = None
+    if publish_report is not None:
+        publish_report(entry)
+
     return entry
 
 
