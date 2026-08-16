@@ -1,0 +1,86 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Trading VPS ? imported from the existing manual deployment (Aug 2026).
+  EC2 t3.small + IAM role + security group + Elastic IP. All resources use
+  DeletionPolicy/UpdateReplacePolicy Retain so a stack delete/update never
+  destroys the live instance. Data-layer resources (S3 data lake, 19 DynamoDB
+  tables) are app-managed and documented in docs/RECOVERY.md, not in this stack.
+
+Resources:
+
+  TradingRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      RoleName: trading-vps-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: { Service: ec2.amazonaws.com }
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+        - arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  TradingInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      InstanceProfileName: trading-vps-profile
+      Roles: [!Ref TradingRole]
+
+  TradingSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      GroupName: trading-system-sg
+      GroupDescription: Trading VPS - SSH, dashboard, webhook, reports
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 100.36.195.7/32
+        - IpProtocol: tcp
+          FromPort: 8501
+          ToPort: 8501
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 8644
+          ToPort: 8644
+          CidrIp: 100.36.195.7/32
+        - IpProtocol: tcp
+          FromPort: 8645
+          ToPort: 8645
+          CidrIp: 100.36.195.7/32
+
+  TradingInstance:
+    Type: AWS::EC2::Instance
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      ImageId: ami-052355af2a014bd2c
+      InstanceType: t3.small
+      KeyName: trading-system
+      SubnetId: subnet-00862239f131d2cc2
+      SecurityGroupIds: [!Ref TradingSecurityGroup]
+      IamInstanceProfile: !Ref TradingInstanceProfile
+
+  TradingEIP:
+    Type: AWS::EC2::EIP
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      Domain: vpc
+
+  TradingEIPAssociation:
+    Type: AWS::EC2::EIPAssociation
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      InstanceId: !Ref TradingInstance
+      AllocationId: !GetAtt TradingEIP.AllocationId

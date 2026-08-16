@@ -1,11 +1,49 @@
 # Recovery Runbook — 24/7 Trading VPS (AS-BUILT)
 
 > **Purpose:** complete, copy-paste rebuild + recovery instructions for the live
-> trading VPS. This documents the **real running system** (verified 2026-08-16),
-> NOT the stale `infra/cloudformation.yaml` IBC-era skeleton. The instance was built
-> **manually** — no CloudFormation bootstrap ever ran (`/var/log/trading-bootstrap.log`
-> is absent), so this runbook + the rewritten `infra/cloudformation.yaml` are the
-> recovery artifacts.
+> trading VPS. This documents the **real running system** (verified 2026-08-16).
+> As of 2026-08-16 the live AWS resources are **under CloudFormation management**
+> (stack `trading-system`) — see the CloudFormation section below; the authoritative
+> IaC file is `infra/cloudformation-stack.yaml`. The original build was **manual**
+> (no bootstrap ever ran), so this runbook remains the operational recovery reference.
+
+---
+
+## CloudFormation — stack `trading-system` (authoritative IaC)
+
+The live AWS resources are **under CloudFormation management** (imported by the
+laptop, 2026-08-16). The authoritative template is committed at
+`infra/cloudformation-stack.yaml` — regenerate it from the live stack with:
+
+```bash
+aws cloudformation get-template --stack-name trading-system \
+  --query TemplateBody --output text > infra/cloudformation-stack.yaml
+```
+
+- **Stack name:** `trading-system` (us-east-1).
+- **6 imported resources** (logical → physical ID):
+
+  | Logical ID | Type | Physical ID |
+  |---|---|---|
+  | `TradingRole` | `AWS::IAM::Role` | `trading-vps-role` |
+  | `TradingInstanceProfile` | `AWS::IAM::InstanceProfile` | `trading-vps-profile` |
+  | `TradingSecurityGroup` | `AWS::EC2::SecurityGroup` | `sg-0b981dd12552d33b9` |
+  | `TradingInstance` | `AWS::EC2::Instance` | `i-00009f59dcb52f725` |
+  | `TradingEIP` | `AWS::EC2::EIP` | `52.7.95.127` (`eipalloc-02c0ee26388774a5b`) |
+  | `TradingEIPAssociation` | `AWS::EC2::EIPAssociation` | `eipassoc-048b2eb45a688becb` |
+
+- **DeletionPolicy / UpdateReplacePolicy = `Retain` on all 6 resources** — a stack
+  delete or update **can never destroy the live instance** (or its role, SG, or EIP).
+  `Retain` also means CF never auto-repairs drift; treat the stack as *declarative
+  documentation* and the live resources as source of truth.
+- **Known cosmetic drift** (expected, harmless): the SecurityGroup `GroupDescription`
+  differs between template (`"Trading VPS - SSH, dashboard, webhook, reports"`) and
+  the actual live SG (`"Trading system VPS"`). CF reports `TradingSecurityGroup` as
+  `MODIFIED` for this reason alone — do not "fix" it on either side.
+- **SG ingress rules are managed BOTH ways** — the stack declares them *and* the
+  laptop's IP auto-update script rewrites the `/32` CIDR on IP change. Drift on the
+  CIDR is expected and harmless (the laptop is behind NAT); do not alert on the CIDR
+  value in drift detection.
 
 ---
 
