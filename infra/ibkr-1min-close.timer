@@ -1,0 +1,9 @@
+[Unit]
+Description=Stop the IBKR 1-min backfill before live hours (Sun 16:00 ET)
+
+[Timer]
+OnCalendar=Sun *-*-* 16:00:00 America/New_York
+Unit=ibkr-1min-close.service
+
+[Install]
+WantedBy=timers.target

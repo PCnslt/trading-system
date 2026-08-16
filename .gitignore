@@ -18,6 +18,9 @@ __pycache__/
 # Runtime collector state (resumable checkpoints)
 data/ibkr_backfill_state.json
 data/ibgateway_watchdog.state
+data/ibkr_1min_paused
+data/ibkr_daily.COMPLETE
+data/ibkr_full_backfill.COMPLETE
 
 # OS
 .DS_Store

@@ -1,0 +1,6 @@
+[Unit]
+Description=Stop ibkr-backfill.service (end of weekend 1-min window)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/systemctl stop ibkr-backfill.service

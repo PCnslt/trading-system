@@ -1,0 +1,6 @@
+[Unit]
+Description=Clear data/ibkr_1min_paused (allow 1-min backfill to resume this weekend)
+
+[Service]
+Type=oneshot
+ExecStart=/bin/rm -f /home/ubuntu/trading-system/data/ibkr_1min_paused

@@ -1,0 +1,9 @@
+[Unit]
+Description=One-shot: clear the 1-min backfill pause flag (next weekend)
+
+[Timer]
+OnCalendar=2026-08-22 00:01:00 America/New_York
+Unit=ibkr-1min-unpause.service
+
+[Install]
+WantedBy=timers.target
