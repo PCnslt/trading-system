@@ -39,7 +39,31 @@ PARAM_TO_ENV = {
     "/trading/fmp/api_key": "FMP_API_KEY",
     "/trading/newsapi/api_key": "NEWSAPI_ORG_API_KEY",
     "/trading/serper/api_key": "SERPER_API_KEY",
+    "/trading/robinhood/access_token": "RH_ACCESS_TOKEN",
+    "/trading/robinhood/refresh_token": "RH_REFRESH_TOKEN",
+    "/trading/robinhood/client_id": "RH_CLIENT_ID",
+    "/trading/robinhood/client_name": "RH_CLIENT_NAME",
+    "/trading/robinhood/expires_at": "RH_EXPIRES_AT",
+    "/trading/robinhood/expires_in": "RH_EXPIRES_IN",
+    "/trading/robinhood/scope": "RH_SCOPE",
+    "/trading/robinhood/token_type": "RH_TOKEN_TYPE",
 }
+
+# Robinhood OAuth parameter names (SSM-only on this VPS — no .env fallback).
+RH_PARAM_NAMES = [
+    "/trading/robinhood/access_token",
+    "/trading/robinhood/refresh_token",
+    "/trading/robinhood/client_id",
+    "/trading/robinhood/client_name",
+    "/trading/robinhood/expires_at",
+    "/trading/robinhood/expires_in",
+    "/trading/robinhood/scope",
+    "/trading/robinhood/token_type",
+]
+RH_ENV_VARS = (
+    "RH_ACCESS_TOKEN", "RH_REFRESH_TOKEN", "RH_CLIENT_ID", "RH_CLIENT_NAME",
+    "RH_EXPIRES_AT", "RH_EXPIRES_IN", "RH_SCOPE", "RH_TOKEN_TYPE",
+)
 
 _SSM_CACHE = None          # {env_var: value} once fetched successfully
 _SSM_ATTEMPTED = False     # avoid re-hitting SSM on repeated calls
@@ -84,17 +108,22 @@ def load_ssm(names=None, region=None):
         return {}
 
     try:
-        resp = client.get_parameters(Names=list(names), WithDecryption=True)
+        out = {}
+        # get_parameters caps at 10 names per call — chunk to stay under the limit
+        # (PARAM_TO_ENV grew past 10 when the Robinhood OAuth params were added).
+        names_list = list(names)
+        for i in range(0, len(names_list), 10):
+            chunk = names_list[i:i + 10]
+            resp = client.get_parameters(Names=chunk, WithDecryption=True)
+            for p in resp.get("Parameters", []):
+                env = PARAM_TO_ENV.get(p["Name"])
+                if env and p.get("Value"):
+                    out[env] = p["Value"]
     except Exception as e:  # noqa: BLE001 — fall back, never crash the bots
         print(f"[secrets] SSM unavailable ({e!r}); using .env fallback", flush=True)
         _SSM_CACHE = {}
         return {}
 
-    out = {}
-    for p in resp.get("Parameters", []):
-        env = PARAM_TO_ENV.get(p["Name"])
-        if env and p.get("Value"):
-            out[env] = p["Value"]
     _SSM_CACHE = out
     return dict(out)
 
@@ -157,6 +186,17 @@ def ibkr_creds():
         username = username or fallback.get("IBG_USERNAME", "")
         password = password or fallback.get("IBG_PASSWORD", "")
     return {"IBG_USERNAME": username, "IBG_PASSWORD": password}
+
+
+def robinhood_oauth():
+    """Robinhood OAuth client creds: SSM-only (no .env fallback on this VPS).
+
+    Returns {RH_ACCESS_TOKEN, RH_REFRESH_TOKEN, RH_CLIENT_ID, ...} with empty
+    strings for anything missing. Never raises (an SSM hiccup degrades to empty
+    creds and the caller surfaces a clear auth error).
+    """
+    ssm = load_ssm(names=RH_PARAM_NAMES)
+    return {env: ssm.get(env, "") for env in RH_ENV_VARS}
 
 
 def _shell_quote(v):

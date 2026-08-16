@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Robinhood equities RSI(2) buy-the-dip — PAPER signal bot + simulated fills.
+"""Robinhood equities RSI(2) buy-the-dip — paper signal bot + simulated fills,
+with a GATED LIVE execution mode (off by default).
 
-STRICTLY PAPER. execution='NONE'. No Robinhood credentials on this VPS, no IBKR,
-no orders of any kind. This file EMITS actionable signals + maintains a simulated
-paper book; the LAPTOP reads the signals and places the real Robinhood orders via
-its own MCP.
+DEFAULT = PAPER (execution='NONE'): this file EMITS actionable signals + maintains
+a simulated paper book. A gated LIVE mode (EXECUTION_MODE='LIVE' + RH_LIVE_ENABLED)
+places real orders on the Robinhood 'Agentic' account via hardening/rh_client.py —
+see docs/ROBINHOOD_EXECUTION.md for the exact go-live switch and verification steps.
+LIVE is OFF by default; the running paper-forward bot is unchanged.
 
 STRATEGY (per research/ROBINHOOD_LANE_PLAN.md + REGIME_GATE_VALIDATION.md):
   Universe : 10 ETFs + top-50 S&P100 by 20d avg $volume (liquidity rule).
@@ -77,6 +79,19 @@ PAPER_CAPITAL = float(os.getenv('RH_PAPER_CAPITAL', '700'))
 RISK_PCT = float(os.getenv('RH_RISK_PCT', '0.01'))        # 1%/trade
 MAX_POS_PCT = float(os.getenv('RH_MAX_POS_PCT', '0.05'))  # 5% capital/name cap
 DAY_LOSS_CAP = float(os.getenv('RH_DAY_LOSS_CAP', '150')) # $/day realized-loss cap
+
+# ---- EXECUTION MODE (go-live switch) ----
+# PAPER (default) = simulated fills at next open (current behaviour, unchanged).
+# LIVE            = real Robinhood orders via hardening/rh_client.py, gated behind
+#                   BOTH RH_EXECUTION_MODE='LIVE' AND RH_LIVE_ENABLED='true' (two
+#                   independent switches, both default OFF) + account_mode check
+#                   (agentic_allowed) + 1% risk + $150/day cap + stop chokepoint
+#                   (place_equity_entry REJECTS stop_price<=0 and reverses any
+#                   fill it cannot protect). See docs/ROBINHOOD_EXECUTION.md.
+EXECUTION_MODE = os.getenv('RH_EXECUTION_MODE', 'PAPER').strip().upper()   # PAPER | LIVE
+RH_LIVE_ENABLED = os.getenv('RH_LIVE_ENABLED', 'false').strip().lower() == 'true'
+RH_LIVE_ACCOUNT = os.getenv('RH_LIVE_ACCOUNT', '515821577')  # 'Agentic' agentic_allowed acct
+
 RSI2_THR = 5.0
 STOP_ATR = 2.0
 MAX_HOLD = 5
@@ -172,6 +187,69 @@ def position_size(capital, close, atr):
     return min(size_risk, size_cap), stop_pct
 
 
+def _get_rh_client():
+    """Lazily build the Robinhood client (LIVE mode only). Imported here so the
+    paper path never touches SSM/rh_client (and the dashboard can import this file)."""
+    from hardening.rh_client import RHClient
+    return RHClient(account_number=RH_LIVE_ACCOUNT)
+
+
+def live_gate_ok(client, day_loss_used):
+    """(ok, reason): gate LIVE entries. FAIL-CLOSED — every check must pass.
+
+    Mirrors the never-lose-money discipline: explicit flag + hard-enable toggle,
+    account-mode check (agentic_allowed only), 1% risk cap, $150/day loss cap.
+    The stop-loss chokepoint (stop_price>0, never naked) is enforced by
+    RHClient.place_equity_entry itself, not here.
+    """
+    if EXECUTION_MODE != 'LIVE':
+        return False, f'execution mode is {EXECUTION_MODE}, not LIVE'
+    if not RH_LIVE_ENABLED:
+        return False, 'RH_LIVE_ENABLED is false'
+    if RISK_PCT > 0.01:
+        return False, f'RISK_PCT {RISK_PCT} exceeds 1% cap'
+    if day_loss_used >= DAY_LOSS_CAP:
+        return False, f'day loss ${day_loss_used:.2f} >= ${DAY_LOSS_CAP:.0f} cap'
+    try:
+        acct = client.get_account()
+    except Exception as e:  # noqa: BLE001 - fail-closed
+        return False, f'account check failed: {e!r}'
+    if not acct.get('agentic_allowed'):
+        return False, f"account {acct.get('account_number')} is not agentic_allowed"
+    return True, 'ok'
+
+
+def _live_exit_position(client, sym, shares):
+    """Cancel resting stops + market-close a LIVE position; confirm the fill.
+
+    Raises on ANY failure so the caller leaves the position OPEN for retry
+    (fail-closed — never mark a broker position closed on an unconfirmed exit).
+    NOTE: basic path; fill-confirmation + a Robinhood reconciler are follow-on
+    work required before go-live (see docs/ROBINHOOD_EXECUTION.md).
+    """
+    from hardening.rh_client import RHOrderError
+    for o in client.list_orders(symbol=sym):
+        if (o.get('type') in ('stop_market', 'stop_limit')
+                and (o.get('state') or '') in ('confirmed', 'queued', 'new',
+                                                'partially_filled')):
+            try:
+                client.cancel_order(o['id'])
+            except Exception as e:  # noqa: BLE001 - best-effort stop cancel
+                print(f'[live] cancel stop {o.get("id")} failed (non-fatal): {e!r}')
+    fill = client.place_equity_order(sym, 'sell', 'market', quantity=str(shares))
+    oid = fill.get('id')
+    state = (fill.get('state') or '').lower()
+    for _ in range(20):  # up to ~10s
+        if state == 'filled':
+            return fill
+        if state in ('cancelled', 'rejected'):
+            raise RHOrderError(f'LIVE exit {sym} {state}')
+        time.sleep(0.5)
+        orders = client.list_orders(order_id=oid) if oid else []
+        state = ((orders[0].get('state') if orders else state) or '').lower()
+    raise RHOrderError(f'LIVE exit {sym} not confirmed filled (state={state})')
+
+
 def load_book(table, dry_run):
     """Current paper positions: {sym: item} for status in (PENDING, OPEN)."""
     if dry_run:
@@ -231,6 +309,18 @@ def main():
     payload = {'lane': 'robinhood-equities', 'date': today, 'paper_capital': PAPER_CAPITAL,
                'signals': []}
 
+    # LIVE client (lazy, only when EXECUTION_MODE == 'LIVE'). Fail-closed: a failed
+    # init disables LIVE entries for the whole run (paper/other lanes unaffected).
+    client = None
+    live_client_error = None
+    if EXECUTION_MODE == 'LIVE':
+        try:
+            client = _get_rh_client()
+            print(f"[live] Robinhood client ready (account={client.account_number or 'auto'})")
+        except Exception as e:  # noqa: BLE001
+            live_client_error = f'RHClient init failed: {e!r}'
+            print(f'[live] {live_client_error} — no LIVE entries this run')
+
     for sym in syms:
         df = bars.get(sym)
         if df is None:
@@ -283,6 +373,17 @@ def main():
                 shares = float(pos.get('size_shares') or 0)
                 if shares <= 0 and entry_price > 0:
                     shares = size_usd / entry_price
+                # LIVE: place a real exit (cancel stop + market close). Fail-closed:
+                # on ANY failure leave the position OPEN for retry — never mark a
+                # broker position closed on an unconfirmed exit. (Broker-side stop
+                # fills are reconciled by the follow-on Robinhood reconciler.)
+                if EXECUTION_MODE == 'LIVE' and client is not None and not live_client_error:
+                    try:
+                        fill = _live_exit_position(client, sym, shares)
+                        exit_price = _f(fill.get('average_price')) or exit_price or c
+                    except Exception as e:  # noqa: BLE001
+                        print(f'[live] exit {sym} failed — position left OPEN for retry: {e!r}')
+                        continue
                 pnl = (exit_price - entry_price) * shares
                 pnl_pct = (exit_price / entry_price - 1.0) if entry_price > 0 else 0.0
                 if pnl < 0:
@@ -318,25 +419,86 @@ def main():
                         regime = 'RISK_ON' if c > ma200 else 'RISK_OFF'
                         reason = (f'RSI(2) {r2:.2f} < {RSI2_THR} AND close {c:.2f} > '
                                   f'SMA200 {ma200:.2f}')
-                        sig = {'action': 'ENTER', 'side': 'LONG', 'strategy': 'RSI2',
-                               'signal': 'LONG', 'entry': 'next_open',
-                               'stop_price': _s(stop_price), 'size_usd': _s(size_usd),
-                               'size_shares': _s(size_usd / c if c > 0 else 0),
-                               'rsi2': _s(r2), 'sma200': _s(ma200), 'sma5': _s(ma5 or 0),
-                               'atr14': _s(atr or 0), 'stop_pct': _s(stop_pct),
-                               'regime': regime, 'bear_warning': BEAR_WARNING,
-                               'reason': reason, 'close': _s(c),
-                               'mode': 'PAPER', 'execution': 'NONE',
-                               'venue': 'Robinhood (laptop) — paper', 'ts': int(time.time())}
-                        put_item(table, f'RHSIG#{sym}', today, sig, args.dry_run)
-                        put_item(table, f'RHPOS#{sym}', 'current', {
-                            'status': 'PENDING', 'entry_date': str(today_dt.date()),
-                            'size_usd': _s(size_usd), 'atr': _s(atr or 0),
-                            'stop_ref': _s(stop_price), 'ts': int(time.time())},
-                            args.dry_run)
-                        enters.append({'sym': sym, 'size_usd': _s(size_usd),
-                                       'stop_price': _s(stop_price)})
-                        committed += 1
+
+                        # --- LIVE execution (gated; see docs/ROBINHOOD_EXECUTION.md) ---
+                        if EXECUTION_MODE == 'LIVE':
+                            reason_l = None
+                            if live_client_error:
+                                reason_l = f'LIVE disabled: {live_client_error}'
+                            elif client is None:
+                                reason_l = 'LIVE client unavailable'
+                            else:
+                                ok, greason = live_gate_ok(client, day_loss_used)
+                                if not ok:
+                                    reason_l = f'LIVE gate: {greason}'
+                                else:
+                                    shares = size_usd / c if c > 0 else 0.0
+                                    if shares < 1.0:
+                                        reason_l = (f'LIVE skip: fractional {shares:.4f} '
+                                                    f'< 1 share cannot carry a broker stop')
+                                    else:
+                                        try:
+                                            fill = client.place_equity_entry(
+                                                sym, 'buy', stop_price,
+                                                dollar_amount=f'{size_usd:.2f}',
+                                                client_order_ref=f'rh_{today}_{sym}')
+                                            ep = (_f((fill.get('entry') or {}).get('average_price'))
+                                                  or c)
+                                            sig = {'action': 'ENTER', 'side': 'LONG',
+                                                   'strategy': 'RSI2', 'signal': 'LONG',
+                                                   'entry': 'broker_fill',
+                                                   'stop_price': _s(stop_price),
+                                                   'size_usd': _s(size_usd),
+                                                   'size_shares': _s(shares),
+                                                   'rsi2': _s(r2), 'sma200': _s(ma200),
+                                                   'sma5': _s(ma5 or 0), 'atr14': _s(atr or 0),
+                                                   'stop_pct': _s(stop_pct),
+                                                   'regime': regime, 'bear_warning': BEAR_WARNING,
+                                                   'reason': reason, 'close': _s(c),
+                                                   'mode': 'LIVE', 'execution': 'RH',
+                                                   'venue': 'Robinhood Agentic — LIVE',
+                                                   'order_id': (fill.get('entry') or {}).get('id', ''),
+                                                   'stop_order_id': (fill.get('stop') or {}).get('id', ''),
+                                                   'ts': int(time.time())}
+                                            put_item(table, f'RHSIG#{sym}', today, sig, args.dry_run)
+                                            put_item(table, f'RHPOS#{sym}', 'current', {
+                                                'status': 'OPEN', 'entry_date': str(today_dt.date()),
+                                                'entry_price': _s(ep), 'stop_price': _s(stop_price),
+                                                'size_usd': _s(size_usd), 'size_shares': _s(shares),
+                                                'atr': _s(atr or 0), 'ts': int(time.time())},
+                                                args.dry_run)
+                                            enters.append({'sym': sym, 'size_usd': _s(size_usd),
+                                                           'stop_price': _s(stop_price)})
+                                            committed += 1
+                                        except Exception as e:  # fail-closed: never naked
+                                            reason_l = f'LIVE place failed (fail-closed): {e!r}'
+                            if reason_l is not None:
+                                put_item(table, f'RHSIG#{sym}', today, {
+                                    'action': 'NONE', 'signal': 'NONE', 'strategy': 'RSI2',
+                                    'rsi2': _s(r2), 'close': _s(c), 'reason': reason_l,
+                                    'mode': 'LIVE', 'execution': 'RH', 'ts': int(time.time())},
+                                    args.dry_run)
+                        else:
+                            # --- PAPER (default): signal + simulated next-open fill ---
+                            sig = {'action': 'ENTER', 'side': 'LONG', 'strategy': 'RSI2',
+                                   'signal': 'LONG', 'entry': 'next_open',
+                                   'stop_price': _s(stop_price), 'size_usd': _s(size_usd),
+                                   'size_shares': _s(size_usd / c if c > 0 else 0),
+                                   'rsi2': _s(r2), 'sma200': _s(ma200), 'sma5': _s(ma5 or 0),
+                                   'atr14': _s(atr or 0), 'stop_pct': _s(stop_pct),
+                                   'regime': regime, 'bear_warning': BEAR_WARNING,
+                                   'reason': reason, 'close': _s(c),
+                                   'mode': 'PAPER', 'execution': 'NONE',
+                                   'venue': 'Robinhood (laptop) — paper', 'ts': int(time.time())}
+                            put_item(table, f'RHSIG#{sym}', today, sig, args.dry_run)
+                            put_item(table, f'RHPOS#{sym}', 'current', {
+                                'status': 'PENDING', 'entry_date': str(today_dt.date()),
+                                'size_usd': _s(size_usd), 'atr': _s(atr or 0),
+                                'stop_ref': _s(stop_price), 'ts': int(time.time())},
+                                args.dry_run)
+                            enters.append({'sym': sym, 'size_usd': _s(size_usd),
+                                           'stop_price': _s(stop_price)})
+                            committed += 1
                 else:
                     reason = ('cap/limit: ' + (
                         f'day loss {day_loss_used:.0f} >= {DAY_LOSS_CAP:.0f}' if day_loss_used >= DAY_LOSS_CAP
