@@ -43,7 +43,10 @@ Sizing honesty: GC = 100 oz = $100/point. A 3*ATR chandelier stop on gold
 (~$76 ATR) risks ~$23k per contract, so the paper sleeve (GC_RISK_BUDGET) is
 sized ~$1.5M so 1 contract is ~1.5% of budget. This is a FORWARD-TEST sizing
 config, NOT a live-capital commitment — a real-money GC sleeve must be that
-large (or trade the MGC micro at $10/point).
+large. MGC (10 oz, $10/point) exposes the SAME edge at ~1/10 the per-contract
+dollar risk (~$2.3k per 3*ATR stop) and ~1/10 the overnight margin (~$900 for
+1 MGC), so a micro-live run sets GC_CONTRACT=MGC and GC_RISK_BUDGET to the real
+account size. GC/MGC share the COMEX metals cycle (Feb/Apr/Jun/Aug/Oct/Dec).
 """
 import os
 import sys
@@ -83,12 +86,35 @@ DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
 LIVE = os.getenv('LIVE', 'false').lower() == 'true'
 
-DATA_TICKER = 'GC=F'
-SYMBOL = 'GC'
-EXCHANGE = 'COMEX'
-POINT_VALUE = 100.0            # full GC = 100 oz = $100/point
-CLIENT_ID = 78                 # distinct: live(70) intraday(72) contracts(73) tick(74) daily(75) reconcile(76) options(77)
+DATA_TICKER = 'GC=F'      # gold price action — MGC tracks GC at 1/10 scale, same % move
+CLIENT_ID = 78            # distinct: live(70) intraday(72) contracts(73) tick(74) daily(75) reconcile(76) options(77)
 BOT_KEY = 'live_gc'
+
+# Gold futures contract — env-driven so one bot trades full GC (default) or the
+# micro MGC. Same COMEX metals cycle (Feb/Apr/Jun/Aug/Oct/Dec); front_month_for
+# already maps both. GC = 100 oz = $100/point; MGC = 10 oz = $10/point (~1/10
+# the overnight margin and ~1/10 the per-contract dollar risk). Micro-live sets
+# GC_CONTRACT=MGC and GC_RISK_BUDGET to the real account size.
+_DEFAULT_POINT_VALUE = {'GC': 100.0, 'MGC': 10.0}
+
+
+def resolve_contract_config(contract=None, exchange=None, point_value=None):
+    """(contract, exchange, point_value) from explicit args or env.
+
+    point_value defaults to 100.0 for GC and 10.0 for MGC; an explicit
+    GC_POINT_VALUE env (or arg) always wins. Pure and testable in isolation —
+    the module calls it with no args at import time.
+    """
+    contract = contract or os.getenv('GC_CONTRACT', 'GC')
+    exchange = exchange or os.getenv('GC_EXCHANGE', 'COMEX')
+    if point_value is None:
+        pv = os.getenv('GC_POINT_VALUE')
+        point_value = float(pv) if pv else _DEFAULT_POINT_VALUE.get(contract, 100.0)
+    return contract, exchange, float(point_value)
+
+
+GC_CONTRACT, EXCHANGE, POINT_VALUE = resolve_contract_config()
+SYMBOL = GC_CONTRACT
 
 # Full GC (100 oz) at 3*ATR risks ~$23k/contract -> paper sleeve sized so
 # 1 contract is ~1.5% of budget. FORWARD-TEST sizing, not a live commitment.
@@ -272,7 +298,8 @@ def run_strategy(ib, dynamo, con, sym, df, detail, strat, today, mode, ctrl=None
         'side': (side or desired or ''),
         'pos': pos, 'held_days': held, 'reason': dreason, 'ts': int(time.time()),
         'promoted': True, 'candidate': False,
-        'mode': f'{mode}-EXEC', 'execution': 'IBKR-PAPER', 'venue': 'futures (GC COMEX)',
+        'mode': f'{mode}-EXEC', 'execution': 'IBKR-PAPER',
+        'venue': f'futures ({SYMBOL} {EXCHANGE})',
     }
     if sname == 'DONCHIAN':
         sig.update({'don_hi': _s(detail['don_hi']), 'don_lo': _s(detail['don_lo']),
@@ -486,7 +513,7 @@ def main():
         # 7. execution manager — the ONLY component that submits orders to IBKR.
         exec_mgr = ExecutionManager(ib, dynamo, scope=BOT_KEY)
 
-        # 8. qualify contract (front-month, GC Feb/Apr/Jun/Aug/Oct/Dec cycle)
+        # 8. qualify contract (front-month; GC/MGC share the COMEX metals cycle)
         try:
             con = ib.qualifyContracts(Future(SYMBOL, front_month_for(SYMBOL), EXCHANGE))[0]
         except Exception as e:

@@ -10,7 +10,8 @@ import pytest
 
 from live_gc import (donchian_desired, donchian_stop, donchian_trail,
                      donchian_exit, tsmom_desired, tsmom_stop, tsmom_exit,
-                     STRATEGIES)
+                     STRATEGIES, resolve_contract_config, _DEFAULT_POINT_VALUE)
+from risk import realized_pnl
 
 
 def _detail(close=4400.0, don_hi=4350.0, don_lo=4200.0, atr=75.0, ret_12m=0.3):
@@ -115,3 +116,45 @@ def test_donchian_exit_time_stop():
 def test_donchian_exit_short_reverse_breakout():
     d = _detail(close=4500.0, don_hi=4450.0)
     assert donchian_exit(d, 'SHORT', 4600.0, 2, 'SHORT')[0] is True
+
+
+# ---- MGC (micro gold) mode: contract config + per-point P&L / stop distance ----
+def test_resolve_contract_default_gc():
+    contract, exchange, pv = resolve_contract_config(contract='GC')
+    assert (contract, exchange, pv) == ('GC', 'COMEX', 100.0)
+
+
+def test_resolve_contract_mgc_tenth_point_value():
+    contract, exchange, pv = resolve_contract_config(contract='MGC')
+    assert (contract, exchange, pv) == ('MGC', 'COMEX', 10.0)
+
+
+def test_resolve_contract_env_point_value_overrides_default(monkeypatch):
+    monkeypatch.setenv('GC_POINT_VALUE', '25.0')
+    _, _, pv = resolve_contract_config(contract='MGC')
+    assert pv == 25.0
+
+
+def test_default_point_value_table():
+    assert _DEFAULT_POINT_VALUE['GC'] == 100.0
+    assert _DEFAULT_POINT_VALUE['MGC'] == 10.0
+
+
+def test_mgc_per_point_pnl_is_tenth_of_gc():
+    # 1 MGC (10 oz) over a $10 move = $100; 1 GC (100 oz) = $1000.
+    assert realized_pnl('LONG', 4400.0, 4410.0, 10.0, 1) == 100.0
+    assert realized_pnl('LONG', 4400.0, 4410.0, 100.0, 1) == 1000.0
+    # short side mirrors it
+    assert realized_pnl('SHORT', 4400.0, 4410.0, 10.0, 1) == -100.0
+
+
+def test_mgc_stop_distance_price_space_and_dollar_risk():
+    # Chandelier stop distance is a PRICE distance (3*ATR), identical for GC and
+    # MGC (they trade the same gold price). Only the per-point dollar value
+    # scales: MGC = $10/point, GC = $100/point.
+    d = _detail(close=4400.0, atr=76.0)
+    stop = donchian_stop(d, 'LONG')
+    dist = abs(d['close'] - stop)
+    assert dist == pytest.approx(3 * 76.0)          # price distance
+    assert dist * 10.0 == pytest.approx(2280.0)     # MGC dollar risk per contract
+    assert dist * 100.0 == pytest.approx(22800.0)   # GC dollar risk per contract
