@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-16T14:11:05-04:00",
+  "updated": "2026-08-16T14:36:42-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -153,6 +153,24 @@
         "Seasonal commodities: monthly overnight hold needs full-size futures margin (~$3-12k) or MGC ~$2k; violates $750 overnight cap at $500 IBKR -> post-deposit (~$5-10k).",
         "Carry/term-structure: expired contracts = Error 200 on paper -> untestable without paid near/far archive."
       ]
+    },
+    {
+      "ts": "2026-08-16T14:29:33-04:00",
+      "task": "BUILD: strategy portfolio registry (docs/STRATEGY_PORTFOLIO.md)",
+      "summary": "docs/STRATEGY_PORTFOLIO.md created as the single living ADDITIVE registry (31 lanes, nothing removed). Status counts: LIVE-PAPER=3, LIVE-READY=1, PARKED-PENDING=1, NO-GO-WITH-REASON=21, RESEARCHING=5.\n\nLIVE-PAPER (3): index Donchian+RSI2 (MES/MNQ, Gate 5 0/10), gold Donchian+TSMOM (GC/MGC, paper-EXEC), crypto Donchian-20+200d (BTC/ETH, signal-only).\nLIVE-READY (1): RSI2 buy-the-dip (Robinhood equities, OOS PF 1.47) — blocked on 30-day paper-forward + SPX>SMA200 index regime gate.\nPARKED-PENDING (1): seasonal commodities (IS 1.20/OOS 1.23) — blocked on funding IBKR to 5-10k for full-size futures margin.\nNO-GO-WITH-REASON (21): 5d momentum, single-name Donchian, pairs/stat-arb (-> shorting enabled), options credit spreads (-> paid options archive), gap fade (redundant w/ RSI2), bonds fade-SHORT, BBAND_INDEX_LONG, CSP-CC wheel, carry, XSMOM futures, XSMOM equities L/S, value/5y reversal, vol overlay, ORB, MOM, DONCH15, FADESHORT, KAMA, 5-day reversal, golden cross, Bollinger lower-band.\nRESEARCHING (5): intraday VWAP (HOLD), 200d MA trend, 12m XSMOM long-only, forex spot, futures-options scaffold.\n\nEvery NO-GO row records its reason + precise re-activation trigger. Registry updated in the same commit as every future sweep (binding maintenance rule).",
+      "commits": [
+        "1d16933"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-16T14:36:42-04:00",
+      "task": "BUILD: Robinhood equities RSI2 paper bot + index regime-gate validation",
+      "summary": "Part 1 — index regime gate (SPY>SMA200) VALIDATED and REJECTED. Walk-forward OOS PF unchanged (1.47 -> 1.47 @0bps; 1.36 -> 1.35 @5bps) but net return -21% (1321 -> 1143 trades) AND bear-year decay NOT removed: 2022 PF WORSE 0.81 -> 0.21 (thr5) / 0.46 (thr2); 2020/2018/2025/2011 also worse; 2008 only 'fixed' by shrinking to ~0 trades. Gate is a lagging MA that keeps early-breakdown losers and filters bottoming winners. Deploy = per-name close>SMA200 only + satellite sizing + bear-year warning flag on every signal. Full report: research/REGIME_GATE_VALIDATION.md.\n\nPart 2 — bot/live_equities.py (PAPER ONLY, execution=NONE, NO Robinhood creds on VPS). Universe = 10 ETFs + top-50 S&P100 (liquidity-ranked, refresh monthly). Entry RSI(2)<5 AND close>SMA200. Exit 2xATR intraday GTC stop / 5-day cap / revert (close>SMA5 | RSI2>70). Risk 1%/trade (5% capital cap), $150/day loss cap (paper = tracked + enforced on new entries). Simulated next-open fills + gap-aware stop + paper book + realized P&L.\n\nLAPTOP READ-PATH (DynamoDB trading-data, us-east-1):\n  RHSIG#<sym>/<date>         today's actionable signal (action=ENTER/EXIT; ENTER carries entry=next_open, stop_price, size_usd, rsi2, sma200, atr14, regime, bear_warning)\n  RHPOS#<sym>/current        current paper position (PENDING/OPEN/CLOSED)\n  RHTRADE#<sym>/<entry_date> round-trip history (forward-test P&L)\n  RHLEDGER#<date>/summary    daily realized P&L + $150 loss-cap status\n  S3 research/scan-results/rh-equities/<Y>/<m>/<d>/<ts>.json (daily snapshot)\n\nCron: Hermes job 'Paper signals - Robinhood equities RSI2' @ 20 23 * * * UTC (19:20 ET), script ~/.hermes/scripts/paper_rh_equities.sh, deliver=telegram.",
+      "commits": [
+        "1b498e5"
+      ],
+      "blockers": []
     }
   ]
 }
