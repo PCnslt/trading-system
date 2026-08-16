@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-16T12:30:47-04:00",
+  "updated": "2026-08-16T12:49:37-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -40,6 +40,22 @@
       "blockers": [
         "Live role trading-vps-role now carries AdministratorAccess (granted by laptop) — broad. Consider narrowing to least-privilege (ssm read scoped to /trading/*) once migration is stable."
       ]
+    },
+    {
+      "ts": "2026-08-16T12:45:18-04:00",
+      "task": "NOOP dispatch-channel HMAC verification",
+      "summary": "Received laptop-task webhook with valid HMAC; dispatch channel confirmed working end-to-end. No action required.",
+      "commits": [],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-16T12:49:37-04:00",
+      "task": "IAC sync: import live CloudFormation stack 'trading-system' into repo",
+      "summary": "Captured authoritative template -> infra/cloudformation-stack.yaml (6 imported resources: role trading-vps-role, instance-profile trading-vps-profile, SG sg-0b981dd12552d33b9, instance i-00009f59dcb52f725, EIP 52.7.95.127/eipalloc-02c0ee26388774a5b, association eipassoc-048b2eb45a688becb; DeletionPolicy+UpdateReplacePolicy Retain on all). Added CloudFormation section to docs/RECOVERY.md + fixed stale preamble. Verified drift = SecurityGroup GroupDescription ONLY (template 'Trading VPS - SSH, dashboard, webhook, reports' vs live 'Trading system VPS'). Note: aws CLI not installed on VPS — used boto3 get_template (identical output); template Description carries a literal '?' from the laptop import (cosmetic, captured verbatim).",
+      "commits": [
+        "76aa3b7ad87d3e077cadc5b23d39636039d59869"
+      ],
+      "blockers": []
     }
   ]
 }
