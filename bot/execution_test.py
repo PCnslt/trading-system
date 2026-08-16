@@ -2,6 +2,12 @@
 
 Proves the full pipeline: connect -> qualify contract -> market data ->
 place BUY -> fill -> place SELL -> fill -> positions. Run manually on VPS.
+
+NOTE (GAP-4): this places a NAKED BUY->SELL round-trip with NO protective stop
+— it bypasses the exec_manager bracket path and is for manual smoke-testing
+only. It REFUSES to run unless invoked with the explicit `--i-know` flag, so it
+can never be scheduled or fat-fingered into placing an unprotected order by
+accident.
 """
 import sys
 from ib_insync import IB, Future, MarketOrder
@@ -11,7 +17,17 @@ _ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))
 from infra.secrets import bootstrap as _sb
 _sb()
 
+I_KNOW_FLAG = '--i-know'
+
+
 def main():
+    if I_KNOW_FLAG not in sys.argv:
+        print("execution_test.py REFUSES to run: it places a naked BUY->SELL "
+              "round-trip with NO protective stop (bypasses exec_manager).")
+        print("Re-run with --i-know to acknowledge the position is temporarily "
+              "unprotected (manual smoke test only, never scheduled).")
+        sys.exit(2)
+
     ib = IB()
     ib.connect('127.0.0.1', 4002, clientId=77, timeout=10)
     print('CONNECTED accounts:', ib.managedAccounts())
@@ -43,6 +59,6 @@ def main():
     ib.disconnect()
     print('ROUND-TRIP OK' if s1.filled and s2.filled else 'ROUND-TRIP INCOMPLETE')
 
+
 if __name__ == '__main__':
     main()
-

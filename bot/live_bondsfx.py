@@ -49,13 +49,12 @@ import numpy as np
 import pandas as pd
 import boto3
 from dotenv import load_dotenv
-from ib_insync import IB, Future, MarketOrder
+from ib_insync import IB, Future
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.s3_archive import archive_daily_bar
 
 from risk import RiskEngine, RiskConfig, realized_pnl
-from execution import confirm_fill
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, already_ran_today,
                      mark_ran_today, ControlUnavailable, account_mode_ok)
@@ -224,6 +223,19 @@ def _archive_daily_bar(c, df):
 
 
 # ===== per-strategy runner (SHORT) =====
+def _order_path_removed(action, qty):
+    """Fail-closed: the raw `ib.placeOrder` path was STRIPPED (GAP-2).
+
+    This bot is SHELVED (Gate-1). Its former naked market-short entry/cover had
+    NO protective stop. Re-enabling requires routing entries/exits through
+    hardening.exec_manager (native bracket + protective stop) — never a bare
+    ib.placeOrder. Do NOT remove this guard without that work.
+    """
+    raise RuntimeError(
+        f"live_bondsfx: raw {action} qty={qty} order path REMOVED (GAP-2). "
+        "Re-enable only via hardening.exec_manager (bracket + protective stop).")
+
+
 def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=None, risk=None):
     sname = strat['name']
     tag = f"{sym}_{sname}"                       # e.g. ZB_RSI2SHORT, ZN_BBANDSHORT
@@ -256,8 +268,7 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
         should_exit, xreason = strat['exit'](detail, stop, held)
         if should_exit:
             exit_px = detail['close']
-            ib.placeOrder(con, MarketOrder('BUY', pos, tif='DAY'))   # cover short
-            ib.sleep(1)
+            _order_path_removed('BUY (cover short)', pos)   # GAP-2: naked path stripped
             if risk is not None and entry_px is not None:
                 risk.record_close(realized_pnl('SHORT', entry_px, exit_px, c['point_value'], pos))
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
@@ -282,26 +293,10 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
         stop_price = strat['stop'](detail)       # above entry (short)
         size = risk.position_size(stop_price - detail['close'], point_value=c['point_value'])
         if size > 0:
-            trade = ib.placeOrder(con, MarketOrder('SELL', size, tif='DAY'))  # sell-to-open short
-            filled, avg_px, fstatus = confirm_fill(ib, trade)
-            if filled <= 0:
-                print(f">>> {mode} {tag} ENTRY NOT FILLED (status={fstatus}) — no state written")
-                return
-            if filled < size:
-                print(f">>> {mode} {tag} PARTIAL fill {filled}/{size} — writing actual qty")
-                size = filled
-            entry_px_filled = avg_px if avg_px > 0 else detail['close']
-            risk.record_fill()
-            log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
-                'side': 'SELL', 'qty': size, 'entry': str(round(entry_px_filled, 4)),
-                'stop': str(round(stop_price, 4)), 'contract': front_month(),
-                'strategy': sname, 'ts': int(time.time())})
-            log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
-                'pos': size, 'stop': str(round(stop_price, 4)),
-                'entry': str(round(entry_px_filled, 4)),
-                'entry_date': today, 'contract': front_month(), 'ts': int(time.time())})
-            print(f">>> {mode} {tag} ENTRY: SELL {size} @ {round(entry_px_filled, 4)} (fade rally), "
-                  f"stop {round(stop_price, 4)} ({ereason})")
+            _order_path_removed('SELL (short open)', size)   # GAP-2: naked path stripped
+            # (fill-confirmation + TRADE#/POSITION# bookkeeping removed with the
+            #  naked order — re-enabling goes through exec_manager, which writes
+            #  its own state.)
         else:
             print(f">>> {mode} {tag} size=0 (stop too wide for budget), skip")
     else:
