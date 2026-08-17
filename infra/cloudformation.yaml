@@ -108,7 +108,7 @@ Resources:
   TradingInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
-      InstanceProfileName: trading-vps-role-instance-profile
+      InstanceProfileName: trading-vps-profile
       Roles: [!Ref TradingRole]
 
   # ---------- Network ----------

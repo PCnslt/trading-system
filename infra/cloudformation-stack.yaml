@@ -54,7 +54,7 @@ Resources:
     UpdateReplacePolicy: Retain
     Properties:
       GroupName: trading-system-sg
-      GroupDescription: Trading VPS - SSH, dashboard, webhook, reports
+      GroupDescription: Trading system VPS
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 22
