@@ -28,6 +28,7 @@ from the Streamlit dashboard (no asyncio event-loop requirement).
 
 
 import time
+from decimal import Decimal
 
 
 class RiskStateUnavailable(Exception):
@@ -66,8 +67,15 @@ class RiskLedger:
         """Persist `state` under RISK#<date_str>/<scope>.
 
         Raises RiskStateUnavailable on write error.
+
+        DynamoDB rejects Python floats ("Float types are not supported") — the
+        engine's `daily_pnl` is a float, so coerce any float to Decimal here
+        (single choke point for ALL bots, not per-caller). ints/bools/strs/None
+        pass through untouched (boto3 serializes them natively).
         """
-        item = dict(state)
+        item = {}
+        for k, v in state.items():
+            item[k] = Decimal(str(v)) if isinstance(v, float) else v
         item.update(self.key(date_str))
         item['ts'] = int(time.time())
         try:
