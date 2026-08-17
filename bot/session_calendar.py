@@ -118,7 +118,7 @@ def session_state(cal):
         now = dt.datetime.now(ZoneInfo('America/New_York')).replace(tzinfo=None)
     except Exception:
         off = -4 if (3 < dt.datetime.now().month < 11) else -5
-        now = (dt.datetime.utcnow() + dt.timedelta(hours=off)).replace(tzinfo=None)
+        now = (dt.datetime.now(dt.timezone.utc).replace(tzinfo=None) + dt.timedelta(hours=off))
 
     ro, rc = cal['regular_session']['open'], cal['regular_session']['close']
     opens, closes = [], []

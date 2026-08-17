@@ -64,18 +64,34 @@ def set_control(**fields):
     st.cache_data.clear()
 
 
+def _scan_all(filter_expr):
+    """Paginated scan — a single table.scan() returns ONE page (<=1MB); the
+    table has grown past that, so loop LastEvaluatedKey to avoid silently
+    missing rows (same bug class as hardening/reconciler.py::_scan_prefix)."""
+    items, lek = [], None
+    while True:
+        kw = {'FilterExpression': filter_expr}
+        if lek:
+            kw['ExclusiveStartKey'] = lek
+        r = table.scan(**kw)
+        items.extend(r.get('Items', []))
+        lek = r.get('LastEvaluatedKey')
+        if not lek:
+            break
+    return items
+
+
 @st.cache_data(ttl=15)
 def scan_positions():
     """All currently-open positions (POSITION#* items with pos>0)."""
-    r = table.scan(FilterExpression=Attr('pk').begins_with('POSITION#') & Attr('sk').eq('current'))
-    return [it for it in r.get('Items', []) if int(it.get('pos', 0)) > 0]
+    items = _scan_all(Attr('pk').begins_with('POSITION#') & Attr('sk').eq('current'))
+    return [it for it in items if int(it.get('pos', 0)) > 0]
 
 
 @st.cache_data(ttl=15)
 def scan_signals(limit=30):
     """Recent signals across all strategies (SIGNAL#* items), newest first."""
-    r = table.scan(FilterExpression=Attr('pk').begins_with('SIGNAL#'))
-    items = r.get('Items', [])
+    items = _scan_all(Attr('pk').begins_with('SIGNAL#'))
     items.sort(key=lambda x: x.get('ts', 0), reverse=True)
     return items[:limit]
 

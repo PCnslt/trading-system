@@ -196,6 +196,23 @@ def _futures_prev_closes():
 
 
 # ============================ signals / trades ============================
+def _scan_all(prefix):
+    """Paginated scan for pk begins_with(prefix) — a single table.scan() returns
+    ONE page (<=1MB); the table is >1MB so loop LastEvaluatedKey (same bug class
+    as hardening/reconciler.py::_scan_prefix)."""
+    items, lek = [], None
+    while True:
+        kw = dict(FilterExpression=Attr("pk").begins_with(prefix))
+        if lek:
+            kw["ExclusiveStartKey"] = lek
+        r = _table.scan(**kw)
+        items.extend(r.get("Items", []))
+        lek = r.get("LastEvaluatedKey")
+        if not lek:
+            break
+    return items
+
+
 @st.cache_data(ttl=15, show_spinner=False)
 def _scan_feed(limit=30):
     """Recent SIGNAL# + TRADE# items merged into one feed, newest first.
@@ -207,8 +224,7 @@ def _scan_feed(limit=30):
     feed = []
     for pfx in ("SIGNAL#", "TRADE#"):
         try:
-            r = _table.scan(FilterExpression=Attr("pk").begins_with(pfx))
-            for it in r.get("Items", []):
+            for it in _scan_all(pfx):
                 it["_kind"] = "signal" if pfx == "SIGNAL#" else "trade"
                 feed.append(it)
         except Exception:
@@ -314,8 +330,7 @@ def _control_state():
 @st.cache_data(ttl=15, show_spinner=False)
 def _open_positions():
     try:
-        r = _table.scan(FilterExpression=Attr("pk").begins_with("POSITION#"))
-        items = r.get("Items", [])
+        items = _scan_all("POSITION#")
     except Exception:
         return [], True
     open_rows = [it for it in items if _num(it.get("pos")) not in (None, 0)]
