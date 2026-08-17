@@ -40,7 +40,6 @@ import base64
 import hashlib
 import json
 import os
-import secrets
 import sys
 import time
 import urllib.error
@@ -115,7 +114,7 @@ def _save_local_token(token: dict) -> None:
 
 
 def pkce_pair() -> tuple[str, str]:
-    verifier = base64.urlsafe_b64encode(secrets.token_bytes(48)).decode().rstrip("=")
+    verifier = base64.urlsafe_b64encode(os.urandom(48)).decode().rstrip("=")
     challenge = base64.urlsafe_b64encode(
         hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
     return verifier, challenge
@@ -234,8 +233,12 @@ def check() -> int:
     print(f"  redirect_uris  : {client_json.get('redirect_uris')}")
     print(f"  access_token   : {'present (len=' + str(len(at)) + ')' if at else 'MISSING'}")
     print(f"  refresh_token  : {'present (len=' + str(len(rt)) + ')' if rt else 'MISSING'}")
-    print(f"  expires_at     : {exp or 'MISSING'}"
-          + (f" (expired {int((float(exp) - time.time()) // 3600)}h ago)" if exp else ""))
+    if exp:
+        h = int((float(exp) - time.time()) // 3600)
+        exp_note = f" (expires in {h}h)" if h >= 0 else f" (expired {-h}h ago)"
+    else:
+        exp_note = ""
+    print(f"  expires_at     : {exp or 'MISSING'}{exp_note}")
 
     if not at:
         print("\n  STATUS: no access_token — re-auth required.")
@@ -289,7 +292,7 @@ def reauth(port: int) -> int:
 
     # 2. PKCE + state.
     verifier, challenge = pkce_pair()
-    state = secrets.token_urlsafe(16)
+    state = base64.urlsafe_b64encode(os.urandom(16)).decode().rstrip("=")
     auth_url = build_authorize_url(client_id, redirect_uri, SCOPE, challenge, state)
     cb_path = urllib.parse.urlparse(redirect_uri).path
     cb_port = urllib.parse.urlparse(redirect_uri).port or port
