@@ -208,13 +208,22 @@ def _side_of(tag, state):
 def report_positions():
     lines = []
     try:
-        resp = table.scan(
-            FilterExpression='begins_with(pk, :p)',
-            ExpressionAttributeValues={':p': 'POSITION#'})
+        items = []
+        lek = None
+        while True:
+            kw = dict(FilterExpression='begins_with(pk, :p)',
+                      ExpressionAttributeValues={':p': 'POSITION#'})
+            if lek:
+                kw['ExclusiveStartKey'] = lek
+            resp = table.scan(**kw)
+            items.extend(resp.get('Items', []))
+            lek = resp.get('LastEvaluatedKey')
+            if not lek:
+                break
     except Exception as e:
         return [f'  (scan error: {e})']
     open_rows = []
-    for it in resp.get('Items', []):
+    for it in items:
         if int(it.get('pos', 0)) > 0:
             tag = it['pk'].split('#', 1)[1]
             open_rows.append((tag, it))

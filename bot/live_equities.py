@@ -256,11 +256,19 @@ def load_book(table, dry_run):
         return {}
     book = {}
     try:
-        resp = table.scan(FilterExpression='begins_with(pk, :p)',
-                          ExpressionAttributeValues={':p': 'RHPOS#'})
-        for it in resp.get('Items', []):
-            if it.get('sk') == 'current' and it.get('status') in ('PENDING', 'OPEN'):
-                book[it['pk'].split('#', 1)[1]] = it
+        lek = None
+        while True:
+            kw = dict(FilterExpression='begins_with(pk, :p)',
+                      ExpressionAttributeValues={':p': 'RHPOS#'})
+            if lek:
+                kw['ExclusiveStartKey'] = lek
+            resp = table.scan(**kw)
+            for it in resp.get('Items', []):
+                if it.get('sk') == 'current' and it.get('status') in ('PENDING', 'OPEN'):
+                    book[it['pk'].split('#', 1)[1]] = it
+            lek = resp.get('LastEvaluatedKey')
+            if not lek:
+                break
     except Exception as e:
         print(f'  [book] scan failed (fail-open, empty book): {e!r}')
     return book
