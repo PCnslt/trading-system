@@ -278,6 +278,25 @@ class _McpTransport:
                 return msg.get("result", {})
         return {}
 
+    def notify(self, method: str, params: dict | None = None) -> None:
+        """Fire-and-forget MCP notification (no ``id``, no response expected).
+
+        The MCP protocol REJECTS a notification that carries an ``id`` (the
+        server answers ``invalid request: unexpected id for <method>``), so this
+        must NOT go through ``rpc``. ``notifications/initialized`` is the one
+        handshake notification sent after ``initialize``.
+        """
+        body = {"jsonrpc": "2.0", "method": method, "params": params or {}}
+        try:
+            self._open(body)
+        except urllib.error.HTTPError as e:
+            detail = e.read().decode(errors="replace")[:300]
+            if e.code in (401, 403):
+                raise RHAuthError(f"MCP auth rejected ({e.code}): {detail}") from e
+            raise RHError(f"MCP HTTP {e.code}: {detail}") from e
+        except (urllib.error.URLError, OSError) as e:
+            raise RHError(f"MCP transport error: {e!r}") from e
+
     def call_tool(self, name: str, arguments: dict) -> dict:
         """Call an MCP tool; return the UNWRAPPED inner JSON (the ``data`` dict).
 
@@ -302,13 +321,22 @@ class _McpTransport:
 
 
 def initialize_transport(transport: _McpTransport) -> None:
-    """MCP handshake: initialize + notifications/initialized."""
+    """MCP handshake: initialize (RPC) + notifications/initialized (notification).
+
+    ``notifications/initialized`` is a one-way notification, NOT a request — it
+    must be sent without an ``id`` and no response is expected (the server
+    rejects it with ``invalid request: unexpected id`` if sent via ``rpc``).
+    """
     transport.rpc("initialize", {
         "protocolVersion": RH_MCP_PROTOCOL,
         "capabilities": {},
         "clientInfo": {"name": "trading-vps", "version": "1.0"},
     })
-    transport.rpc("notifications/initialized")
+    notify = getattr(transport, "notify", None)
+    if notify is not None:
+        notify("notifications/initialized")
+    else:  # legacy/test transports without a notify() — keep the old path
+        transport.rpc("notifications/initialized")
 
 
 # --------------------------------------------------------------------------

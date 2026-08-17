@@ -16,9 +16,10 @@ evaluation standard.
 
 **Futures phase-1 (paper forward-test).** Two validated futures edges are being
 paper-forwarded toward live capital (index-LONG + gold momentum); everything else
-is shelved/tabled (never deleted — optionality is preserved). Stocks/options
-(Robinhood) are live-ish on the laptop side; crypto is paper-signal research-grade
-(LOWEST live-priority).
+is shelved/tabled (never deleted — optionality is preserved). **Robinhood is the
+LIVE small-capital lane** (~$700 acct `515821577`, whole-share small-ticket RSI2,
+gated live, paper-forward first) — see `docs/SMALL-CAPITAL-LIVE-PLAN.md`. Crypto
+is paper-signal research-grade (LOWEST live-priority).
 
 Execution-layer hardening is **done** (3 phases):
 1. Persistent risk ledger (`RISK#`) — restart-safe daily loss cap.
@@ -41,8 +42,11 @@ Execution-layer hardening is **done** (3 phases):
 - **Robinhood LIVE client** (`hardening/rh_client.py`, committed `77fbb1e`): OAuth
   via SSM `/trading/robinhood/*` (MCP-gateway transport); live orders gated behind
   **`RH_EXECUTION_MODE=LIVE` + `RH_LIVE_ENABLED=true`** (both default OFF,
-  fail-closed). Current SSM token is **REVOKED** (rotated refresh not persisted) →
-  laptop re-auth via `infra/rh_oauth.py`. See `docs/ROBINHOOD-LIVE.md`.
+  fail-closed). **✅ LIVE path operational (2026-08-17):** token fresh (re-authed
+  2026-08-16 21:58 ET) + transport fixed (`notifications/initialized` now a proper
+  MCP notification — was rejected as `unexpected id`). Read path verified live
+  (acct `515821577`, `agentic_allowed=true`); **no live order placed**. See
+  `docs/ROBINHOOD-LIVE.md` + `docs/SMALL-CAPITAL-LIVE-PLAN.md`.
 
 ## Active edges
 
@@ -52,7 +56,7 @@ Execution-layer hardening is **done** (3 phases):
 | **intraday MES** (FADESHORT + DONCH15, `live_intraday.py`) | ▶️ paper | RTH entries, EOD flatten 15:45 ET. |
 | **gold momentum** (GC Donchian L/S + TSMOM, `live_gc.py`) | ✅ paper-EXEC | Promoted (EDGE_SWEEP) → IBKR paper execution (clientId 78, ~19:10 ET). Donchian 1.45/1.81 OOS/1.31 IB, 3-tick 1.42; TSMOM 1.37/1.73/1.99, 3-tick 1.35. Donchian = chandelier 3·ATR trail; TSMOM = fixed 3·ATR stop. GC full = $100/pt (~$23k risk/contract @ 3·ATR → $1.5M fwd-test sleeve; MGC micro is the realistic live size). |
 | **equities RSI2-dip + Donchian(200d)** (`equity_signals.py`) | ▶️ paper-signal | Promoted (EQUITIES_SWEEP). RSI2 champion (both regimes); Donchian gated by close>200d-MA. Robinhood stays manual. |
-| **RH equities RSI2** (`live_equities.py`) | ▶️ paper | Robinhood lane (laptop executes via MCP). RSI(2)<5 + SMA200, 2xATR stop, 5d cap, revert. 1%/trade (5% cap), $150/day loss cap. Signals+sim fills → DynamoDB `RHSIG#/RHPOS#/RHTRADE#/RHLEDGER#`. Index regime gate REJECTED (2022 worse 0.81→0.21). OOS PF 1.47 (thr2)/1.36@5bps. |
+| **RH equities RSI2** (`live_equities.py`) | ▶️ paper → **LIVE-READY** | Robinhood lane (VPS `rh_client` submits — single-writer; laptop MCP retired). RSI(2)<5 + SMA200, 2xATR whole-share stop, 5d cap, revert. 1%/trade (5% cap), $150/day loss cap. Index regime gate REJECTED (2022 0.81→0.21). OOS PF 1.47 (all 5 folds >1.0)/1.36@5bps. **Small-capital live ENABLED** via whole-share small-ticket sizing — `docs/SMALL-CAPITAL-LIVE-PLAN.md`. |
 | **crypto Donchian-20+200d** (`crypto_paper.py`) | ▶️ paper-signal | Promoted (CRYPTO_SWEEP) but buy-and-hold proxy; LOWEST live-priority. |
 | **bonds fade-SHORT** (ZB/ZN, `live_bondsfx.py`) | 📦 SHELVED | Dies at 1-tick slip. Code kept + disarmed no-op; cron paused. Revisit only if cost/regime materially changes. |
 | **BBAND_INDEX_LONG** | 📦 TABLED | Redundant w/ RSI2-LONG (corr 0.69, PF 1.84 / OOS 1.71). Paper fwd-test candidate if RSI2-LONG underperforms live. |
@@ -119,12 +123,16 @@ loss cap, mandatory stops + trailing (already fail-closed). No asset priority.
 
 ## Next actions (VPS)
 
-1. Paper-forward `live.py` (index edge) until **Gate 5** (paper validation) passes —
+1. **Robinhood small-capital live (the live lane):** build the small-ticket liquid
+   sub-universe (§5 of `docs/SMALL-CAPITAL-LIVE-PLAN.md`), paper-forward ≥30 days,
+   then gate live behind `RH_EXECUTION_MODE=LIVE`+`RH_LIVE_ENABLED=true`. No live
+   orders until the owner resolves the 5%-cap vs "$10–$150 tickets" decision (§4).
+2. Paper-forward `live.py` (index edge) until **Gate 5** (paper validation) passes —
    now judged on the drawdown-first bar above, not PF alone.
-2. Add 2–3-day short-swing variants (Donchian 2–3d lookback, 2–3d mean-reversion) to
+3. Add 2–3-day short-swing variants (Donchian 2–3d lookback, 2–3d mean-reversion) to
    the intraday/short-swing evaluation, alongside ORB/MOM/VWAP/DONCH15/FADESHORT.
-3. Micro-live — min size, hard loss limit, tested kill + rollback.
-4. Optional: buy CME FX-futures entitlement to un-gap 6E/6J/6B/6A/6C/6S/6N.
+4. Micro-live — min size, hard loss limit, tested kill + rollback.
+5. Optional: buy CME FX-futures entitlement to un-gap 6E/6J/6B/6A/6C/6S/6N.
 
 ## Laptop's active research focus
 

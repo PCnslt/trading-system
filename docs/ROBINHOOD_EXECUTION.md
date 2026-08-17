@@ -128,11 +128,10 @@ swapped under the same method surface — but the fail-closed rules are transpor
    (`stop_market`/`stop_limit`) are **whole-share only** (fractional quantity is
    accepted for market orders in regular hours only). A sub-1-share position has no
    broker-side stop, so `place_equity_entry` **reverses it fail-closed** rather than
-   leave it naked. At $700, the RSI2 size ($25–50 → fractional for most names) is
-   therefore **not live-executable** — LIVE only admits positions ≥ 1 whole share
-   (names ≤ ~$35/share at current sizing). This is the honest reason LIVE is not
-   switched on: the fractional edge needs either (a) larger capital so sizes are
-   whole shares, or (b) a code-level stop (unacceptable under never-lose-money).
+   leave it naked. **Resolved by whole-share sizing** — LIVE only admits positions
+   ≥ 1 whole share, so the live lane trades whole shares of liquid small-ticket
+   names (sub-$35 at $700 → 1–3 shares each, ~5–15 concurrent). Executability gate
+   = 2×ATR/share ≤ 1% ($7), *not* ticket price. See `docs/SMALL-CAPITAL-LIVE-PLAN.md`.
 2. **No native bracket.** Robinhood has no entry+stop atomic bracket (unlike IBKR).
    The never-naked guarantee is a *code* guarantee (place stop immediately after
    fill, verify, reverse on failure), not a *broker* guarantee. A crash between
@@ -147,20 +146,20 @@ preconditions for flipping LIVE.
 
 ---
 
-## 6. ⚠️ Current blocker — token is DEAD, re-OAuth required
+## 6. ✅ Resolved 2026-08-17 — token fresh + transport fixed
 
-During build, the refresh flow was exercised once to validate the rotation
-behaviour. Robinhood's refresh **rotates the refresh_token AND immediately revokes
-the old access token** (`invalid_grant` / `token revoked`), and the rotated value
-was not persisted before the process exited. Result: the `refresh_token` and
-`access_token` in SSM are both now **invalid**.
+The token was **re-authenticated 2026-08-16 21:58 ET** (fresh, `expires_at` ≈ +7.8d)
+and the transport bug was fixed: `notifications/initialized` was being sent as an RPC
+(with an `id`) and the MCP server rejected it with `invalid request: unexpected id for
+"notifications/initialized"`. It is now sent as a proper fire-and-forget notification
+(`_McpTransport.notify`, no `id`, no response). **Read path verified live**: `get_account()`
+→ acct `515821577` (`agentic_allowed=true`), `get_quote('SPY')` → live quote.
 
-**Recovery:** run `python3 infra/rh_oauth.py --reauth` on the VPS (it prints the
-authorization URL + `ssh -L 58245:127.0.0.1:58245 ubuntu@52.7.95.127` port-forward;
-the owner completes browser consent from the laptop), which re-auths via PKCE and
-writes fresh tokens to SSM. Until then, the Robinhood lane cannot read the account
-or place orders. The `rh_client` itself is correct and validated — it will work the
-moment fresh tokens are in SSM.
+**Recovery (unchanged, if the token dies again):** run `python3 infra/rh_oauth.py --reauth`
+on the VPS (it prints the authorization URL + `ssh -L 58245:127.0.0.1:58245 ubuntu@52.7.95.127`
+port-forward; the owner completes browser consent from the laptop), which re-auths via PKCE and
+writes fresh tokens to SSM. The `rh_client` is correct and validated — it works the moment
+fresh tokens are in SSM.
 
 **Lesson (encoded in the client):** refresh writeback is crash-safe — persist the
 rotated token to the **local fallback file first, then SSM**, before returning.

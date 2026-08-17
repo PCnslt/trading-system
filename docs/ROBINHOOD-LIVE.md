@@ -39,24 +39,28 @@ Order-time LIVE also requires: `agentic_allowed` account mode, `RISK_PCT <= 0.01
 `$150/day` loss cap, and a protective stop (`stop_price > 0`). Full spec:
 `docs/ROBINHOOD_EXECUTION.md`.
 
-## Auth status (verified 2026-08-16): TOKEN DEAD — re-auth required
+## Auth status (verified 2026-08-17): TOKEN FRESH — LIVE path operational
 
-The SSM token is **not expired** but was **revoked**: during validation the
-`refresh_token` was rotated and the rotated value was not persisted before the
-process exited, so Robinhood revoked BOTH old tokens. (`api.robinhood.com`
-returns 401 `rejected client id`; refresh returns `invalid_grant`.)
+Re-authenticated **2026-08-16 21:58 ET**; token fresh (`expires_at` ≈ +7.8d). The
+client was also unblocked: `notifications/initialized` was being sent as an RPC
+(with an `id`) and the MCP server rejected it (`unexpected id for
+notifications/initialized`); it is now sent as a proper fire-and-forget
+notification. **Read path verified live** — `get_account()` returns acct
+`515821577` (`agentic_allowed=true`), `get_quote('SPY')` returns a live quote.
+**No live order has been placed.**
 
-### Remaining USER-ONLY blocker (new)
+Re-auth recovery (if the token dies again) is still **`infra/rh_oauth.py --reauth`**
+(owner browser consent via `ssh -L`) — unchanged.
 
-Run **`infra/rh_oauth.py` on the laptop** (browser + Robinhood login) to
-re-authenticate and write a fresh token set to SSM `/trading/robinhood/*`.
+## Fractional sizing — RESOLVED by whole-share small-ticket sizing
 
-### Secondary blocker (fractional sizing)
-
-Robinhood stops are **whole-share only**; fractional positions (<1 share) cannot
-carry a broker stop. `place_equity_entry` reverses them fail-closed, so the
-fractional RSI2 edge is **not live-executable at ~$700** — needs whole-share
-sizing or more capital before it can run LIVE.
+Robinhood stops are **whole-share only** (fractional <1 share carries no broker
+stop; `place_equity_entry` reverses them fail-closed). This is **no longer a
+blocker**: the live lane trades **whole shares of liquid small-ticket names** at
+$700 (~5–15 concurrent positions of $14–$35 each, every one with a real
+broker-side stop). The executability gate is 2×ATR/share ≤ 1% ($7) — *not* ticket
+price. Full sizing table, the satellite-vs-concentration tradeoff, and rollout:
+**`docs/SMALL-CAPITAL-LIVE-PLAN.md`**.
 
 ## Verification
 
