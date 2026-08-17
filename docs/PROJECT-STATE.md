@@ -2,7 +2,7 @@
 
 > **Both sides keep this current.** Laptop = research + Robinhood order placement.
 > VPS = build/backtest/deploy/monitor (IBKR paper). Commit every update so the
-> other side picks it up on next pull. Last updated: **2026-08-16**.
+> other side picks it up on next pull. Last updated: **2026-08-17**.
 
 ---
 
@@ -45,8 +45,11 @@ Execution-layer hardening is **done** (3 phases):
   fail-closed). **✅ LIVE path operational (2026-08-17):** token fresh (re-authed
   2026-08-16 21:58 ET) + transport fixed (`notifications/initialized` now a proper
   MCP notification — was rejected as `unexpected id`). Read path verified live
-  (acct `515821577`, `agentic_allowed=true`); **no live order placed**. See
-  `docs/ROBINHOOD-LIVE.md` + `docs/SMALL-CAPITAL-LIVE-PLAN.md`.
+  (acct `515821577`, `agentic_allowed=true`); **no live order placed**. **Live
+  balance (get_portfolio, 2026-08-16): total $700.06 · cash $675.00 · buying power
+  $675.00 · pending deposits $700** · positions = SPY 0.016 + QQQ 0.017 (DCA base
+  layer ~$25). Plan: `docs/ROBINHOOD-LIVE-PLAN.md`; sizing:
+  `docs/SMALL-CAPITAL-LIVE-PLAN.md`.
 
 ## Active edges
 
@@ -56,7 +59,7 @@ Execution-layer hardening is **done** (3 phases):
 | **intraday MES** (FADESHORT + DONCH15, `live_intraday.py`) | ▶️ paper | RTH entries, EOD flatten 15:45 ET. |
 | **gold momentum** (GC Donchian L/S + TSMOM, `live_gc.py`) | ✅ paper-EXEC | Promoted (EDGE_SWEEP) → IBKR paper execution (clientId 78, ~19:10 ET). Donchian 1.45/1.81 OOS/1.31 IB, 3-tick 1.42; TSMOM 1.37/1.73/1.99, 3-tick 1.35. Donchian = chandelier 3·ATR trail; TSMOM = fixed 3·ATR stop. GC full = $100/pt (~$23k risk/contract @ 3·ATR → $1.5M fwd-test sleeve; MGC micro is the realistic live size). |
 | **equities RSI2-dip + Donchian(200d)** (`equity_signals.py`) | ▶️ paper-signal | Promoted (EQUITIES_SWEEP). RSI2 champion (both regimes); Donchian gated by close>200d-MA. Robinhood stays manual. |
-| **RH equities RSI2** (`live_equities.py`) | ▶️ paper → **LIVE-READY** | Robinhood lane (VPS `rh_client` submits — single-writer; laptop MCP retired). RSI(2)<5 + SMA200, 2xATR whole-share stop, 5d cap, revert. 1%/trade (5% cap), $150/day loss cap. Index regime gate REJECTED (2022 0.81→0.21). OOS PF 1.47 (all 5 folds >1.0)/1.36@5bps. **Small-capital live ENABLED** via whole-share small-ticket sizing — `docs/SMALL-CAPITAL-LIVE-PLAN.md`. |
+| **RH equities RSI2** (`live_equities.py`) | ▶️ paper → **LIVE-READY (ACTIVE — enabled, not blocked)** | Robinhood lane (VPS `rh_client` submits — single-writer; laptop MCP retired). RSI(2)<5 + SMA200, 2xATR whole-share stop, 5d cap, revert. 1%/trade (5% cap), $150/day loss cap. Index regime gate REJECTED (2022 0.81→0.21). OOS PF 1.47 (all 5 folds >1.0)/1.36@5bps. **Whole-share small-ticket live ENABLED** — $675 buying power, 20-pos hard ceiling / 5–15 recommended. Plan: `docs/ROBINHOOD-LIVE-PLAN.md`; sizing: `docs/SMALL-CAPITAL-LIVE-PLAN.md`. |
 | **crypto Donchian-20+200d** (`crypto_paper.py`) | ▶️ paper-signal | Promoted (CRYPTO_SWEEP) but buy-and-hold proxy; LOWEST live-priority. |
 | **bonds fade-SHORT** (ZB/ZN, `live_bondsfx.py`) | 📦 SHELVED | Dies at 1-tick slip. Code kept + disarmed no-op; cron paused. Revisit only if cost/regime materially changes. |
 | **BBAND_INDEX_LONG** | 📦 TABLED | Redundant w/ RSI2-LONG (corr 0.69, PF 1.84 / OOS 1.71). Paper fwd-test candidate if RSI2-LONG underperforms live. |
@@ -127,8 +130,8 @@ loss cap, mandatory stops + trailing (already fail-closed). No asset priority.
    sub-universe (§5 of `docs/SMALL-CAPITAL-LIVE-PLAN.md`), paper-forward ≥30 days,
    then gate live behind `RH_EXECUTION_MODE=LIVE`+`RH_LIVE_ENABLED=true`. No live
    orders until the owner resolves the 5%-cap vs "$10–$150 tickets" decision (§4).
-2. Paper-forward `live.py` (index edge) until **Gate 5** (paper validation) passes —
-   now judged on the drawdown-first bar above, not PF alone.
+2. Paper-forward `live.py` (index edge) — **Gate 5 session 1/10 starts Mon
+   2026-08-17** (10 RTH sessions, drawdown-first bar, not PF alone).
 3. Add 2–3-day short-swing variants (Donchian 2–3d lookback, 2–3d mean-reversion) to
    the intraday/short-swing evaluation, alongside ORB/MOM/VWAP/DONCH15/FADESHORT.
 4. Micro-live — min size, hard loss limit, tested kill + rollback.

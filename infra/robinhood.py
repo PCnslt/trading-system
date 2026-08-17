@@ -168,6 +168,38 @@ def _mcp_post(body, token, session_id=None):
         return -1, None, repr(e)
 
 
+def _parse_sse(raw):
+    """Extract the JSON payload from an SSE-framed MCP response.
+
+    The Robinhood MCP server answers every JSON-RPC POST with SSE framing
+    (``event: message`` / ``data: {json}``), NOT a bare JSON body — so a naive
+    ``json.loads(raw)`` throws JSONDecodeError on a SUCCESSFUL response. Prefer
+    the first ``data:`` line; fall back to a bare JSON body.
+    """
+    for line in raw.splitlines():
+        if line.startswith("data:"):
+            try:
+                return json.loads(line[5:].strip())
+            except json.JSONDecodeError:
+                continue
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return None
+
+
+def mcp_notify(method, params, token, session_id=None):
+    """Fire-and-forget MCP notification (no ``id``, no response expected).
+
+    The MCP protocol rejects a notification carrying an ``id`` (the server
+    answers ``unexpected id for <method>``), so this must NOT go through
+    ``mcp_call``. ``notifications/initialized`` is the one handshake
+    notification sent after ``initialize``.
+    """
+    body = {"jsonrpc": "2.0", "method": method, "params": params or {}}
+    _mcp_post(body, token, session_id)
+
+
 def mcp_call(method, params, token, session_id=None):
     """MCP JSON-RPC call -> (ok, result_or_error, session_id)."""
     body = {"jsonrpc": "2.0", "id": int(time.time() * 1000) % 100000,
@@ -175,9 +207,8 @@ def mcp_call(method, params, token, session_id=None):
     status, sid, raw = _mcp_post(body, token, session_id)
     if status != 200:
         return False, {"http_status": status, "body": raw[:300]}, sid
-    try:
-        j = json.loads(raw)
-    except json.JSONDecodeError:
+    j = _parse_sse(raw)
+    if j is None:
         return False, {"parse_error": raw[:300]}, sid
     if "error" in j:
         return False, j["error"], sid
@@ -237,6 +268,10 @@ def audit():
         else:
             row["detail"] = f"MCP {res.get('http_status')}: {body!r}"
             return row
+
+    # 2.5) complete the MCP handshake — the server requires the fire-and-forget
+    # `notifications/initialized` before it accepts tools/call requests.
+    mcp_notify("notifications/initialized", {}, creds["access_token"], sid)
 
     # 3) authenticated — enumerate tools and locate the account/portfolio tools
     ok, res, sid = mcp_call("tools/list", {}, creds["access_token"], sid)

@@ -213,7 +213,9 @@ def render_table(matrix):
         cells = [r.get("venue", "?")]
         for c in COLS:
             v = r.get(c, "BLOCKED")
-            v = (v or "BLOCKED").replace("|", "·").replace("\n", " ")
+            if isinstance(v, (dict, list)):
+                v = json.dumps(v)
+            v = str(v or "BLOCKED").replace("|", "·").replace("\n", " ")
             cells.append(v)
         lines.append("| " + " | ".join(cells) + " |")
     return "\n".join(lines)

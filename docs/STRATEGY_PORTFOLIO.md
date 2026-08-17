@@ -4,7 +4,7 @@
 > winner-takes-all: nothing is ever deleted, every NO-GO stays here with its
 > reason **and** the precise trigger that would re-activate it. If a lane exists
 > in a backtest, a bot file, a gate report, or a plan doc, it appears here.
-> Last updated: **2026-08-16**.
+> Last updated: **2026-08-17**.
 
 ---
 
@@ -35,8 +35,8 @@
 
 | # | Lane | Asset class | Status | IS PF / OOS PF | Capital | Blocks activation / re-activation trigger |
 |---|---|---|---|---|---|---|
-| 1 | **RSI2 buy-the-dip** (Robinhood) | Equities (10 ETFs + top-50 S&P100 large-caps) | **LIVE-READY** | IS 1.42 (thr5) / OOS 1.47 walk-fwd (all 5 folds >1.0); 1.36 @5bps, 1.26 @10bps · SPY IS 2.00 / OOS 2.04 | ~$700 Robinhood **whole-share small-ticket** (VPS `rh_client` single-writer; `live_equities.py` feeds signals, gated `exec=LIVE`) | **Paper-trade ≥30 days on a small-ticket liquid sub-universe.** Index regime gate already validated-**REJECTED** (do not re-add); bear-year warning (2008 PF 0.36 / 2022 0.81) stays on signals. Whole-share sizing at $700 = sub-$35 names, ~5–15 concurrent, 5%/name satellite cap. See `docs/SMALL-CAPITAL-LIVE-PLAN.md`. |
-| 2 | **Index Donchian + RSI2-LONG** (MES/MNQ) | Index futures | **LIVE-PAPER** | Donchian IS 1.56 / OOS 1.52 (1.43 @3t) · RSI2-LONG IS 1.99 / OOS 2.57 (1.88 @3t) | $50k paper fwd-test sleeve @1% risk (`live.py`, IBKR paper, Gate 5 0/10 sessions) | **Gate 5 (10 RTH sessions) → Gate 6 shadow → Gate 7 micro-live.** Also: 1% risk sizing flips full-size MES/MNQ to size=0 → need MES-micro or sleeve decision. |
+| 1 | **RSI2 buy-the-dip** (Robinhood) | Equities (10 ETFs + top-50 S&P100 large-caps) | **LIVE-READY (ACTIVE — enabled, not blocked)** | IS 1.42 (thr5) / OOS 1.47 walk-fwd (all 5 folds >1.0); 1.36 @5bps, 1.26 @10bps · SPY IS 2.00 / OOS 2.04 | ~$700 Robinhood **whole-share small-ticket** (VPS `rh_client` single-writer; `live_equities.py` feeds signals, gated `exec=LIVE`; **$675 buying power live**) | **Paper-trade ≥30 days on a small-ticket liquid sub-universe** (enabled, not blocked — 20-pos hard ceiling / 5–15 recommended). Index regime gate already validated-**REJECTED** (do not re-add); bear-year warning (2008 PF 0.36 / 2022 0.81) stays on signals. Whole-share sizing at $700 = sub-$35 names, ~5–15 concurrent, 5%/name satellite cap. Plan: `docs/ROBINHOOD-LIVE-PLAN.md`; sizing: `docs/SMALL-CAPITAL-LIVE-PLAN.md`. |
+| 2 | **Index Donchian + RSI2-LONG** (MES/MNQ) | Index futures | **LIVE-PAPER** | Donchian IS 1.56 / OOS 1.52 (1.43 @3t) · RSI2-LONG IS 1.99 / OOS 2.57 (1.88 @3t) | $50k paper fwd-test sleeve @1% risk (`live.py`, IBKR paper, **Gate 5 session 1/10 starts Mon 2026-08-17**) | **Gate 5 (10 RTH sessions) → Gate 6 shadow → Gate 7 micro-live.** Also: 1% risk sizing flips full-size MES/MNQ to size=0 → need MES-micro or sleeve decision. |
 | 3 | **Gold Donchian + TSMOM** (GC/MGC) | Gold futures | **LIVE-PAPER** | Donchian IS 1.45 / OOS 1.81 (1.42 @3t) · TSMOM IS 1.37 / OOS 1.73 (1.35 @3t) | $1.5M paper fwd-test sleeve (`live_gc.py`, paper-EXEC clientId 78); MGC micro = realistic live (~$900 margin, $2.3k/stop) | **Real-time metals L1** (GC delayed-on-paper → signal-only until subscribed) **+ MGC micro sizing** (full GC = ~$23k risk/contract). |
 | 4 | **Seasonal commodities** (month-of-year) | Commodity futures | **PARKED-PENDING** | IS 1.20 / OOS 1.23 (n=1360), cost-stable @3t | Needs **$5–10k IBKR** (full-size margins: GC $8–12k, PL $3–5k, ZC/ZS $2–3k, HE $1.5–2k); currently ~$500 | **Fund IBKR to $5–10k** (full-size futures margin) **+ ≥5y same-month 2nd source** to cross-confirm (unconfirmable on ~3y IBKR bars). |
 | 5 | **5-day momentum** (short-term TSMOM) | Equities | **NO-GO-WITH-REASON** | IS 1.20 → 1.07 @10bps (53k trades, high turnover) | Robinhood (equities) | Cost-fragile at any realistic slippage — dies to ~breakeven at 10bps on 53k trades. **Re-activate only under near-zero-friction execution** (no realistic trigger). |
