@@ -224,3 +224,26 @@ Also: expires_at now stored as plain number string (was repr(float)); refresh() 
 - **Commits**: `b783a545850f83a944d21ee7e23f05d2680ae6b6`
 - **Blockers**:
   - Robinhood token is REVOKED — owner must run infra/rh_oauth.py --reauth (browser consent) before the equities lane can read the account or the fractional-stop check can run.
+
+---
+
+## 2026-08-16T22:12:35-04:00 — Context alignment: small-capital live trading ENABLED via Robinhood whole-share small-ticket RSI2
+
+- **Summary**: Capital is NOT a blocker. Robinhood acct 515821577 (agentic_allowed, ~$700) is the LIVE small-capital lane via whole-share small-ticket RSI2. Fixed a real transport bug: notifications/initialized was sent as an RPC (with id) and the MCP gateway rejected every call ("unexpected id"); now sent as a proper fire-and-forget notification (_McpTransport.notify). Read path verified live (get_account=515821577 agentic_allowed=true, get_quote SPY=776.31). Token fresh (re-authed 2026-08-16 21:58 ET). New docs/SMALL-CAPITAL-LIVE-PLAN.md: grounded whole-share sizing table (real 2026-08 closes+ATR14), 5-15 concurrent positions, $150/day cap mechanics, satellite(5%-cap)-vs-$150-ticket decision, and a new data-driven finding: the top-50 S&P100 universe has drifted almost entirely >$35 (SPY~$776), so $700 whole-share needs a small-ticket liquid sub-universe. No live orders placed (paper-forward first). Tests 13/13 green.
+- **Commits**: `000dfba`
+- **Blockers**:
+  - Owner decision pending: keep 5%-cap satellite sizing (recommended) vs authorize >5% concentration to reach $100-150 tickets (see plan §4).
+  - Build task (not blocker): add small-ticket liquid sub-universe ($5-35, 20d $vol) to live_equities.py universe.
+  - Paper-forward >=30 days before flipping RH_EXECUTION_MODE=LIVE.
+
+---
+
+## 2026-08-16T22:31:00-04:00 — Robinhood small-capital alignment: memory note + $700 live plan + real balance
+
+- **Summary**: Memory note saved (auto-load trading skills at session start; corrected vps-trading-operations -> trading-system-ops). Real RH balance via single-writer rh_client get_portfolio: buying power $675, cash $675, total $700.06, pending deposits $700, positions SPY 0.016 + QQQ 0.017 (DCA ~$25). Wrote docs/ROBINHOOD-LIVE-PLAN.md (whole-share sizing table, max concurrent = 20 hard ceiling / 5-15 recommended, worked F example w/ real ATR 2x=$0.89). PROJECT-STATE + STRATEGY_PORTFOLIO: RH RSI2 = ACTIVE LIVE-READY (enabled, not blocked); Gate 5 session 1/10 starts Mon 2026-08-17. FIXED infra/robinhood.py audit (MCP returns SSE-framed responses -> naive json.loads threw parse_error -> false BLOCKED; added notifications/initialized) + broker_access_audit render_table dict crash; accessibility matrix now shows Robinhood OK. No live orders placed.
+- **Commits**: `b8e72d9`
+- **Blockers**:
+  - Owner decision pending: satellite (5% cap, recommended) vs concentrated ($10-150 tickets) - see plan §2
+  - $700 pending deposit still settling - re-pull and re-size against actual buying power before first live order
+  - Build small-ticket liquid sub-universe ($5-35, 20d $vol) - current universe drifted >$35
+  - Paper-forward >=30 days before flipping RH_EXECUTION_MODE=LIVE
