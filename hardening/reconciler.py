@@ -159,15 +159,37 @@ def _exec_info(e):
 
 
 # ---- internal-side queries ----
+def _scan_prefix(table, prefix: str) -> list:
+    """Paginated scan for every item whose pk begins with `prefix`.
+
+    CRITICAL: a single table.scan() returns ONE page (<=1MB of scanned data).
+    Once the table grows past ~1MB, a non-paginated scan SILENTLY MISSES rows
+    that sort into later pages — producing false 'unaccounted fills' (TRADE#)
+    and false 'position drift' (POSITION#). Loop LastEvaluatedKey until the
+    whole table is covered.
+    """
+    items = []
+    lek = None
+    while True:
+        kw = dict(FilterExpression='begins_with(pk, :p)',
+                  ExpressionAttributeValues={':p': prefix})
+        if lek:
+            kw['ExclusiveStartKey'] = lek
+        try:
+            r = table.scan(**kw)
+        except Exception as e:  # noqa: BLE001 - fail-closed on read error
+            raise ReconcileQueryError(f"internal {prefix} scan failed: {e}") from e
+        items.extend(r.get('Items', []))
+        lek = r.get('LastEvaluatedKey')
+        if not lek:
+            break
+    return items
+
+
 def _scan_positions(table):
     """All open POSITION#<tag>/current rows as [(tag, state), ...]."""
-    try:
-        r = table.scan(FilterExpression='begins_with(pk, :p)',
-                       ExpressionAttributeValues={':p': 'POSITION#'})
-    except Exception as e:  # noqa: BLE001 - fail-closed on read error
-        raise ReconcileQueryError(f"internal POSITION# scan failed: {e}") from e
     out = []
-    for it in r.get('Items', []):
+    for it in _scan_prefix(table, 'POSITION#'):
         if int(it.get('pos', 0) or 0) != 0:
             out.append((it['pk'].split('#', 1)[1], it))
     return out
@@ -212,15 +234,9 @@ def broker_stops(open_orders) -> dict:
 
 def _internal_traded_today(table, today_iso) -> set:
     """symbols with >=1 internal TRADE# row dated today."""
-    try:
-        r = table.scan(FilterExpression='begins_with(pk, :p)',
-                       ExpressionAttributeValues={':p': 'TRADE#'})
-    except Exception as e:  # noqa: BLE001
-        raise ReconcileQueryError(f"internal TRADE# scan failed: {e}") from e
     out = set()
-    for it in r.get('Items', []):
+    for it in _scan_prefix(table, 'TRADE#'):
         sk = it.get('sk', '') or ''
-        ts = it.get('ts', '')
         # live.py sk = 'YYYY-MM-DD#epoch'; live_intraday sk = 'YYYY-MM-DDTHH:MM...'
         if sk.startswith(today_iso):
             out.add(symbol_of(it['pk'].split('#', 1)[1]))
