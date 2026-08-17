@@ -41,11 +41,59 @@ xdotool type --delay 60 "$IBG_PASSWORD"; sleep 1
 # --- click "Paper Log In" ---
 xdotool mousemove 660 479 click 1
 
-# --- accept the paper-trading disclaimer if it appears (one-time per account) ---
-sleep 6
-if xdotool search --name "Warning" 2>/dev/null | grep -q .; then
-    xdotool mousemove 639 510 click 1
-    sleep 2
-fi
+# --- clear the TWO post-login dialogs (Warning + Pending Tasks) ---
+# They appear AFTER login (which takes variable time, esp. the weekly 2FA floor).
+# The old code slept a fixed 6s then clicked a fixed (639,510) once — that lands
+# BEFORE the dialogs appear (2FA push + disclaimer arrive later) and on the wrong
+# button, and never handled the "Pending Tasks" window. Poll for each dialog and
+# clear it; retry up to 3 passes so dialogs that appear in sequence are all caught.
+clear_dialogs() {
+    local i WWIN PWIN
+    # 1) "Warning" = paper-disclaimer; "I understand and accept" button (~625,507 on 1280x800).
+    for i in $(seq 1 45); do
+        if xdotool search --name "Warning" 2>/dev/null | grep -q .; then
+            WWIN=$(xdotool search --name "Warning" 2>/dev/null | head -1)
+            xdotool windowactivate "$WWIN" 2>/dev/null
+            sleep 1
+            xdotool mousemove 625 507 click 1
+            sleep 2
+            break
+        fi
+        sleep 2
+    done
+    # 2) "Pending Tasks" — may be UNMAPPED: map, raise, activate, then Tab+Return.
+    for i in $(seq 1 30); do
+        if xdotool search --name "Pending Tasks" 2>/dev/null | grep -q .; then
+            PWIN=$(xdotool search --name "Pending Tasks" 2>/dev/null | head -1)
+            xdotool windowmap "$PWIN" 2>/dev/null
+            sleep 1
+            xdotool windowraise "$PWIN" 2>/dev/null
+            xdotool windowactivate "$PWIN" 2>/dev/null
+            sleep 1
+            if [ "$(xdotool getactivewindow getwindowname 2>/dev/null)" = "Pending Tasks" ]; then
+                xdotool key Tab
+                sleep 0.5
+                xdotool key Return
+                sleep 2
+            fi
+            break
+        fi
+        sleep 2
+    done
+}
 
-echo "login helper complete — approve the IB Key 2FA push on your phone if prompted."
+for _pass in 1 2 3; do
+    clear_dialogs
+    if ! xdotool search --name "Warning" 2>/dev/null | grep -q . && \
+       ! xdotool search --name "Pending Tasks" 2>/dev/null | grep -q .; then
+        break
+    fi
+    sleep 3
+done
+
+# --- final status (port 4002 bound = logged in) ---
+if ss -ltn 2>/dev/null | grep -q ':4002 '; then
+    echo "login helper complete — gateway logged in (port 4002 listening)."
+else
+    echo "login helper complete — approve the IB Key 2FA push on your phone if prompted (port 4002 not yet bound)."
+fi
