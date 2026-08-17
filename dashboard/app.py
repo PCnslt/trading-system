@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from bot.control import set_control as control_set_control
 from dashboard.pulse import render_pulse, render_data_hot, render_data_cold
+from dashboard.trading_view import render_trading
 
 load_dotenv()
 
@@ -93,9 +94,13 @@ elif state == "RUNNING":
 else:
     st.warning("⚠️ Control state UNKNOWN — bots are fail-closed (no trading until set)")
 
-tab_pulse, tab_data_hot, tab_data_cold, tab_sched, tab_live, tab_arch, tab_road = st.tabs(
-    ["💓 Live Pulse", "🔥 Data — Hot", "🧊 Data — Cold", "🗓️ 24/7 Schedule",
-     "📊 Live", "🗺️ Architecture", "📋 Roadmap"])
+tab_trade, tab_pulse, tab_data_hot, tab_data_cold, tab_sched, tab_live, tab_arch, tab_road = st.tabs(
+    ["📈 Trading", "💓 Live Pulse", "🔥 Data — Hot", "🧊 Data — Cold",
+     "🗓️ 24/7 Schedule", "📊 Live", "🗺️ Architecture", "📋 Roadmap"])
+
+# ============================ TRADING TAB ============================
+with tab_trade:
+    render_trading()
 
 # ============================ LIVE PULSE TAB ============================
 with tab_pulse:
@@ -424,7 +429,7 @@ with tab_road:
 | Data | Data-lake build-out (contract metadata + rollover, session calendar, L1 tick recorder) | done |
 | Data | Broker reconciliation (startup + periodic 45s daemon) — positions/orders/fills vs DynamoDB, halt+alert on mismatch/UNKNOWN | done |
 | Data | Data-health gate + stale-signal gate | next phase |
-| Obs | Streamlit dashboard :8501 (Live Pulse + Data — Hot + Data — Cold + Live + Architecture + Roadmap) | done |
+| Obs | Streamlit dashboard :8501 (Trading charts+logs + Live Pulse + Data — Hot + Data — Cold + Live + Architecture + Roadmap) | done |
 | Obs | Telegram group (user visibility) | done |
 | Obs | Daily summary 23:45, health watchdog */30, weekly scan | done |
 | Obs | Health watchdog fixed — native GWClient + :4002 check (was checking removed IBC) | done |
