@@ -677,11 +677,14 @@ class RHClient:
                            or entry.get("quantity") or 0)
         position_side = "long" if side == "buy" else "short"
         stop_qty = int(filled_qty)
-        if stop_qty < 1:
-            # Fractional (<1 share) fill cannot carry a broker stop -> reverse it.
-            self._flatten(sym, side, account_number=acct, client_order_ref=client_order_ref)
+        # A sub-1-share OR non-whole-share fill cannot carry a whole-share stop
+        # that fully protects it (floor(qty) would leave the remainder naked).
+        # Reverse the entry instead (never-lose-money).
+        if filled_qty < 1 or filled_qty != float(stop_qty):
+            self._flatten(sym, side, account_number=acct, client_order_ref=client_order_ref,
+                          qty=filled_qty, dollar_amount=dollar_amount)
             raise RHStopPlacementFailed(
-                f"{sym}: fractional fill {filled_qty} < 1 share cannot carry a broker "
+                f"{sym}: fractional fill {filled_qty} cannot carry a whole-share protective "
                 f"stop — entry reversed (fail-closed, never naked)")
 
         try:
@@ -691,12 +694,14 @@ class RHClient:
                                    time_in_force=stop_time_in_force,
                                    client_order_ref=client_order_ref)
         except Exception as e:  # noqa: BLE001
-            self._flatten(sym, side, account_number=acct, client_order_ref=client_order_ref)
+            self._flatten(sym, side, account_number=acct, client_order_ref=client_order_ref,
+                          qty=filled_qty)
             raise RHStopPlacementFailed(
                 f"{sym}: protective stop placement failed — entry reversed: {e!r}") from e
 
         if not self._stop_is_resting(sym, position_side, account_number=acct):
-            self._flatten(sym, side, account_number=acct, client_order_ref=client_order_ref)
+            self._flatten(sym, side, account_number=acct, client_order_ref=client_order_ref,
+                          qty=filled_qty)
             raise RHStopPlacementFailed(
                 f"{sym}: protective stop not resting after placement — entry reversed")
 
@@ -715,14 +720,28 @@ class RHClient:
         return False
 
     def _flatten(self, symbol: str, entry_side: str, account_number: str | None = None,
-                 client_order_ref: str | None = None):
-        """Emergency market-close of a just-filled (unprotected) entry."""
+                 client_order_ref: str | None = None, qty: float | None = None,
+                 dollar_amount: str | None = None):
+        """Emergency market-close of a just-filled (unprotected) entry.
+
+        MUST carry a size: a market order with neither ``quantity`` nor
+        ``dollar_amount`` is under-specified and would be rejected, stranding
+        the position naked. ``qty`` (whole shares, >=1) closes via ``quantity``;
+        a fractional fill closes via ``dollar_amount``.
+        """
         close_side = "sell" if entry_side == "buy" else "buy"
+        kw = {}
+        if qty is not None and float(qty) >= 1:
+            kw["quantity"] = str(int(float(qty)))
+        elif dollar_amount:
+            kw["dollar_amount"] = str(dollar_amount)
+        else:
+            raise RHNakedPosition(
+                f"{symbol}: cannot flatten — no size (qty/dollar_amount) supplied")
         try:
             self.place_equity_order(symbol, close_side, "market",
                                     account_number=account_number,
-                                    dollar_amount=None, quantity=None,
-                                    client_order_ref=client_order_ref)
+                                    client_order_ref=client_order_ref, **kw)
         except Exception as e:  # noqa: BLE001
             raise RHNakedPosition(
                 f"{symbol}: unable to flatten unprotected entry: {e!r}") from e

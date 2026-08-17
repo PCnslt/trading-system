@@ -111,9 +111,12 @@ def test_entry_fractional_fill_is_reversed(ssm_and_token):
     with pytest.raises(RHStopPlacementFailed):
         c.place_equity_entry("SPY", "buy", 95.0, dollar_amount="50.00",
                              client_order_ref="t1")
-    sides = [a["side"] for _, a in c._transport.tool_calls
-             if _ == "place_equity_order"]
+    calls = [a for name, a in c._transport.tool_calls if name == "place_equity_order"]
+    sides = [a["side"] for a in calls]
     assert sides == ["buy", "sell"]   # entry then reversal (never left naked)
+    sell = calls[1]
+    # the reversal MUST carry a size (a size-less order would be rejected -> naked)
+    assert sell.get("dollar_amount") == "50.00"
 
 
 # ---- happy path: entry + resting stop ----
