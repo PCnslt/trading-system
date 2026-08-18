@@ -137,7 +137,18 @@ def on_tick_factory(buffer, latest):
             bid, ask, last = _num(t.bid), _num(t.ask), _num(t.last)
             if bid is None and ask is None and last is None:
                 continue
-            rec = {'ts': now, 'bid': bid, 'bidSize': _num(t.bidSize),
+            # tag what actually changed vs the prior tick: 'trade' (last print)
+            # and/or 'quote' (bid/ask). Order-flow analysis (Phase 3) needs the
+            # trade-vs-quote distinction for bid-ask delta / absorption.
+            prev = latest.get(sym, {})
+            kinds = []
+            if last is not None and last != prev.get('last'):
+                kinds.append('trade')
+            if (bid is not None and bid != prev.get('bid')) or \
+               (ask is not None and ask != prev.get('ask')):
+                kinds.append('quote')
+            rec = {'ts': now, 'kind': '+'.join(kinds) or 'trade',
+                   'bid': bid, 'bidSize': _num(t.bidSize),
                    'ask': ask, 'askSize': _num(t.askSize),
                    'last': last, 'lastSize': _num(t.lastSize),
                    'volume': _num(t.volume)}
