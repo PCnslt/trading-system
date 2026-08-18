@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-17T23:06:33-04:00",
+  "updated": "2026-08-18T00:46:12-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -309,6 +309,23 @@
       "blockers": [
         "Lane 10 re-activation: deeper 1-min archive + cross-source + paper-forward MES/MNQ equity-index sleeve only.",
         "Lane 24: no realistic trigger (2-3d hold net-negative; untimed cross contradicts capital-preservation)."
+      ]
+    },
+    {
+      "ts": "2026-08-18T00:46:12-04:00",
+      "task": "Order-flow/microstructure lane + VWAP equity-index sleeve (Lane 10 re-activation)",
+      "summary": "Phases 1-4 built, serialized (git+S3+DynamoDB), 239 tests green. P1: VWAP sleeve re-activated (bot/live_vwap.py, MES/MNQ, VWAP_EXECUTION=PAPER real fills, VWAP_K=2.0 + high-volume filter, 2xATR native-bracket stop, round-trip journal, MES_VWAP/MNQ_VWAP in TRACKED_TAGS); 1-min backfill refreshed via --1m-only (30d entitlement cap - 24mo not achievable from any source). P2: orderbook collector (IBKR MES/MNQ L1-only [L2 Error 354 not entitled] + RH get_equity_price_book L2 for 15 small-ticket names) + tick_recorder kind tag (trade/quote). P3: footprint engine (bid-ask delta, absorption, volume profile POC/VAH/VAL, orderbook imbalance, spread) -> MICRO# rows. P4: Creamer auction generator (MNQ 5-min, first 90min NY open, 20k participation floor, multi-day 1h structure) -> AUCTION#, exec=NONE. VWAP paper fills: 0 (armed, first RTH session pending). Order-flow signals: 0 setups / 8 sessions.",
+      "commits": [
+        "cd3ddf1",
+        "9da241b",
+        "674d4c5",
+        "dd29f07",
+        "4d10195"
+      ],
+      "blockers": [
+        "IBKR paper has no L2 depth (Error 354) - MES/MNQ orderbook is L1 top-of-book only; L2 is a separate paid package.",
+        "24-month 1-min archive NOT achievable (IBKR 1m ~30d, yf ~7d) - Lane 10 re-validation trigger (1) blocked on entitlement, not code.",
+        "Order-flow auction: 0 setups/8 sessions - golden-pocket-outside-value + price-in-pocket is rare; needs swing-selection tuning + orderbook data (needs-more-data, not a bug)."
       ]
     }
   ]
