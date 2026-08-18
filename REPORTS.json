@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-17T22:18:57-04:00",
+  "updated": "2026-08-17T23:06:33-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -296,6 +296,19 @@
         "Small-ticket liquid sub-universe ($5-35, 20d $vol >= ~$50M/day) still needs building (only T sub-$35 today)",
         "Owner still must decide satellite (5% cap, recommended) vs concentrated ($10-150 tickets)",
         "M6E margin ~$300 is approximate (verify exact at go-live); M6E rejected on risk regardless"
+      ]
+    },
+    {
+      "ts": "2026-08-17T23:06:33-04:00",
+      "task": "Lane 10 (Intraday VWAP) + Lane 24 (KAMA) validation — intraday + 1/2/3-day swing horizon",
+      "summary": "VALIDATION ONLY (no live/exec). Both verdicts NO-GO-WITH-REASON. LANE 10 VWAP 2-sigma: definitive sweep VWAP_K {1.5,2,2.5} x high-volume filter. Volume filter unlocks the EQUITY-INDEX sleeve (S&P/Nasdaq/Dow/Russell group OOS PF 1.11-1.38 @1t, stable across K), but Metals 0.94 / Energy 0.97 fail in every combo -> NO-GO cross-asset (the 4 'positive groups' are one correlated bet, not >=2 independent asset classes). Re-activate: deeper 1-min archive (24mo) + cross-source on the equity-index sleeve, then paper-forward MES/MNQ sleeve only. LANE 24 KAMA crossover daily re-test: at the owner's 2-3d hold horizon it is net-negative after costs (OOS PF 0.75-1.16 @5bps; <1.1 @10bps everywhere). Pure (untimed) crossover OOS 1.3-1.7 is a bull-regime buy-and-hold proxy (IS PF <1.0) with maxDD -12..-61% -> NO-GO confirmed, no realistic re-activation trigger. All outputs persisted to S3 research/ + research/LANE10_VWAP_SWEEP.md / LANE24_KAMA_DAILY.md.",
+      "commits": [
+        "dd31be3",
+        "71a6047"
+      ],
+      "blockers": [
+        "Lane 10 re-activation: deeper 1-min archive + cross-source + paper-forward MES/MNQ equity-index sleeve only.",
+        "Lane 24: no realistic trigger (2-3d hold net-negative; untimed cross contradicts capital-preservation)."
       ]
     }
   ]
