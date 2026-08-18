@@ -68,6 +68,8 @@ Execution-layer hardening is **done** (3 phases):
 | **futures-options** (chain scaffold, `options_plan.py`) | 🔬 research | Chain metadata for 12 underlyings captured; vol-surface/greeks need paid bars — NOT requested. See `FUTURES_OPTIONS_PLAN.md`. |
 | **Crypto** | ▶️ paper-signal | Donchian-20+200d promoted (buy-and-hold proxy, LOWEST live-priority). Mean-reversion KILLED. Deep `crypto-hist/` sweep (6.9y, 6 syms): 0 promotes. Binance.US ticks still collected. |
 | **forex spot** (28 yfinance pairs) | 🔬 data-on only | No edge/broker yet. Daily (max) + 1h (~2y) → `yf/fx/` for future research. Reopens Sun 17:00 ET. |
+| **VWAP equity-index sleeve** (`live_vwap.py`, Lane 10 re-activation) | ✅ paper-EXEC (armed) | Scoped re-activation 2026-08-18: volume-filtered VWAP 2σ on MES/MNQ, 5-min, real paper fills, 2×ATR native stop, round-trip journal. 1-min 24mo re-validation blocked (30d entitlement cap). |
+| **Order-flow / microstructure** (Lane 32, Creamer auction) | 🔬 data + signal-only (exec=NONE) | Orderbook depth (IBKR L1-only, RH L2 for 15 small-ticket names) + `kind`-tagged ticks + 1-min bars; footprint features → `MICRO#`; auction signals → `AUCTION#MNQ`. 0 setups/8 sessions (needs tuning). |
 
 ## Data sources + coverage vs gaps
 
