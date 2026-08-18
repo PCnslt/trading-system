@@ -1,0 +1,18 @@
+[Unit]
+Description=VWAP equity-index sleeve forward-test bot (MES/MNQ) — PAPER only
+After=network.target ibgateway.service
+Wants=ibgateway.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+Environment=LIVE=false
+Environment=VWAP_EXECUTION=PAPER
+ExecStart=/home/ubuntu/trading-system/venv/bin/python -u infra/bot_loop.py --interval 15 --rth-only -- /home/ubuntu/trading-system/venv/bin/python -u bot/live_vwap.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:/home/ubuntu/trading-system/logs/live-vwap.log
+StandardError=append:/home/ubuntu/trading-system/logs/live-vwap.log
+
+[Install]
+WantedBy=multi-user.target

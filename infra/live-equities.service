@@ -1,0 +1,17 @@
+[Unit]
+Description=Robinhood equities RSI(2) forward-test bot — PAPER (signal + simulated fills)
+After=network.target
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+Environment=RH_EXECUTION_MODE=PAPER
+Environment=RH_LIVE_ENABLED=false
+ExecStart=/home/ubuntu/trading-system/venv/bin/python -u infra/bot_loop.py --daily 19:20 -- /home/ubuntu/trading-system/venv/bin/python -u bot/live_equities.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:/home/ubuntu/trading-system/logs/live-equities.log
+StandardError=append:/home/ubuntu/trading-system/logs/live-equities.log
+
+[Install]
+WantedBy=multi-user.target

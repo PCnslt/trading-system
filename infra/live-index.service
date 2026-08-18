@@ -1,0 +1,18 @@
+[Unit]
+Description=Index futures forward-test bot (MES/MNQ Donchian+RSI2) — PAPER only
+After=network.target ibgateway.service
+Wants=ibgateway.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+Environment=LIVE=false
+Environment=RISK_BUDGET=350000
+ExecStart=/home/ubuntu/trading-system/venv/bin/python -u infra/bot_loop.py --daily 19:00 -- /home/ubuntu/trading-system/venv/bin/python -u bot/live.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:/home/ubuntu/trading-system/logs/live-index.log
+StandardError=append:/home/ubuntu/trading-system/logs/live-index.log
+
+[Install]
+WantedBy=multi-user.target

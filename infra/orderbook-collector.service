@@ -1,0 +1,18 @@
+[Unit]
+Description=Order-flow orderbook depth collector (IBKR paper L1 -> S3 orderbook/ + DynamoDB ORDERBOOK#)
+After=network.target ibgateway.service
+Wants=ibgateway.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+Environment=IBKR_ENABLED=true
+Environment=RH_ENABLED=false
+ExecStart=/home/ubuntu/trading-system/venv/bin/python -u bot/orderbook_collector.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:/home/ubuntu/trading-system/logs/orderbook-collector.log
+StandardError=append:/home/ubuntu/trading-system/logs/orderbook-collector.log
+
+[Install]
+WantedBy=multi-user.target

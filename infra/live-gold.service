@@ -1,0 +1,19 @@
+[Unit]
+Description=Gold futures forward-test bot (MGC Donchian+TSMOM) — PAPER only
+After=network.target ibgateway.service
+Wants=ibgateway.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+Environment=LIVE=false
+Environment=GC_CONTRACT=MGC
+Environment=GC_RISK_BUDGET=250000
+ExecStart=/home/ubuntu/trading-system/venv/bin/python -u infra/bot_loop.py --daily 19:10 -- /home/ubuntu/trading-system/venv/bin/python -u bot/live_gc.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:/home/ubuntu/trading-system/logs/live-gold.log
+StandardError=append:/home/ubuntu/trading-system/logs/live-gold.log
+
+[Install]
+WantedBy=multi-user.target
