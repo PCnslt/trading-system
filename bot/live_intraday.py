@@ -248,7 +248,7 @@ def _archive_bars(sname, barsize, df):
     try:
         slug = barsize.replace(' mins', 'min')       # '5 mins' -> '5min'
         date = dt.datetime.now(dt.timezone.utc).strftime('%Y-%m-%d')  # S3 key date stays UTC (storage convention)
-        records = [{'date': idx.isoformat(), 'open': float(r['Open']),
+        records = [{'ts': idx.isoformat(), 'open': float(r['Open']),
                     'high': float(r['High']), 'low': float(r['Low']),
                     'close': float(r['Close']), 'volume': float(r['Volume'])}
                    for idx, r in df.iterrows()]
