@@ -67,7 +67,9 @@ def load_intraday(sym='MES', barsize='15min'):
         o = _s3.get_object(Bucket=S3_BUCKET, Key=keys[-1])
         d = json.loads(o['Body'].read())
         df = pd.DataFrame(d['bars'])
-        df['date'] = pd.to_datetime(df['date'])
+        # bar timestamp field changed date->ts (forward-test fill work); tolerate both
+        ts_col = 'ts' if 'ts' in df.columns else 'date'
+        df['date'] = pd.to_datetime(df[ts_col])
         df = df.sort_values('date').reset_index(drop=True)
         return df
     except Exception:
