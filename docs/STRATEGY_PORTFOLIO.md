@@ -3,8 +3,8 @@
 > **Single living registry of EVERY strategy lane in the system.** Additive, not
 > winner-takes-all: nothing is ever deleted, every NO-GO stays here with its
 > reason **and** the precise trigger that would re-activate it. If a lane exists
-> in a backtest, a bot file, a gate report, or a plan doc, it appears here.
-> Last updated: **2026-08-17**.
+> exists in a backtest, a bot file, a gate report, or a plan doc, it appears here.
+> Last updated: **2026-08-18**.
 
 ---
 
@@ -18,15 +18,15 @@
 | **NO-GO-WITH-REASON** | Killed/retired for a recorded reason. **Stays here** with the exact re-activation trigger. |
 | **RESEARCHING** | Active research; no promote/kill verdict yet. |
 
-## Status counts (2026-08-16)
+## Status counts (2026-08-18)
 
 | Status | Count |
 |---|---|
 | LIVE-PAPER | 3 |
 | LIVE-READY | 1 |
 | PARKED-PENDING | 1 |
-| NO-GO-WITH-REASON | 21 |
-| RESEARCHING | 5 |
+| NO-GO-WITH-REASON | 22 |
+| RESEARCHING | 4 |
 | **Total lanes** | **31** |
 
 ---
@@ -44,7 +44,7 @@
 | 7 | **Pairs / stat-arb** (Z-score MR) | Equities (market-neutral, 10 liquid pairs) | **NO-GO-WITH-REASON** | IS 1.29 → 1.14 @10bps (win 62%, ~+0.4%/trade) | IBKR (needs short leg) | Requires a short leg: Robinhood cash acct can't short; IBKR paper can but isn't live. **Re-activate = shorting enabled (IBKR live margin) + more capital + wider than 10 pairs.** |
 | 8 | **Options credit spreads / iron condors** | Options (defined-risk short premium) | **NO-GO-WITH-REASON** | IS 1.04 synthetic (IV=realized, no premium) / 1.48 @15% vol premium · OOS n/a | Robinhood (needs Level 3 + $5k) | Two blockers: **paid historical options archive** (verify the index vol-premium edge) **+ capital ≥$5k** (SPY/QQQ spread ≤5% acct) **+ Robinhood Level 3** (spreads). |
 | 9 | **Gap fade** (2% gap-down, 5d hold) | Equities | **NO-GO-WITH-REASON** | IS 1.34 → 1.26 @10bps (win 55%); same-day fade 0.99 @10bps; futures GAP_FADE OOS 0.94 | Robinhood (equities) | Redundant with RSI2-dip (same buy-the-dip exposure, RSI2 stronger + fully validated). **Re-activate only if shown non-redundant** (a regime the RSI2 lane doesn't cover). |
-| 10 | **Intraday VWAP** (2σ reversion) | Index futures (MES/MNQ) | **RESEARCHING** (HOLD) | IS 1.12 @0t / 1.00 @3t / OOS 1.03; **1.08 @1t realistic** (Sharpe 1.04) | $25k paper intraday sleeve (`live_intraday.py`, `exec=NONE`) | **Param sweep (VWAP_K 1.5/2/2.5 + high-volume filter) + deeper 1-min archive.** Per-symbol inconsistent (Nasdaq micros/minis +, S&P/energy −). |
+| 10 | **Intraday VWAP** (2σ reversion) | Index futures (MES/MNQ) | **NO-GO-WITH-REASON** (sleeve-scoped) | Volume filter unlocks equity-index sleeve: group OOS 1.11–1.38 @1t (S&P/Nasdaq/Dow/Russell, stable across VWAP_K 1.5–2.5); Metals 0.94 / Energy 0.97 fail → cross-asset NO-GO | $25k paper intraday sleeve (`live_intraday.py`, `exec=NONE`) | **Scope to equity-index sleeve → re-validate on deeper 1-min archive (24mo) + cross-source; paper-forward MES/MNQ sleeve only.** The 4 "positive groups" are one correlated bet (4 index futures), not ≥2 independent asset classes. `research/LANE10_VWAP_SWEEP.md`. |
 
 ---
 
@@ -65,7 +65,7 @@
 | 21 | MOM intraday (10-bar ROC) | Index futures (intraday) | **NO-GO-WITH-REASON** | IS 0.95 @0t / 0.80 @3t / OOS 0.78 | Dead even at 1-tick. |
 | 22 | DONCH15 (15m Donchian/ATR) | Index futures (intraday) | **NO-GO-WITH-REASON** | IS 1.05 @0t / 0.99 @3t / OOS 0.87 | Breakeven+ at 1-tick, dies @3t. |
 | 23 | FADESHORT intraday (RSI2+Boll short) | Index futures (intraday) | **NO-GO-WITH-REASON** (signal-only collecting) | IS 1.07 @0t / 0.95 @3t / OOS 1.16 (regime-dependent) | Lowest-drawdown intraday but still net-negative. Keep collecting signals, no execution. |
-| 24 | KAMA crossover (intraday 5-min) | Index futures (intraday) | **NO-GO-WITH-REASON** (wrong horizon) | IS 0.82 @0t / 0.70 @3t / OOS 0.68 | Whipsaws at 5-min granularity. **Re-test on daily / 2–3-day swing horizon** (where KAMA is designed to run). |
+| 24 | KAMA crossover (daily re-test) | Index futures / index ETFs | **NO-GO-WITH-REASON** (confirmed on daily) | 2-3d hold OOS 0.75–1.16 @5bps (<1.1 @10bps everywhere); pure-cross OOS 1.3–1.7 is bull-regime proxy (IS<1.0) w/ maxDD −12..−61% | 2-3 day hold (owner's swing horizon) net-negative after costs; untimed cross = buy-and-hold bull proxy + unacceptable DD. **No realistic re-activation** (contradicts capital-preservation directive). `research/LANE24_KAMA_DAILY.md`. |
 | 25 | 5-day reversal | Equities | **NO-GO-WITH-REASON** | IS 1.46 pooled / OOS 1.31 (regime-flipped: SPY 2.93 → 0.94 post-2009) | Regime-flipped + inconsistent across symbols. |
 | 26 | Golden cross (50/200) | Equities | **NO-GO-WITH-REASON** | IS 3.57 / OOS 3.20 (n=88) | Statistically meaningless (n=4–7 OOS/symbol despite inf PF). |
 | 27 | Bollinger lower-band | Equities | **NO-GO-WITH-REASON** | IS 1.42 / OOS 1.11 | 0.72 corr with RSI2 — redundant, do not co-deploy. |
@@ -100,4 +100,6 @@
 - Lane 4, 15–19, 29: `research/EDGE_SWEEP.md`, `research/EDGE_SWEEP2.md`.
 - Lanes 5, 7, 8: `research/SMALL_CAPITAL_OPPORTUNITIES.md`, `research/options_spread_synth.py`.
 - Lane 10, 20–24: `research/INTRADAY_GATE1_VALIDATION.md`, `research/INTRADAY_BUILD.md`.
+- Lane 10 (definitive sweep): `research/LANE10_VWAP_SWEEP.md`.
+- Lane 24 (daily re-test): `research/LANE24_KAMA_DAILY.md`.
 - Lane 14: `bot/wheel_backtest.py`, `research/OPTIONS_PLAN.md`.
