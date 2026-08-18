@@ -26,7 +26,7 @@
 - **Declared:** 2026-08-14 (gate STARTED)
 - **Target:** 10 RTH sessions (Mon–Fri, 09:30–16:00 ET)
 - **First counted session:** Mon 2026-08-17
-- **Sessions completed:** 0 / 10
+- **Sessions completed:** 1 / 10
 - **Counter resets to 0** on any (a)–(d) failure → root-cause, fix, restart window.
 
 ## Why 10 sessions (tuning justification)
@@ -39,7 +39,7 @@
 
 | # | Date (RTH) | Index signal fired? | Intent→fill→MATCH | Fill-verify fails | HALTs (explained?) | Ledger persisted | Verdict |
 |---|---|---|---|---|---|---|---|
-| — | _(none yet)_ | — | — | — | — | — | — |
+| 1 | 2026-08-17 (Mon) | No — MES/MNQ Donchian+RSI2 all `NONE` (flat) | n/a (no signal) | 0 | 1 (explained) — intraday `unaccounted fills: MES` from the ~13:37 manual flatten of an orphaned long (documented 16:27 report; reconciler scan-pagination fix `65430ee` already resolved it; RECONCILE=MATCH streak 0) | Yes (RISK#live/live_gc persisted, halted=false) | **Session 1 — no index signal; 0 new execution defects.** Sizing audit (this session) found the $50k sleeve would return size=0 on a signal → raised to $350k paper sleeve BEFORE any signal fired (see REPORT). |
 
 ## Decision
 

@@ -83,12 +83,15 @@ def test_engine_load_fresh_day(fake_table):
 
 
 def test_engine_load_restores_state(fake_table):
-    import datetime as dt
+    from datetime import datetime, timezone
     ledger = RiskLedger(fake_table, scope='live')
-    ledger.save(dt.date.today().isoformat(), {'daily_pnl': -1500.0, 'daily_trades': 3,
-                                              'consecutive_losses': 2, 'halted': True,
-                                              'halt_reason': 'daily loss halt',
-                                              'open_positions': 1})
+    # Save under the SAME date the engine loads (UTC), NOT dt.date.today()
+    # (local ET) — the two diverge after 20:00 ET and the test silently fails.
+    day = datetime.now(timezone.utc).date().isoformat()
+    ledger.save(day, {'daily_pnl': -1500.0, 'daily_trades': 3,
+                      'consecutive_losses': 2, 'halted': True,
+                      'halt_reason': 'daily loss halt',
+                      'open_positions': 1})
     e = RiskEngine.load(make_cfg(), ledger)
     assert e.daily_pnl == -1500.0
     assert e.daily_trades == 3

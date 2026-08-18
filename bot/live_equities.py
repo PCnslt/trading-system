@@ -344,17 +344,28 @@ def main():
         exited = False
         exit_info = None
 
-        # --- 1. fill PENDING at today's open ---
+        # --- 1. fill PENDING at today's open (only if it signaled on a PRIOR bar) ---
         if pos and pos.get('status') == 'PENDING':
-            entry_price = o
-            atr_sig = _f(pos.get('atr')) or atr or 0.0
-            stop = entry_price - STOP_ATR * atr_sig
-            pos = {'symbol': sym, 'status': 'OPEN',
-                   'entry_date': str(today_dt.date()),
-                   'entry_price': _s(entry_price), 'stop_price': _s(stop),
-                   'size_usd': pos.get('size_usd', ''), 'size_shares': _s(
-                       float(pos.get('size_usd') or 0) / entry_price if entry_price > 0 else 0),
-                   'atr': _s(atr_sig), 'ts': int(time.time())}
+            entry_date_s = str(pos.get('entry_date', ''))
+            last_bar_s = str(today_dt.date())
+            if entry_date_s and entry_date_s < last_bar_s:
+                entry_price = o
+                atr_sig = _f(pos.get('atr')) or atr or 0.0
+                stop = entry_price - STOP_ATR * atr_sig
+                pos = {'status': 'OPEN',
+                       'entry_date': last_bar_s,
+                       'entry_price': _s(entry_price), 'stop_price': _s(stop),
+                       'size_usd': pos.get('size_usd', ''), 'size_shares': _s(
+                           float(pos.get('size_usd') or 0) / entry_price if entry_price > 0 else 0),
+                       'atr': _s(atr_sig), 'ts': int(time.time())}
+                # Persist the simulated next-open fill so the position advances to
+                # OPEN and the round-trip journal (RHTRADE#) can later record the
+                # exit + realized P&L. Was in-memory only -> the position stayed
+                # PENDING forever, re-filled at every subsequent open, and RHTRADE#
+                # never got written (the "signals but never fills" defect).
+                put_item(table, f'RHPOS#{sym}', 'current', pos, args.dry_run)
+            # else: signaled on the current bar (or a same-day re-run) -> keep
+            # PENDING and fill on the next run (next trading open).
 
         # --- 2. manage OPEN: stop -> time -> revert (backtest priority order) ---
         if pos and pos.get('status') == 'OPEN':
