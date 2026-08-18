@@ -320,3 +320,10 @@ No real-money orders placed tonight. All fills are IBKR-paper or simulated.
   - IBKR paper has no L2 depth (Error 354) - MES/MNQ orderbook is L1 top-of-book only; L2 is a separate paid package.
   - 24-month 1-min archive NOT achievable (IBKR 1m ~30d, yf ~7d) - Lane 10 re-validation trigger (1) blocked on entitlement, not code.
   - Order-flow auction: 0 setups/8 sessions - golden-pocket-outside-value + price-in-pocket is rare; needs swing-selection tuning + orderbook data (needs-more-data, not a bug).
+
+---
+
+## 2026-08-18T00:50:42-04:00 — Repo hygiene/alignment: verify build session pushed, no leftovers, tests green
+
+- **Summary**: Build session 20260818_041111 (delivery 1787026271420) ended 04:47:57 and had ALREADY committed+pusushed all order-flow work (VWAP sleeve, orderbook collector, footprint engine, KAMA/VWAP validation, auction signals). The 3 formerly-untracked files (bot/auction_signals.py, data/auction.py, tests/test_auction.py) are now tracked. No leftover artifacts to commit: HEAD==origin/main (0 unpushed), 0 untracked. Tests: 239 passed (>=210). Repo fully aligned.
+- **Commits**: `252781c`
