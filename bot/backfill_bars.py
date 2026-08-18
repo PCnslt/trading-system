@@ -240,6 +240,16 @@ def backfill_intraday(ib, sym, dry_run):
     return tot
 
 
+def backfill_1m_only(ib, sym, dry_run):
+    """1-min bars only (the deepest intraday TF; ~30d entitlement cap)."""
+    exchange = EXCHANGE[sym]
+    con = resolve_front(ib, sym, exchange)
+    if con is None:
+        print(f"    [{sym}] 1m: NO CONTRACT (gapped?)")
+        return 0
+    return backfill_intraday_tf(ib, sym, con, '1 min', '1m', INTRA_1M_DUR, dry_run)
+
+
 def _pace():
     time.sleep(PACING_S)
 
@@ -249,6 +259,7 @@ def main():
     ap.add_argument('--symbols', default='', help='comma subset, e.g. ES,NQ')
     ap.add_argument('--daily-only', action='store_true')
     ap.add_argument('--intraday-only', action='store_true')
+    ap.add_argument('--1m-only', action='store_true', help='1-min bars only (deepest TF)')
     ap.add_argument('--dry-run', action='store_true')
     args = ap.parse_args()
 
@@ -257,7 +268,7 @@ def main():
         want = {x.strip().upper() for x in args.symbols.split(',') if x.strip()}
         syms = [s for s in syms if s in want]
 
-    do_daily = not args.intraday_only
+    do_daily = not (args.intraday_only or args.__dict__.get('1m_only'))
     do_intra = not args.daily_only
 
     ib = IB()
@@ -270,12 +281,16 @@ def main():
         for sym in syms:
             print(f"\n=== {sym} ===")
             n_daily = n_intra = 0
-            if do_daily:
-                n_daily = backfill_daily(ib, sym, args.dry_run)
+            if args.__dict__.get('1m_only'):
+                n_intra = backfill_1m_only(ib, sym, args.dry_run)
                 _pace()
-            if do_intra:
-                n_intra = backfill_intraday(ib, sym, args.dry_run)
-                _pace()
+            else:
+                if do_daily:
+                    n_daily = backfill_daily(ib, sym, args.dry_run)
+                    _pace()
+                if do_intra:
+                    n_intra = backfill_intraday(ib, sym, args.dry_run)
+                    _pace()
             summary.append((sym, n_daily, n_intra))
     finally:
         ib.disconnect()

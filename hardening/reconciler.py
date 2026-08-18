@@ -32,6 +32,8 @@ TRACKED_TAGS = {
     'MNQ_DONCHIAN': 'LONG', 'MNQ_RSI2': 'LONG',
     # intraday MES
     'MES_FADESHORT': 'SHORT', 'MES_DONCH15': None,
+    # VWAP equity-index intraday sleeve (bidirectional — side stored in row)
+    'MES_VWAP': None, 'MNQ_VWAP': None,
     # gold momentum (bidirectional — side MUST be stored in the POSITION row,
     # like MES_DONCH15; None here means "resolve from the row or fail closed")
     'GC_DONCHIAN': None, 'GC_TSMOM': None,
