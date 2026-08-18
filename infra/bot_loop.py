@@ -87,6 +87,8 @@ def main():
             print(f"[bot_loop] bad --daily {args.daily!r} (want HH:MM)", flush=True)
             sys.exit(2)
 
+    CATCHUP_MIN = 10  # restart within this many min AFTER the daily time -> run now (catch-up)
+    first = True
     while True:
         now = dt.datetime.now(NY)
         if args.rth_only and not _in_rth(now):
@@ -96,6 +98,24 @@ def main():
                   f"to next open {nxt:%Y-%m-%d %H:%M %Z}", flush=True)
             time.sleep(secs)
             continue
+
+        # Daily bots must NOT fire off-hours on service (re)start. A deploy at
+        # 02:07 ET ran the 19:00 daily bot immediately, producing spurious
+        # off-hours entries (gold fired two LONGs that timed out UNKNOWN).
+        # Only run the immediate first cycle within a small catch-up window of
+        # the scheduled time; otherwise sleep straight to the next schedule.
+        if first and args.daily:
+            sched = now.replace(hour=hh, minute=mm, second=0, microsecond=0)
+            delta = (now - sched).total_seconds()
+            if not (0.0 <= delta <= CATCHUP_MIN * 60):
+                nxt = _next_daily(hh, mm, now)
+                secs = (nxt - now).total_seconds()
+                print(f"[bot_loop] daily {args.daily} — off-schedule start, sleeping "
+                      f"{secs / 3600:.1f}h to {nxt:%Y-%m-%d %H:%M %Z}", flush=True)
+                time.sleep(secs)
+                first = False
+                continue
+        first = False
 
         run_once(cmd)
 
