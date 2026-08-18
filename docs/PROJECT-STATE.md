@@ -126,6 +126,22 @@ tiny-drawdown strategy outranks a high-return high-drawdown one. PF/Sharpe/retur
 are reported but demoted to tie-breakers. Risk per trade: **0.5–1% max**, hard daily
 loss cap, mandatory stops + trailing (already fail-closed). No asset priority.
 
+### Daily-loss limit — ONE authoritative policy (no ambiguity)
+
+Effective daily-loss halt, **as enforced by code**, is per-lane:
+
+| Lane | Enforced by | Daily-loss limit |
+|---|---|---|
+| Index futures (MES/MNQ) | `bot/risk.py` RiskEngine | 2% × sleeve ($350k) = **$7,000** (paper) |
+| Gold (MGC) | RiskEngine | 2% × sleeve ($250k) = **$5,000** (paper) |
+| VWAP sleeve (MES/MNQ) | RiskEngine | 2% × sleeve ($25k) = **$500** (paper) |
+| Intraday MES | RiskEngine | 2% × `INTRA_RISK_BUDGET` (paper) |
+| RH equities | `live_equities.py` `RH_DAY_LOSS_CAP` | **$150 flat** |
+
+- Futures lanes: `max_daily_loss_pct` (2%) × `risk_budget_usd`, checked before every entry, persisted in `RISK#`.
+- RH lane: flat `$150/day` realized-loss throttle, separate from RiskEngine.
+- **Micro-live note:** the "$150/day" plan target equals `2% × $7,500` sleeve. When funding live, set the sleeve so `2% × budget = $150` — do NOT carry the paper $350k/$250k sleeves into live. There is no single global "$1,000" limit; the value above is the one actually enforced.
+
 ## Next actions (VPS)
 
 1. **Robinhood small-capital live (the live lane):** build the small-ticket liquid
