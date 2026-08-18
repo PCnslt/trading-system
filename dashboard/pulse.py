@@ -698,7 +698,112 @@ def _ibkr_inventory():
     return out
 
 
+# ============================ data health (SOURCE → AGE → STATE) ============================
+# The 2026-08-16 data-lake freeze disabled a set of pure data-lake jobs in the SYSTEM
+# crontab. State below is DERIVED from each feed's last-observed timestamp + scheduler
+# state — never synthesized from an assumption. This is the fix for the false
+# "news active / 2,085 today" report: a bare DynamoDB count is historical, not "today".
+_FROZEN_JOBS = {
+    "NEWS#":         ("market_research.py", "2026-08-16"),
+    "OHLCV#":        ("data/ingest.py",     "2026-08-16"),
+    "crypto-tick/":  ("crypto_tick.py",     "2026-08-16"),
+    "macro/":        ("fred_collect.py",    "2026-08-16"),
+    "news-archive/": ("newsapi_ingest.py",  "2026-08-16"),
+    "fmp/":          ("fmp_ingest.py",      "2026-08-16"),
+}
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _dyn_last(pk):
+    """Latest epoch ts for a DynamoDB feed (sk='latest' get_item, else query desc)."""
+    try:
+        r = _table.get_item(Key={"pk": pk, "sk": "latest"})
+        if r.get("Item"):
+            return _ts(r["Item"])
+    except Exception:
+        pass
+    try:
+        r = _table.query(KeyConditionExpression=Key("pk").eq(pk),
+                         ScanIndexForward=False, Limit=1)
+        items = r.get("Items", [])
+        return _ts(items[0]) if items else 0
+    except Exception:
+        return 0
+
+
+@st.cache_data(ttl=60, show_spinner=False)
+def _news_state():
+    """News sentiment (NEWS#<date>): latest date + today's count (paginated scan)."""
+    today = now_utc().date().isoformat()
+    last_date = ""
+    today_n = 0
+    try:
+        for it in _scan_all("NEWS#"):
+            d = str(it.get("pk", "")).replace("NEWS#", "")
+            if d and d > last_date:
+                last_date = d
+            if d == today:
+                today_n += 1
+    except Exception:
+        pass
+    return last_date, today_n
+
+
+def _state_badge(frozen, last_ts):
+    """🟢 ACTIVE / 🟠 STALE / 🔒 DISABLED from scheduler state + age."""
+    if frozen:
+        return "🔒 DISABLED"
+    if last_ts and (now_utc().timestamp() - last_ts) < 26 * 3600:
+        return "🟢 ACTIVE"
+    return "🟠 STALE"
+
+
+def _render_data_health():
+    st.subheader("🩺 Data health — source → last observed → age → state")
+    st.caption("Ground-truth only: state derives from each feed's last-observed timestamp + "
+               "scheduler state, never from an assumption. 🔒 = scheduler off "
+               "(2026-08-16 data-lake freeze).")
+    inv = _s3_cold_inventory()
+
+    def s3_ts(p):
+        d = inv.get(p, {})
+        return d.get("last_ts", 0) if not d.get("error") else 0
+
+    last_news_date, news_today = _news_state()
+    rows = []
+
+    def add(label, frozen, ts, producer, last_override=None):
+        state = _state_badge(frozen, ts)
+        if last_override is not None:
+            last, age = last_override, "—"
+        elif ts:
+            last = dt.datetime.fromtimestamp(ts, NY).strftime("%Y-%m-%d %H:%M ET")
+            age = _age_str(ts)
+        else:
+            last, age = "—", "—"
+        rows.append((label, state, last, age, producer))
+
+    add("News sentiment `NEWS#`", True, None, "market_research.py",
+        last_override=f"{last_news_date or '—'} · {news_today} today")
+    add("Equity OHLCV `OHLCV#AAPL`", True, _dyn_last("OHLCV#AAPL"), "data/ingest.py")
+    add("Crypto ticks `QUOTE#BTCUSDT`", True, _dyn_last("QUOTE#BTCUSDT"), "crypto_tick.py")
+    add("Futures L1 `QUOTE#MES`", False, _dyn_last("QUOTE#MES"), "futures-tick-recorder (RTH)")
+    add("Crypto signals `SIGNAL#BTCUSDT_MOM_DONCHIAN`", False,
+        _dyn_last("SIGNAL#BTCUSDT_MOM_DONCHIAN"), "crypto_signals.py · 30m")
+    add("`futures-bars/`", False, s3_ts("futures-bars/"), "daily_collect.py")
+    add("`futures-ticks/`", False, s3_ts("futures-ticks/"), "futures-tick-recorder")
+    add("`orderbook/`", False, s3_ts("orderbook/"), "orderbook-collector")
+    add("`yf/`", False, s3_ts("yf/"), "yf_collect.py")
+    add("`macro/`", True, s3_ts("macro/"), "fred_collect.py")
+    add("`crypto-tick/`", True, s3_ts("crypto-tick/"), "crypto_tick.py")
+    add("`news-archive/`", True, s3_ts("news-archive/"), "newsapi_ingest.py")
+    add("`fmp/`", True, s3_ts("fmp/"), "fmp_ingest.py")
+    st.table([("feed", "state", "last observed", "age", "producer")] + rows)
+
+
 def render_data_cold():
+    _render_data_health()
+    st.divider()
     st.subheader("🧊 Cold archive — S3 `trading-datalake-920641308584`")
     st.caption("Every fetch is persisted here (never discarded). Bounded scan (≤5k objects/prefix) — "
                "large prefixes (yf/, futures-bars/) are truncated: counts show ≥ and 'latest write' "
@@ -730,6 +835,4 @@ def render_data_cold():
             irows.append((p.rstrip("/"), "⚠️ read error" if d.get("error") else str(d.get("total", 0))))
         st.table([("ibkr/ sub-prefix", "objects")] + irows)
 
-    st.warning("`futures-ticks/` = 0 objects — the tick recorder has not yet captured a live RTH session "
-               "(deployed after Friday RTH close + IB Gateway down since Sat 02:11 ET). First real capture: "
-               "the next RTH session after the gateway logs back in.")
+    st.caption("Prefix freshness/liveness is shown in the 🩺 Data health panel above and on Live Pulse.")

@@ -149,10 +149,10 @@ with tab_sched:
 |---|---|---|
 | **every 45s** | reconcile-daemon → `RECONCILE/system` (broker vs state) | systemd |
 | **every 5m** | reconcile watchdog → Telegram on non-MATCH | Hermes cron |
-| **every 10m** | crypto_tick.py → Binance.US L1 ticks (`QUOTE#` + `crypto-tick/`) | system crontab |
+| **every 10m** | ~~crypto_tick.py → Binance.US L1 ticks~~ ⛔ FROZEN (2026-08-16 data-lake freeze) | system crontab |
 | **every 30m** | IB Gateway health watchdog → Telegram | Hermes cron |
 | **every 30m** | crypto signal lanes (sweep + Donch200) — signal-only, local | Hermes cron |
-| **every 30m** | market_research.py → news sentiment (`NEWS#`) | system crontab |
+| **every 30m** | ~~market_research.py → news sentiment (`NEWS#`)~~ ⛔ FROZEN (2026-08-16) | system crontab |
 | **Mon–Fri */15, 09:00–16:45** | intraday MES (FADESHORT + DONCH15); bot self-gates entries 09:30–15:30, flatten 15:45 | Hermes cron |
 | **Mon–Fri 09:30–16:00** | futures L1 tick recorder (clientId 74) → `futures-ticks/` | systemd |
 | 21:15 | ~~data engine: US stocks daily (~6.9k)~~ ⛔ PAUSED — pivoted to IBKR | system crontab |
@@ -162,12 +162,12 @@ with tab_sched:
 | 00:00 | IB Gateway native auto-restart (token re-login, no 2FA) | systemd |
 | Sun 08:00 | ~~data engine: universe refresh (~7k)~~ ⛔ PAUSED (universe list still cached + used by IBKR collector) | system crontab |
 | Sun 09:00 | IB Gateway weekly cold restart → 2FA re-login | systemd timer |
-| 17:00 | ingest.py (daily aggregates) | system crontab |
-| 17:45 | options_chains.py (futures options metadata) | system crontab |
-| 18:00 | fred_collect.py (macro) | system crontab |
-| 18:15 | fmp_ingest.py (quote/profile) | system crontab |
+| 17:00 | ~~ingest.py (daily aggregates)~~ ⛔ FROZEN (2026-08-16) | system crontab |
+| 17:45 | ~~options_chains.py (futures options metadata)~~ ⛔ FROZEN (2026-08-16) | system crontab |
+| 18:00 | ~~fred_collect.py (macro)~~ ⛔ FROZEN (2026-08-16) | system crontab |
+| 18:15 | ~~fmp_ingest.py (quote/profile)~~ ⛔ FROZEN (2026-08-16) | system crontab |
 | 18:30 | yf_collect.py (ETFs/sectors/futures/**fx+crosses**/crypto — daily + 1h) | system crontab |
-| 18:45 | newsapi_ingest.py | system crontab |
+| 18:45 | ~~newsapi_ingest.py~~ ⛔ FROZEN (2026-08-16) | system crontab |
 | **19:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2) | Hermes cron |
 | 19:10 | live_gc.py (gold momentum — PAPER EXEC: GC Donchian L/S + TSMOM) | Hermes cron |
 | 19:15 | equity_signals.py (equities, signal-only) | Hermes cron |
@@ -251,7 +251,8 @@ with tab_live:
             _sc = _n.get('score', '0')
             st.markdown(f"{_emoji} **{_lbl}** ({_sc}) — {_n.get('title','')} · `{_n.get('source','')}`")
     else:
-        st.caption("No headlines yet — first research run pending.")
+        st.caption("🔒 News pipeline frozen (2026-08-16 data-lake freeze) — no headlines ingested since Aug 15. "
+                   "See the 🩺 Data health panel on the Data tab for live feed state.")
 
     st.divider()
     st.subheader("🕹️ Controls")
