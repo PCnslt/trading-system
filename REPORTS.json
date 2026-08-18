@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-16T22:31:00-04:00",
+  "updated": "2026-08-17T22:18:57-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -247,6 +247,55 @@
         "$700 pending deposit still settling - re-pull and re-size against actual buying power before first live order",
         "Build small-ticket liquid sub-universe ($5-35, 20d $vol) - current universe drifted >$35",
         "Paper-forward >=30 days before flipping RH_EXECUTION_MODE=LIVE"
+      ]
+    },
+    {
+      "ts": "2026-08-17T13:40:24-04:00",
+      "task": "Dashboard overhaul — added Trading tab (candlestick charts + live bot logs)",
+      "summary": "Rebuilt dashboard to show real day-trading, not just project progress. New \"Trading\" tab (first): (1) altair candlestick charts with the exact indicators the bots compute — intraday MES DONCH15 (20-bar Donchian channel) + FADESHORT (Bollinger 20/2 + RSI2), daily MES/MNQ (20d Donchian + 200d SMA + RSI2), GC (Donchian + 3-ATR chandelier ref); (2) live bot logs tailing each bot cron output; (3) live signal state per strategy. New modules dashboard/charts.py + logs.py + trading_view.py. Verified: py_compile OK, AppTest 0 exceptions, altair specs resolve, service restarted HTTP 200.",
+      "commits": [
+        "ae0f4c9"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-17T16:27:48-04:00",
+      "task": "Health check -> found + fixed critical reconciler scan-pagination bug (system had auto-paused)",
+      "summary": "User asked how the system was doing. Ground-truth check found RECONCILE MISMATCH \"unaccounted fills: MES\" + CONTROL auto-PAUSED (fail-closed, correct). Broker was FLAT (0 positions, no capital at risk) but had one today-fill (SLD 1 MES @7798.75 = morning manual flatten of orphaned long). Root cause: reconciler _scan_positions/_internal_traded_today did a single table.scan() (one 1MB page) on a 2.3MB table, silently missing TRADE#/POSITION# rows on later pages -> false \"unaccounted fills\". Fixed with paginated _scan_prefix() helper (loops LastEvaluatedKey). 184 tests pass; reconcile flips MATCH (streak 0); CONTROL resumed RUNNING after restarting reconcile-daemon to load the fix. Also paginated the same bug in live_equities.load_book + status_report.report_positions. Commits 65430ee (reconciler) + 064b135 (live_equities/status_report).",
+      "commits": [
+        "65430ee"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-17T16:44:33-04:00",
+      "task": "Full codebase review: fixed rh_client fail-closed gaps + scan pagination (dashboard) + CFN drift",
+      "summary": "Systematic defect review across hardening/ bot/ data_engine/ dashboard/ infra/. Already fixed this session: reconciler scan pagination (65430ee) + live_equities/status_report (064b135). New findings: (1) rh_client._flatten placed the emergency reversal with NO size (quantity=None, dollar_amount=None) -> would be rejected -> naked position; also a 1.x-share fill left the fraction unprotected. Fixed both (flatten requires size; any non-whole fill reversed). (2) dashboard app.py/pulse.py single-page scans (same pagination bug class) -> added _scan_all(). (3) session_calendar deprecated utcnow(). (4) CFN drift: cloudformation-stack.yaml SG GroupDescription mismatched live (\"Trading system VPS\") -> synced; recovery template profile name -> trading-vps-profile. 184 tests pass, AppTest 0 exceptions, dashboard HTTP 200. Commits d0187e4 03e6c3c 8cd20eb. Verified clean files: exec_manager, risk, risk_ledger, control, reconciler, rh_client token lifecycle, s3store (paginator), tick_recorder.",
+      "commits": [
+        "d0187e4"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-17T19:45:56-04:00",
+      "task": "Daily trading-system status summary (cron)",
+      "summary": "Gateway active (4002 LISTEN). Positions: none (all flat). Intraday MES_FADESHORT + MES_DONCH15: signal=NONE pos=0, no trades today. Data: IBKR intraday bars ok (2026-08-17), equity ingest AAPL 2026-08-14 (weekend), crypto QUOTE#BTCUSDT ~25h old, reconcile MATCH. No IBKR login errors.",
+      "commits": [],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-17T22:18:57-04:00",
+      "task": "Execution mandate RETRY — forward-test all paper lanes (fix signal-only), RH micro-live prep, IBKR Gate 5 + $500 live option",
+      "summary": "PART 1 — Forward test: 3 'signal-only' root causes found & fixed (no real-money orders).\n(a) Equities RSI2 (live_equities.py): the simulated next-open fill was never persisted — a PENDING position filled in-memory only and stayed PENDING forever, so the round-trip journal RHTRADE# never got an entry (0 round trips ever). FIXED: persist OPEN on fill + fill only on a later bar. VERIFIED live: AVGO advanced PENDING->OPEN (entry 397.08, stop 363.84 = 2xATR); AMZN correctly stays PENDING (fills tomorrow).\n(b) Gold (live_gc.py): fired LONG today (Donchian close 4467.7 > 20d-high 4445.0 AND TSMOM 12m +33.9%) but wrote NO fill — full GC ($100/pt) at 1% risk needs a ~$2.3M sleeve (3-ATR stop ~$23k/ctr) so size=0. FIXED: forward-test now on MGC micro ($10/pt, GC_CONTRACT=MGC, $250k sleeve) -> 1 contract (~$2.3k stop risk = 0.9%). Reconciler TRACKED_TAGS now includes MGC_DONCHIAN/MGC_TSMOM. MGC 202608 COMEX resolves (multiplier 10, verified).\n(c) Index (live.py): flat today (no signal — healthy), but 1% risk @ $50k sleeve returned size=0 for EVERY MES/MNQ lane (MES Donchian 3-ATR ~$1.2k, MNQ 3-ATR ~$3.3k/ctr). FIXED: paper sleeve $50k->$350k -> MES Donchian 2 / RSI2 4 / MNQ 1 each (sizing math verified).\nAll 184 tests green (fixed one UTC-vs-ET date-literal flake in test_risk_ledger).\n\nPART 2 — RH micro-live: 'tests fine' (>=1 clean simulated fill -> protective-exit -> P&L entry tonight, zero errors) = NOT met. Fill bug fixed + verified (AVGO fill correct), but no position completed a full round trip tonight (AVGO holding, AMZN pending — RSI2 dip-buyer is a rare-event strategy holding up to 5 days). Recommendation: DO NOT flip live tomorrow; continue paper-forward until >=1 clean round trip completes. Prepared (DRAFT, NOT activated): RH_EXECUTION_MODE=LIVE + RH_LIVE_ENABLED=true, $50-100 capital, 1-2 whole-share positions, hard protective stop on every entry, 1% risk, $150/day cap. First candidate symbols (sub-$35, 2xATR <= $7/share): F (~$14), AAL (~$15), T/KHC/PFE/WBD (~$25), KVUE/DOW (~$28-31), SNAP/NIO (~$5-10).\n\nPART 3 — IBKR money:\n(a) Gate 5 session 1/10 (2026-08-17): index flat (no signal), intraday flat; the one intraday halt ('unaccounted fills: MES') traces to the ~13:37 manual flatten of an orphaned long (documented 16:27 report; reconciler pagination fix 65430ee already resolved; RECONCILE=MATCH streak 0). 0 new execution defects. Actual simulated fill + P&L = NONE (no signal fired).\n(b) $500 live option: M6E (micro EUR/USD) resolves on paper (12,500 EUR, $1.25/pip, multiplier verified) but 2-ATR stop = 100 pips = $125/contract = 25% of $500 -> REJECT (min position = 1 contract = 25% risk, cannot meet 1% rule; ~$300 margin is secondary). RECOMMEND whole-share equities RSI2 (same edge as the RH lane) on IBKR: 1 share of a sub-$35 name with 2xATR <= $7 meets 1% risk. Go-live: (1) build sub-universe, (2) review_equity_order simulate on a real $15 name, (3) paper-forward >=30d, (4) flip LIVE + reconcile vs get_positions.\n\nNo real-money orders placed tonight. All fills are IBKR-paper or simulated.",
+      "commits": [
+        "95e6a2a"
+      ],
+      "blockers": [
+        "RH 'tests fine' NOT met (no complete round trip tonight) — do NOT flip live tomorrow; continue paper-forward",
+        "$700 RH deposit still settling — re-pull buying power before first live order",
+        "Small-ticket liquid sub-universe ($5-35, 20d $vol >= ~$50M/day) still needs building (only T sub-$35 today)",
+        "Owner still must decide satellite (5% cap, recommended) vs concentrated ($10-150 tickets)",
+        "M6E margin ~$300 is approximate (verify exact at go-live); M6E rejected on risk regardless"
       ]
     }
   ]
