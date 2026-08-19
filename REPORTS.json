@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-19T13:00:27-04:00",
+  "updated": "2026-08-19T13:40:31-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -454,6 +454,17 @@
       "summary": "RECONSTRUCTED 08-18 (deterministic replay of live.py compute() on finalized yfinance close): the lost EOD day had a REAL RSI(2)<10 buy-the-dip LONG on BOTH MES and MNQ (ES close 7714.0 RSI2 9.8 > SMA200 7110; NQ 29586.0 RSI2 9.8). The 02:02 off-hours run had read a PARTIAL Globex bar (close 7737.5 / RSI2 13.4) -> classified flat, then 19:00 EOD was dedupe-skipped. Net: 1 RSI2 LONG entry (2 contracts) lost to the operational bug (already fixed 5277bc7). NOT backfilled (would falsify forward-test). GATE5: 08-18 recorded as VOIDED session (data-integrity defect, not execution defect); counter = 1 valid/10. Session 2 = tonight 08-19, armed clean (no stale RUN# marker, fix live). HEADS-UP: MNQ forming 08-19 bar still RSI2 9.8 (dip live) -> tonight may fire MNQ RSI2 LONG if NQ stays weak through 16:00 close; ES already bounced (RSI2 44). docs/GATE5_LOG.md updated with reconstruction table.",
       "commits": [
         "34a5c38"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-19T13:40:31-04:00",
+      "task": "Double-effort: make missed/failed signals structurally impossible across markets",
+      "summary": "AUDIT of every lane for the 'miss a signal' failure class. FIXED 3 things: (1) live.py + live_gc.py STILL had mark_ran_today BEFORE the data fetch+eval (only live_equities was correct) — extracted a pure evaluate_signal() (no IBKR) that logs SIGNAL# for every strategy, moved mark_ran AFTER it, so a crash before eval leaves no RUN# marker and a same-day retry re-evaluates (the 08-18 class now impossible). (2) BUILT infra/missed_signal_check.py — post-EOD deterministic replay of the finalized close vs logged SIGNAL# for index (Donchian+RSI2) + gold (Donchian+TSMOM); alerts on missed/spurious/missing. Validated: reproduces the 08-18 RSI2 LONG exactly. Cron 23:35 UTC Mon-Fri no_agent->Telegram (job 35c8fac5d2bc). (3) FOUND+fixed a latent landmine: infra/secrets.py shadowed stdlib secrets, breaking 'import numpy.random' (ImportError: cannot import name randbits -> also breaks pandas) for any script run as 'python infra/x.py'. Renamed to infra/ssm_secrets.py + updated 42 importers + 2 repo + 2 deployed ibgateway*.sh. Bots were unaffected (they namespace it). 240 tests pass, compile clean, detector runs silent (healthy). crypto/vwap/intraday lanes are state-based/re-RTH so no mark_ran risk. Skills patched (shadow severity + mark-after-eval).",
+      "commits": [
+        "d7ec6d8",
+        "44eb3cb",
+        "f654811"
       ],
       "blockers": []
     }
