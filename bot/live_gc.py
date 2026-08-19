@@ -70,7 +70,7 @@ from hardening.reconciler import reconcile
 from hardening.exec_manager import ExecutionManager, TradeIntent
 from control import (get_control, control_state, control_allows_entry, wants_flatten,
                      clear_flatten, ack_flatten, flatten_ibkr, already_ran_today,
-                     mark_ran_today, ControlUnavailable, account_mode_ok)
+                     mark_ran_today, data_finalized, ControlUnavailable, account_mode_ok)
 
 load_dotenv()
 # --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
@@ -438,6 +438,11 @@ def main():
     dynamo = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
     today = dt.date.today().isoformat()
     mode = 'LIVE' if LIVE else 'PAPER'
+
+    # Data-freshness guard: daily signals need the FINALIZED close (>= 17:00 ET).
+    if not data_finalized():
+        print(f"[{today}] {mode} SKIP — before daily-close finalization (stale-data guard)")
+        return
 
     if already_ran_today(dynamo, BOT_KEY, today):
         print(f"[{today}] {mode} already ran today (RUN#{BOT_KEY}) — skip (dedupe guard)")

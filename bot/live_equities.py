@@ -293,6 +293,16 @@ def main():
     table = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
     today = dt.date.today().isoformat()
 
+    # Data-freshness guard: daily signals need the FINALIZED close (>= 17:00 ET).
+    try:
+        import datetime as _dt
+        from zoneinfo import ZoneInfo
+        if _dt.datetime.now(ZoneInfo('America/New_York')).hour < 17:
+            print(f'[{today}] live_equities SKIP — before daily-close finalization (stale-data guard)')
+            return
+    except Exception:
+        pass
+
     # once-per-day dedupe (fail-open on read error, like equity_signals)
     if not args.dry_run:
         try:

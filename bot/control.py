@@ -99,6 +99,24 @@ def mark_ran_today(table, key, today):
         print(f"[control] mark_ran_today failed (non-fatal): {e}")
 
 
+def data_finalized(finalize_hour_et=17):
+    """True if the ET clock is at/after the daily-close finalization hour.
+
+    The daily bots compute signals on the FINALIZED daily close. A run before
+    ~17:00 ET uses the in-progress intraday bar and writes a STALE signal — the
+    2026-08-18 deploy ran at 02:02 ET, stamped RUN# with stale data, and the
+    proper 19:00 EOD run was then skipped. This guard makes any off-hours run a
+    no-op (no RUN#, no signal) so the day's real EOD run still happens. Fail-open
+    on clock error (never block trading on a clock read).
+    """
+    try:
+        import datetime as _dt
+        from zoneinfo import ZoneInfo
+        return _dt.datetime.now(ZoneInfo('America/New_York')).hour >= finalize_hour_et
+    except Exception:
+        return True
+
+
 def set_control(table, **fields):
     """Read-modify-write CONTROL/system, PRESERVING existing flags.
 
