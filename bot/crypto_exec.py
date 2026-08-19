@@ -5,7 +5,8 @@ momentum is the one family that survives realistic cost on crypto, while
 mean-reversion dies). Pure Donchian-20 channel breakout, LONG-only spot:
 
   entry  = close > prior 20-day high   (fresh-high breakout)
-  exit   = close < prior 20-day low    (channel breakdown) OR 2*ATR(14) stop
+  exit   = chandelier trail (best price since entry - 3*ATR, ratchets up only)
+           OR close < prior 20-day low (channel breakdown)
 
 No 200d-SMA filter — the prior DONCH200 variant's 200d-SMA "regime filter" is
 what made it a buy-and-hold proxy (long during every bull), inflating its PF.
@@ -52,7 +53,7 @@ FEE_BPS = 0.001          # 10 bps round-trip taker fee
 
 FAMILY = 'MOM20'         # pure Donchian-20 momentum (replaces DONCH200)
 LOOKBACK = 20
-STOP_ATR = 2.0
+CHAND_ATR = 3.0    # chandelier trailing stop: best price since entry - 3*ATR (ratchets up only)
 MIN_BARS = 25            # enough for a Donchian-20 channel (vs 220 for the old 200d-SMA)
 
 UNIVERSE = [
@@ -96,7 +97,7 @@ def analyze_momentum(df):
         return ('LONG',
                 f'close {last_close:.2f} > 20d-high {don_hi:.2f}',
                 {'don_hi': _s(don_hi), 'don_lo': _s(don_lo), 'atr': _s(atr14),
-                 'stop': _s(last_close - STOP_ATR * atr14)})
+                 'stop': _s(last_close - CHAND_ATR * atr14)})
     if not math.isnan(don_lo) and last_close < don_lo:
         return ('BREAKDOWN',
                 f'close {last_close:.2f} < 20d-low {don_lo:.2f}',
@@ -191,7 +192,8 @@ def main():
                     print(f'  [dry] {tag} BUY {qty:.6f} @ {entry:.2f} stop {stop:.2f}')
                 else:
                     put_state(table, tag, pos=_s(qty), side='LONG', entry=_s(entry),
-                              stop=_s(stop), entry_ts=now_ts, session_date=today)
+                              stop=_s(stop), peak=_s(entry),
+                              entry_ts=now_ts, session_date=today)
                     record_trade(table, tag, 'BUY', qty, entry, 'breakout', 0.0, now_ts)
                 print(f'  [{sym}] ENTER LONG {qty:.6f} @ {entry:.2f} (stop {stop:.2f}) — {reason}')
             else:
@@ -199,11 +201,19 @@ def main():
         else:
             entry = _f(state.get('entry'))
             stop = _f(state.get('stop'))
+            peak = _f(state.get('peak')) or entry
+            atr = _f(extra.get('atr')) or 0.0
+            # chandelier trail: ratchet peak up, raise the stop up (never down)
+            peak = max(peak, px)
+            if atr > 0:
+                trail = peak - CHAND_ATR * atr
+                if trail > stop:
+                    stop = trail
             exit_px = None
             exit_reason = None
             if px <= stop:
                 exit_px = px * (1 - SLIP_BPS)
-                exit_reason = 'stop'
+                exit_reason = 'chandelier'
             elif signal == 'BREAKDOWN':
                 exit_px = px * (1 - SLIP_BPS)
                 exit_reason = 'breakdown'
@@ -219,7 +229,11 @@ def main():
                     add_pnl(table, today, pnl)
                 print(f'  [{sym}] EXIT ({exit_reason}) {pos:.6f} @ {exit_px:.2f} pnl {pnl:.2f}')
             else:
-                print(f'  [{sym}] holding {pos:.6f} @ {entry:.2f} (stop {stop:.2f}, px {px:.2f})')
+                if not args.dry_run:
+                    put_state(table, tag, pos=_s(pos), side='LONG', entry=_s(entry),
+                              stop=_s(stop), peak=_s(peak),
+                              entry_ts=state.get('entry_ts'), session_date=state.get('session_date'))
+                print(f'  [{sym}] holding {pos:.6f} @ {entry:.2f} (trail {stop:.2f}, px {px:.2f})')
 
     print('\ncrypto_exec done.')
 
