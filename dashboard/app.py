@@ -168,9 +168,10 @@ with tab_sched:
 | 18:15 | ~~fmp_ingest.py (quote/profile)~~ ⛔ FROZEN (2026-08-16) | system crontab |
 | 18:30 | yf_collect.py (ETFs/sectors/futures/**fx+crosses**/crypto — daily + 1h) | system crontab |
 | 18:45 | ~~newsapi_ingest.py~~ ⛔ FROZEN (2026-08-16) | system crontab |
-| **19:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2) | Hermes cron |
-| 19:10 | live_gc.py (gold momentum — PAPER EXEC: GC Donchian L/S + TSMOM) | Hermes cron |
+| **19:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2) | systemd |
+| 19:10 | live_gc.py (gold momentum — PAPER EXEC: MGC Donchian L/S + TSMOM) | systemd |
 | 19:15 | equity_signals.py (equities, signal-only) | Hermes cron |
+| 19:20 | live_equities.py (RH equities RSI2 — PAPER signal + fills) | systemd |
 | 19:20 | daily_collect.py (futures bars) | system crontab |
 | 19:45 | daily trading summary → Telegram | Hermes cron |""")
 
@@ -191,7 +192,6 @@ crypto ticks, news, health watchdogs, and the reconcile daemon run 24/7/365 rega
     st.markdown("#### ⏸️ Paused (kept, not running)")
     st.markdown("""| Job | Why |
 |---|---|
-| Paper signals — bonds (19:05 ET) | SHELVED (Gate-1: dies at 1-tick slip) |
 | Weekly strategy scan (Sun 14:00 ET) | screening CLOSED (Gate-1) |""")
 
 # ============================ LIVE TAB ============================

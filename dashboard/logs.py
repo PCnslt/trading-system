@@ -15,13 +15,10 @@ CRON_OUTPUT = os.path.expanduser('~/.hermes/cron/output')
 # script filename (in ~/.hermes/scripts/) -> friendly label. Kept in run-order.
 _SCRIPT_LABELS = {
     'paper_intraday.sh':        ('Intraday MES',     'FADESHORT + DONCH15 — every 15m RTH'),
-    'paper_index_futures.sh':   ('Index EOD',        'live.py Donchian + RSI2 — 19:00 ET'),
-    'paper_gc_exec.sh':         ('Gold momentum',    'live_gc.py Donchian L/S — 19:10 ET'),
     'paper_equity_signals.sh':  ('Equities signals', '19:15 ET'),
-    'paper_rh_equities.sh':     ('RH equities RSI2', '19:20 ET'),
     'paper_crypto_signals.sh':  ('Crypto signals',   'every 30m'),
     'paper_crypto_paper.sh':    ('Crypto Donch200',  'every 30m'),
-    'paper_bonds.sh':           ('Bonds (shelved)',  'paused'),
+    'paper_crypto_exec.sh':     ('Crypto exec',      'MOM20 — every 30m'),
 }
 
 
