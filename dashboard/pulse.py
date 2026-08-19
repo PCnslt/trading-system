@@ -496,10 +496,11 @@ def _render_positions():
         tag = p["pk"].split("#", 1)[-1]
         side = p.get("side", "LONG")
         pos = _num(p.get("pos")) or 0
+        pos_str = str(int(pos)) if float(pos).is_integer() else f"{pos:.6f}".rstrip('0').rstrip('.')
         entry = _num(p.get("entry"))
         stop = _num(p.get("stop"))
         arrow = "▲" if side == "LONG" else "▼"
-        st.markdown(f"{arrow} **{tag}** — {int(pos)} {side.lower()} "
+        st.markdown(f"{arrow} **{tag}** — {pos_str} {side.lower()} "
                     f"· entry {entry if entry is not None else '—'} "
                     f"· stop {stop if stop is not None else '—'}")
 

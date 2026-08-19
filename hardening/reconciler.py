@@ -190,11 +190,21 @@ def _scan_prefix(table, prefix: str) -> list:
 
 
 def _scan_positions(table):
-    """All open POSITION#<tag>/current rows as [(tag, state), ...]."""
+    """Open POSITION#<tag>/current rows for broker-tracked (futures) tags only.
+
+    Crypto paper-execution (MOM20) writes POSITION#<sym>_MOM20 with a FRACTIONAL
+    'pos' (e.g. 0.039992 BTC) and has NO broker counterpart (simulated fills).
+    Those rows are skipped — the reconciler only reconciles the integer-contract
+    futures tags in TRACKED_TAGS. (Without this filter, int('0.039992') crashes
+    the whole reconcile -> UNKNOWN the moment a crypto paper position opens.)
+    """
     out = []
     for it in _scan_prefix(table, 'POSITION#'):
+        tag = it['pk'].split('#', 1)[1]
+        if tag not in TRACKED_TAGS:
+            continue
         if int(it.get('pos', 0) or 0) != 0:
-            out.append((it['pk'].split('#', 1)[1], it))
+            out.append((tag, it))
     return out
 
 

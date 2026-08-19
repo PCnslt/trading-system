@@ -224,7 +224,7 @@ def report_positions():
         return [f'  (scan error: {e})']
     open_rows = []
     for it in items:
-        if int(it.get('pos', 0)) > 0:
+        if float(it.get('pos', 0) or 0) > 0:
             tag = it['pk'].split('#', 1)[1]
             open_rows.append((tag, it))
     if not open_rows:

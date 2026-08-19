@@ -130,6 +130,15 @@ def test_reconcile_match_short_position(fake_table):
     assert r.status == 'MATCH', r.reason
 
 
+def test_reconcile_ignores_fractional_crypto_positions(fake_table):
+    """Crypto paper-execution writes FRACTIONAL POSITION# rows with no broker
+    counterpart. They must be IGNORED, not crash int('0.039992')."""
+    pos_row(fake_table, 'BTCUSDT_MOM20', '0.039992', side='LONG')
+    pos_row(fake_table, 'ETHUSDT_MOM20', '1.094102', side='LONG')
+    r = reconcile(FakeIB(), fake_table, today_iso=TODAY)
+    assert r.status == 'MATCH', r.reason
+
+
 def test_reconcile_match_rsi2_with_stop(fake_table):
     # NEVER-LOSE-MONEY: RSI2 now rests a hard stop too.
     pos_row(fake_table, 'MES_RSI2', 1)

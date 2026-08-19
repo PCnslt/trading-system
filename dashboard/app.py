@@ -85,7 +85,7 @@ def _scan_all(filter_expr):
 def scan_positions():
     """All currently-open positions (POSITION#* items with pos>0)."""
     items = _scan_all(Attr('pk').begins_with('POSITION#') & Attr('sk').eq('current'))
-    return [it for it in items if int(it.get('pos', 0)) > 0]
+    return [it for it in items if float(it.get('pos', 0) or 0) > 0]
 
 
 @st.cache_data(ttl=15)
