@@ -1,4 +1,9 @@
-"""Crypto PAPER forward-test — PROMOTED strategy: Donchian-20 + 200d-SMA filter.
+"""SUPERSEDED signal lane (2026-08-19): DONCH200 replaced by crypto_exec.py (MOM20).
+Kept as a SHARED HELPER MODULE — live_price / load_yf / merge_live / wilder_atr are
+imported by crypto_exec.py. The signal-lane main() below is retired (no cron runs it);
+do NOT invoke this file as a script.
+
+Crypto PAPER forward-test — PROMOTED strategy: Donchian-20 + 200d-SMA filter.
 
 Promoted by research/CRYPTO_SWEEP.md as the single best crypto edge:
 DONCHIAN_20+200d — full PF 2.35, OOS PF 1.50 (n=79), maxDD -44%, and every cell

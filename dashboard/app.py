@@ -151,7 +151,7 @@ with tab_sched:
 | **every 5m** | reconcile watchdog → Telegram on non-MATCH | Hermes cron |
 | **every 10m** | ~~crypto_tick.py → Binance.US L1 ticks~~ ⛔ FROZEN (2026-08-16 data-lake freeze) | system crontab |
 | **every 30m** | IB Gateway health watchdog → Telegram | Hermes cron |
-| **every 30m** | crypto signal lanes (sweep + Donch200) — signal-only, local | Hermes cron |
+| **every 30m** | crypto signal lanes (sweep, signal-only) + paper-exec MOM20 — local | Hermes cron |
 | **every 30m** | ~~market_research.py → news sentiment (`NEWS#`)~~ ⛔ FROZEN (2026-08-16) | system crontab |
 | **Mon–Fri */15, 09:00–16:45** | intraday MES (FADESHORT + DONCH15); bot self-gates entries 09:30–15:30, flatten 15:45 | Hermes cron |
 | **Mon–Fri 09:30–16:00** | futures L1 tick recorder (clientId 74) → `futures-ticks/` | systemd |

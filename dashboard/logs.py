@@ -17,7 +17,6 @@ _SCRIPT_LABELS = {
     'paper_intraday.sh':        ('Intraday MES',     'FADESHORT + DONCH15 — every 15m RTH'),
     'paper_equity_signals.sh':  ('Equities signals', '19:15 ET'),
     'paper_crypto_signals.sh':  ('Crypto signals',   'every 30m'),
-    'paper_crypto_paper.sh':    ('Crypto Donch200',  'every 30m'),
     'paper_crypto_exec.sh':     ('Crypto exec',      'MOM20 — every 30m'),
 }
 

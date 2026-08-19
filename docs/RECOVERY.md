@@ -242,15 +242,16 @@ Installed by `hermes gateway install`; **requires `loginctl enable-linger ubuntu
 | Daily trading summary | `45 23` | telegram | ON |
 | IB Gateway health watchdog | `*/30` | telegram | ON |
 | Broker reconcile watchdog | `*/5` | telegram | ON |
-| Paper signals — index futures | `0 23` | telegram | ON |
+| Trading system health monitor | `*/15 13-20 * * 1-5` | origin | ON |
 | Paper signals — equities | `15 23` | telegram | ON |
 | Paper signals — intraday MES | `*/15 13-20 * * 1-5` | local | ON |
 | Paper signals — crypto | `*/30` | local | ON |
-| Paper execution — gold momentum | `10 23` | telegram | ON |
-| Paper fwd — crypto Donch200 | `*/30` | local | ON |
-| Paper signals — bonds | `5 23` | telegram | ⛔ paused |
+| Paper execution — crypto MOM20 (24/7) | `*/30` | local | ON |
 | Weekly strategy scan + refine | `0 18 * * 0` | telegram | ⛔ paused |
-| IBGW 04:00 restart token re-login (one-shot) | once | — | done/off |
+
+> **Daily futures/equities bots run via systemd** (`live-index` 19:00 ET, `live-gold` 19:10,
+> `live-equities` 19:20 ET) — migrated 2026-08-18, NOT cron. The old cron duplicates
+> (index/gold/RH-equities/bonds/crypto-Donch200) were removed 2026-08-19.
 
 > **TZ nuance:** the Hermes gateway caches its timezone at startup and does NOT pick
 > up a live `timedatectl set-timezone` change. The cron exprs above are **left in UTC**
