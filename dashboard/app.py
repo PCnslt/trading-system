@@ -168,7 +168,7 @@ with tab_sched:
 | 18:15 | ~~fmp_ingest.py (quote/profile)~~ ⛔ FROZEN (2026-08-16) | system crontab |
 | 18:30 | yf_collect.py (ETFs/sectors/futures/**fx+crosses**/crypto — daily + 1h) | system crontab |
 | 18:45 | ~~newsapi_ingest.py~~ ⛔ FROZEN (2026-08-16) | system crontab |
-| **19:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2) | systemd |
+| **19:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2 + RSI2PT) | systemd |
 | 19:10 | live_gc.py (gold momentum — PAPER EXEC: MGC Donchian L/S + TSMOM) | systemd |
 | 19:15 | equity_signals.py (equities, signal-only) | Hermes cron |
 | 19:20 | live_equities.py (RH equities RSI2 — PAPER signal + fills) | systemd |
@@ -308,7 +308,7 @@ with tab_arch:
                      ┌─────────────────────┐
                      │  STRATEGY RUNNER     │
                      │  (3 bots, Hermes cron)│
-                     │  live.py        23:00 │  index MES/MNQ (Donchian + RSI2)
+                     │  live.py        23:00 │  index MES/MNQ (Donchian + RSI2 + RSI2PT)
                      │  live_bondsfx  SHELVED│  bonds ZB/ZN (disarmed)
                      │  live_intraday  */15  │  intraday MES (RTH)
                      └──────────┬──────────┘

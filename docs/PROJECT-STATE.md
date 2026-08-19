@@ -55,7 +55,7 @@ Execution-layer hardening is **done** (3 phases):
 
 | Edge | Status | Note |
 |---|---|---|
-| **index-LONG** (Donchian + RSI2-LONG, `live.py`) | ✅ PROMOTED | Sole live-cap candidate. Donchian PF 1.56/1.52/1.43@3t; RSI2-LONG 1.99/2.57/1.88@3t (corr 0.002). |
+| **index-LONG** (Donchian + RSI2-LONG + RSI2PT A/B, `live.py`) | ✅ PROMOTED | Sole live-cap candidate. Donchian PF 1.56/1.52/1.43@3t; RSI2-LONG 1.99/2.57/1.88@3t (corr 0.002). RSI2PT = A/B take-profit variant (+0.5% broker-side limit) forward-testing vs RSI2's RSI2>70/5d exit. |
 | **intraday MES** (FADESHORT + DONCH15, `live_intraday.py`) | ▶️ paper | RTH entries, EOD flatten 15:45 ET. |
 | **gold momentum** (MGC Donchian L/S + TSMOM, `live_gc.py`) | ✅ paper-EXEC | Promoted (EDGE_SWEEP) → IBKR paper execution (clientId 78, ~19:10 ET). Donchian 1.45/1.81 OOS/1.31 IB, 3-tick 1.42; TSMOM 1.37/1.73/1.99, 3-tick 1.35. Donchian = chandelier 3·ATR trail; TSMOM = fixed 3·ATR stop. **Forward-test runs on MGC micro ($10/pt, GC_CONTRACT=MGC, $250k sleeve)** — full GC ($100/pt) at 1% risk needs a ~$2.3M sleeve (size=0); MGC sizes 1 contract (~$2.3k stop risk). |
 | **equities RSI2-dip + Donchian(200d)** (`equity_signals.py`) | ▶️ paper-signal | Promoted (EQUITIES_SWEEP). RSI2 champion (both regimes); Donchian gated by close>200d-MA. Robinhood stays manual. |

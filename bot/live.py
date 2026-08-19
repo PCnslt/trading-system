@@ -69,6 +69,7 @@ LIVE = os.getenv('LIVE', 'false').lower() == 'true'   # flip to true for real mo
 LOOKBACK = 20
 STOP_ATR = 2.0
 BREAKEVEN_ATR = 1.0   # RSI2 breakeven-lock: raise stop to entry once +1*ATR in profit
+TAKE_PROFIT_PCT = 0.005  # RSI2PT A/B variant: broker-side limit exit at +0.5%
 MAX_HOLD = 5
 RSI2_LO = 10.0    # RSI(2) buy-the-dip entry
 RSI2_HI = 70.0    # RSI(2) exit
@@ -220,6 +221,11 @@ STRATEGIES = [
      'entry': rsi2_entry, 'exit': rsi2_exit, 'stop': rsi2_stop,
      'trail': rsi2_trail, 'horizon': 'swing', 'exit_mode': 'close',
      'stop_width': '2xATR fixed + breakeven-lock @ +1ATR'},
+    {'name': 'RSI2PT', 'label': 'RSI(2) buy-dip long + 0.5% take-profit (A/B vs RSI2)',
+     'entry': rsi2_entry, 'exit': rsi2_exit, 'stop': rsi2_stop,
+     'horizon': 'swing', 'exit_mode': 'target',
+     'stop_width': '2xATR fixed + 0.5% broker-side take-profit',
+     'take_profit_pct': TAKE_PROFIT_PCT},
 ]
 
 
@@ -252,6 +258,38 @@ def log_dynamo(table, pk, sk, data):
 def get_state(table, pk, sk):
     r = table.get_item(Key={'pk': pk, 'sk': sk})
     return r.get('Item')
+
+
+def _last_fill_price(ib, symbol, side, qty=None):
+    """Price of the most recent broker fill for `symbol`+`side` (or None).
+
+    Used to attribute an intraday position-close to the ACTUAL fill (a
+    take-profit limit fills at the target, a stop fills at the stop price) —
+    without this the bot would mis-record a target fill as a stop fill and
+    understate the A/B P&L. Reads ib.fills() (Fill has .contract + .execution).
+    """
+    try:
+        fills = ib.fills()
+    except Exception:
+        return None
+    best, best_t = None, None
+    for f in fills:
+        ex = getattr(f, 'execution', None)
+        if ex is None or ex.side != side:
+            continue
+        sym = getattr(getattr(f, 'contract', None), 'symbol', None)
+        if sym != symbol:
+            continue
+        if qty is not None and getattr(ex, 'shares', None) != qty:
+            continue
+        t = getattr(ex, 'time', None)
+        if t is None or (best_t is not None and t <= best_t):
+            continue
+        best_t = t
+        px = getattr(ex, 'price', None) or getattr(ex, 'avgPrice', None)
+        if px is not None:
+            best = float(px)
+    return best
 
 
 def _archive_daily_bar(c, df):
@@ -344,16 +382,20 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
                 'pos': 0, 'stop': '0', 'entry': '0', 'entry_date': '', 'ts': int(time.time())})
             print(f">>> {mode} {tag} EXIT {pos} ({xreason})")
         elif not exec_mgr.is_stop_open(sym, 'LONG', ref=tag):
-            # state long but GTC stop no longer resting -> filled intraday
-            exit_px = stop if stop is not None else detail['close']
+            # position closed intraday (protective stop OR take-profit target
+            # filled). Read the ACTUAL closing fill price so a target fill is
+            # recorded at the target, not mis-attributed to the stop.
+            exit_px = _last_fill_price(ib, sym, 'SELL', qty=pos)
+            if exit_px is None:
+                exit_px = stop if stop is not None else detail['close']
             if risk is not None and entry_px is not None:
                 risk.record_close(realized_pnl('LONG', entry_px, exit_px, c['point_value'], pos))
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
-                'side': 'EXIT', 'qty': pos, 'reason': 'stop-filled (intraday)',
+                'side': 'EXIT', 'qty': pos, 'reason': 'target/stop-filled (intraday)',
                 'strategy': sname, 'ts': int(time.time())})
             log_dynamo(dynamo, f"POSITION#{tag}", 'current', {
                 'pos': 0, 'stop': '0', 'entry': '0', 'entry_date': '', 'ts': int(time.time())})
-            print(f">>> {mode} {tag} EXIT via protective stop (intraday fill)")
+            print(f">>> {mode} {tag} EXIT via protective stop/target (intraday fill)")
         else:
             # HOLD — ratchet the trailing stop (chandelier) for tomorrow.
             if 'trail' in strat:
@@ -398,7 +440,9 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
                                  side='LONG', qty=size, order_type='MKT',
                                  stop_price=float(stop_price), contract_month=front_month(),
                                  bar_time=today, signal_reason=ereason)
-            res = exec_mgr.submit_entry(intent, con)
+            tp_pct = strat.get('take_profit_pct')
+            tp_price = float(detail['close']) * (1 + tp_pct) if tp_pct else None
+            res = exec_mgr.submit_entry(intent, con, take_profit=tp_price)
             if res.status == 'DUPLICATE':
                 print(f">>> {mode} {tag} duplicate signal {res.signal_id} — skip (idempotent)")
                 return
