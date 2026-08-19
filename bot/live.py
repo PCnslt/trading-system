@@ -68,6 +68,7 @@ LIVE = os.getenv('LIVE', 'false').lower() == 'true'   # flip to true for real mo
 
 LOOKBACK = 20
 STOP_ATR = 2.0
+BREAKEVEN_ATR = 1.0   # RSI2 breakeven-lock: raise stop to entry once +1*ATR in profit
 MAX_HOLD = 5
 RSI2_LO = 10.0    # RSI(2) buy-the-dip entry
 RSI2_HI = 70.0    # RSI(2) exit
@@ -166,6 +167,24 @@ def rsi2_stop(detail):
     return detail['close'] - STOP_ATR * detail['atr']
 
 
+def rsi2_trail(detail, state):
+    """Breakeven-lock (NOT a trailing stop): once the dip-buy is +1*ATR in profit,
+    raise the protective stop to breakeven (entry). Ratchet-up only. The validated
+    RSI2 exit remains RSI(2)>70 / time stop — this only locks the downside.
+    (Validated — research/adaptive_stop_study.py: breakeven beats fixed on RSI2:
+    ES PF 1.63->1.72 + maxDD -33k->-25k; NQ PF 1.45->1.54.)"""
+    if not np.isfinite(detail['atr']):
+        return None, None, "no ATR"
+    entry_px = float(state.get('entry', 0.0) or 0.0)
+    if entry_px <= 0:
+        return None, None, "no entry"
+    profit_atr = (float(detail['close']) - entry_px) / float(detail['atr'])
+    if profit_atr >= BREAKEVEN_ATR:
+        return entry_px, None, (f"breakeven-lock: +{profit_atr:.1f} ATR "
+                                f"-> stop=entry {entry_px:.1f}")
+    return None, None, f"below breakeven (+{profit_atr:.1f} ATR < {BREAKEVEN_ATR})"
+
+
 # ===== trailing-stop function (Donchian chandelier; tighten-only) =====
 def donchian_trail(detail, state):
     """Chandelier: candidate = (highest close since entry) - 3*ATR, ratchet-up.
@@ -197,9 +216,10 @@ STRATEGIES = [
      'entry': donchian_entry, 'exit': donchian_exit, 'stop': donchian_stop,
      'trail': donchian_trail, 'horizon': 'swing', 'exit_mode': 'close',
      'stop_width': '3xATR chandelier (catastrophic)'},
-    {'name': 'RSI2', 'label': 'RSI(2) buy-dip long (>200d SMA, fixed 2*ATR)',
+    {'name': 'RSI2', 'label': 'RSI(2) buy-dip long (>200d SMA, 2*ATR + breakeven-lock)',
      'entry': rsi2_entry, 'exit': rsi2_exit, 'stop': rsi2_stop,
-     'horizon': 'swing', 'exit_mode': 'close', 'stop_width': '2xATR fixed'},
+     'trail': rsi2_trail, 'horizon': 'swing', 'exit_mode': 'close',
+     'stop_width': '2xATR fixed + breakeven-lock @ +1ATR'},
 ]
 
 
