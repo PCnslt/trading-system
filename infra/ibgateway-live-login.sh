@@ -15,7 +15,7 @@
 set -u
 export DISPLAY=:100
 
-eval "$(python3 /home/ubuntu/trading-system/infra/secrets.py --ibkr-shell)"
+eval "$(python3 /home/ubuntu/trading-system/infra/ssm_secrets.py --ibkr-shell)"
 if [ -z "${IBG_USERNAME:-}" ] || [ -z "${IBG_PASSWORD:-}" ]; then
     echo "no IBG creds from SSM or ~/ibgateway-creds.env"; exit 1
 fi

@@ -35,10 +35,10 @@ import yfinance as yf
 from dotenv import load_dotenv
 
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
-# --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
+# --- SSM-first secrets (infra/ssm_secrets.py): overlay /trading/* over .env fallback ---
 import os as _so, sys as _ss
 _ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
-from infra.secrets import bootstrap as _sb
+from infra.ssm_secrets import bootstrap as _sb
 _sb()
 
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')

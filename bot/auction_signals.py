@@ -38,7 +38,7 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 import os as _so, sys as _ss
 _ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
-from infra.secrets import bootstrap as _sb
+from infra.ssm_secrets import bootstrap as _sb
 _sb()
 
 from data.auction import (market_structure, find_swings, fib_golden_pocket,

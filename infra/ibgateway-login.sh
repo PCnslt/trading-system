@@ -13,11 +13,11 @@ set -u
 export DISPLAY=:99
 
 # --- SSM-first secrets (source of truth: /trading/ibkr/*, SecureString) ---
-# Prefer SSM via infra/secrets.py; fall back to ~/ibgateway-creds.env (the
+# Prefer SSM via infra/ssm_secrets.py; fall back to ~/ibgateway-creds.env (the
 # file cache) when SSM is unreachable or a key is absent. Never crash on an
 # SSM hiccup — the eval emits whatever it can and we only abort if BOTH are
 # missing.
-eval "$(python3 /home/ubuntu/trading-system/infra/secrets.py --ibkr-shell)"
+eval "$(python3 /home/ubuntu/trading-system/infra/ssm_secrets.py --ibkr-shell)"
 if [ -z "${IBG_USERNAME:-}" ] || [ -z "${IBG_PASSWORD:-}" ]; then
     echo "no IBG creds from SSM or ~/ibgateway-creds.env"; exit 1
 fi

@@ -59,10 +59,10 @@ from control import (get_control, control_state, control_allows_entry, wants_fla
                      account_mode_ok)
 
 load_dotenv()
-# --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
+# --- SSM-first secrets (infra/ssm_secrets.py): overlay /trading/* over .env fallback ---
 import os as _so, sys as _ss
 _ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
-from infra.secrets import bootstrap as _sb
+from infra.ssm_secrets import bootstrap as _sb
 _sb()
 
 # ===== config =====

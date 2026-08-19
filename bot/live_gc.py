@@ -73,10 +73,10 @@ from control import (get_control, control_state, control_allows_entry, wants_fla
                      mark_ran_today, data_finalized, ControlUnavailable, account_mode_ok)
 
 load_dotenv()
-# --- SSM-first secrets (infra/secrets.py): overlay /trading/* over .env fallback ---
+# --- SSM-first secrets (infra/ssm_secrets.py): overlay /trading/* over .env fallback ---
 import os as _so, sys as _ss
 _ss.path.insert(0, _so.path.dirname(_so.path.dirname(_so.path.abspath(__file__))))
-from infra.secrets import bootstrap as _sb
+from infra.ssm_secrets import bootstrap as _sb
 _sb()
 
 # ===== config =====
@@ -276,21 +276,21 @@ def get_state(table, pk, sk):
     return r.get('Item')
 
 
-# ===== per-strategy runner =====
-def run_strategy(ib, dynamo, con, sym, df, detail, strat, today, mode, ctrl=None,
-                 risk=None, exec_mgr=None):
+# ===== per-strategy signal evaluation (pure, NO IBKR) =====
+def evaluate_signal(dynamo, df, detail, sym, strat, today, mode):
+    """Compute + log the signal for one strategy on finalized data (no IBKR).
+
+    Logging SIGNAL# here — before the gateway connect — guarantees every EOD
+    cycle leaves an auditable signal record even when IBKR is down, so a missed
+    signal is DETECTABLE rather than silently lost (the 08-18 failure class)."""
     sname = strat['name']
     tag = f"{sym}_{sname}"
     state = get_state(dynamo, f"POSITION#{tag}", 'current') or {}
     pos = int(state.get('pos', 0))
     side = state.get('side') or None
-    stop = float(state['stop']) if state.get('stop') else None
-    entry_px = float(state['entry']) if state.get('entry') else None
     entry_date = state.get('entry_date')
     held = held_days(df, entry_date)
-
     desired, dreason = strat['desired'](detail)
-
     sig = {
         'signal': 'EXIT' if pos > 0 else (desired or 'NONE'),
         'strategy': sname,
@@ -307,6 +307,18 @@ def run_strategy(ib, dynamo, con, sym, df, detail, strat, today, mode, ctrl=None
     else:
         sig['ret_12m'] = _s(detail['ret_12m'])
     log_dynamo(dynamo, f"SIGNAL#{tag}", today, sig)
+    return desired, dreason, pos, side, held
+
+
+# ===== per-strategy runner =====
+def run_strategy(ib, dynamo, con, sym, df, detail, strat, today, mode, ctrl=None,
+                 risk=None, exec_mgr=None):
+    sname = strat['name']
+    tag = f"{sym}_{sname}"
+    state = get_state(dynamo, f"POSITION#{tag}", 'current') or {}
+    stop = float(state['stop']) if state.get('stop') else None
+    entry_px = float(state['entry']) if state.get('entry') else None
+    desired, dreason, pos, side, held = evaluate_signal(dynamo, df, detail, sym, strat, today, mode)
 
     if pos > 0:
         should_exit, xreason = strat['exit'](detail, side, stop, held, desired)
@@ -447,8 +459,6 @@ def main():
     if already_ran_today(dynamo, BOT_KEY, today):
         print(f"[{today}] {mode} already ran today (RUN#{BOT_KEY}) — skip (dedupe guard)")
         return
-    mark_ran_today(dynamo, BOT_KEY, today)
-
     # 1. data (fetch before IBKR so we still know the signal if connect fails)
     df = yf.download(DATA_TICKER, period='3y', interval='1d', progress=False, auto_adjust=True)
     if isinstance(df.columns, pd.MultiIndex):
@@ -456,6 +466,15 @@ def main():
     if df is None or df.empty or len(df) < MIN_BARS:
         print(f"[{today}] insufficient GC data ({0 if df is None else len(df)} bars) — skip")
         return
+
+    # 1b. evaluate + log every signal on FINALIZED data BEFORE mark_ran — a crash
+    #     here leaves no RUN# marker, so a same-day retry re-evaluates instead of
+    #     silently missing the signal (the 08-18 failure class). IBKR not needed.
+    detail = compute(df)
+    for strat in STRATEGIES:
+        evaluate_signal(dynamo, df, detail, SYMBOL, strat, today, mode)
+
+    mark_ran_today(dynamo, BOT_KEY, today)
 
     # 2. connect IBKR
     ib = IB()
