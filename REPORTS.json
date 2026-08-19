@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-19T13:40:31-04:00",
+  "updated": "2026-08-19T18:38:39-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -465,6 +465,15 @@
         "d7ec6d8",
         "44eb3cb",
         "f654811"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-19T18:38:39-04:00",
+      "task": "Deploy RSI2PT A/B take-profit variant + sync all docs/diagram/CFN + defect check",
+      "summary": "Implemented the evidence-backed 'take profits frequently' move as an A/B variant. live.py: new RSI2PT strategy (same RSI2<10 entry, exits at a broker-side +0.5% limit target via the native bracket the exec_mgr already supported) running alongside RSI2 (RSI2>70/5d exit) to forward-test which exit wins. Added _last_fill_price() so an intraday target fill is attributed at the TARGET price (not mis-recorded as a stop fill). reconciler TRACKED_TAGS + VWAP OTHER_BOT_TAGS updated with MES/MNQ_RSI2PT. Synced: assets/architecture.html (RSI2PT + MGC + crypto_exec fixes), dashboard/app.py (schedule + ASCII diagram), docs/STRATEGY_PORTFOLIO.md lane 2, docs/PROJECT-STATE.md. CloudFormation: NO change (RSI2PT is a strategy tag, not a new resource — verified no strategy refs in the stack). DEFECT CHECK: 240 tests pass, all changed files compile, manual verification of STRATEGIES wiring + _last_fill_price attribution + reconciler/VWAP tags all pass. Research basis: 26y RSI2PT = 89% win PF 1.92 (vs baseline 72%/1.83, mixed DD); OR-fade + time-of-day seasonality FAIL honest costs (intraday premium is MR, per Lou-Polk-Skouras).",
+      "commits": [
+        "2c8e141"
       ],
       "blockers": []
     }
