@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-18T00:50:42-04:00",
+  "updated": "2026-08-19T12:55:33-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -334,6 +334,117 @@
       "summary": "Build session 20260818_041111 (delivery 1787026271420) ended 04:47:57 and had ALREADY committed+pusushed all order-flow work (VWAP sleeve, orderbook collector, footprint engine, KAMA/VWAP validation, auction signals). The 3 formerly-untracked files (bot/auction_signals.py, data/auction.py, tests/test_auction.py) are now tracked. No leftover artifacts to commit: HEAD==origin/main (0 unpushed), 0 untracked. Tests: 239 passed (>=210). Repo fully aligned.",
       "commits": [
         "252781c"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-18T02:09:45-04:00",
+      "task": "Operational: daemonize + start the 5 forward-test bots (systemd, PAPER-only)",
+      "summary": "All 5 forward-test bots daemonized as systemd services (PAPER-only) and RUNNING.\n\nis-active: live-index=active, live-gold=active, live-vwap=active, live-equities=active, orderbook-collector=active (NRestarts=0 all).\n\nRunning processes: 4x infra/bot_loop.py wrappers (live.py idx, live_gc.py, live_vwap.py, live_equities.py) + 1x bot/orderbook_collector.py. clientIds 70/78/79/80; live_equities has no IBKR clientId.\n\nFRESH DATA (Aug 18 2026) landing — was stale since June 12: RUN#live, RUN#live_gc, RUN#live_equities, SIGNAL#MES_DONCHIAN/RSI2 + MNQ_DONCHIAN/RSI2 (all NONE=flat, healthy), SIGNAL#MGC_DONCHIAN + MGC_TSMOM (LONG), RHLEDGER#2026-08-18 (realized -\\/usr/bin/bash.36, 1 exit) — all sk=2026-08-18. MAX ts=1787033185 = 2026-08-18T02:06:25-04:00 (today). RECONCILE=MATCH streak=0.\n\nBots failed to start: NONE.\n\nNotes: (1) live_gc bootstrap run at 02:00 ET attempted MGC entry that timed out (thin overnight COMEX liquidity, exec-mgr 8s fill-confirm) -> fail-closed, no state written, account verified flat (no open orders/positions); signal still recorded. Normal 19:10 ET schedule going forward. (2) live_vwap + orderbook_collector are RTH-gated (09:30-16:00 ET) — running but write nothing until the open (expected, not a blocker). (3) 3 Hermes cron jobs paused (index futures, gold momentum, RH equities RSI2) to avoid double-fire; equity_signals, intraday MES, crypto + monitors stay on cron. (4) orderbook_collector RH_ENABLED=false (no Robinhood connection, per PAPER-only directive).",
+      "commits": [
+        "7bea50c"
+      ],
+      "blockers": [
+        "live_vwap + orderbook_collector will start writing at RTH open 09:30 ET (Aug 18) — verify ORDERBOOK#/VWAP SIGNAL# then. live_gc MGC entry timed out on the 02:00 bootstrap run; re-check at 19:10 ET that the fill confirms."
+      ]
+    },
+    {
+      "ts": "2026-08-18T13:44:30-04:00",
+      "task": "VPS daily: observability fix + RSI2/Donchian robustness + trading status",
+      "summary": "TRADING: all PAPER, healthy. RECONCILE MATCH, CONTROL RUNNING, 9 services active, 239 tests pass. Broker flat: 0 positions, 0 trades today, $0 realized paper P&L (no strategy has completed a round-trip yet). Gate 5 = 2/10 sessions.\n\nCODE + DEFECTS FIXED:\n1. Schema migration (A): live_intraday.py date->ts, all 3 intraday writers now consistent (aa8fb5b).\n2. Dashboard observability: new Data-health panel (SOURCE -> last-observed -> AGE -> STATE from ground truth, never assumed); marked 7 frozen data-lake jobs; fixed false news-active status + stale futures-ticks warning (c60dee5).\n3. Documented authoritative daily-loss-limit: futures = 2% x sleeve, RH = flat $150 (139c52f).\n\nRESEARCH (26y sample 2000-2026, honest fills):\n4. RSI2-long: PF 1.92 but left-tail (skew -0.89, payoff 0.80); 2018 = PF 0.33 is the maxDD source; no stop -> -$30k worst MAE. Robust to 5-tick slippage + 1-2 bar late fills (d95267d).\n5. Donchian-long: PF 1.34 ES / 1.56 NQ, bounded tail (2xATR stop), regime-dependent (11 losing years); 2xATR suboptimal (4xATR = 1.59) (18d3aa5).\n6. KEY: RSI2 + Donchian are independent (corr -0.001) and complementary (RSI2 wins 2008, Donchian wins 2018). Combined 1+1 portfolio PF 1.66, maxDD -$33.9k (21% better than RSI2 alone), eliminates all losing years except 2007 and 2018.\n\nFACT-CHECK CORRECTIONS: news sentiment PAUSED (frozen 08-16, not active); 4 systemd bots not 6; live_intraday.py NOT redundant (retracted) — still sole FADESHORT/DONCH15 producer; crypto scheduler healthy (fires every 30m).\n\nNO strategy-logic changes — research + display + docs only.",
+      "commits": [
+        "aa8fb5b",
+        "c60dee5",
+        "139c52f",
+        "d95267d",
+        "18d3aa5"
+      ],
+      "blockers": [
+        "No blockers — paper trading healthy; Gate 5 only 2/10, no live track record yet",
+        "Next candidates: gold (MGC) robustness pass, then IAM least-privilege migration (pre-live)"
+      ]
+    },
+    {
+      "ts": "2026-08-18T16:43:41-04:00",
+      "task": "Crypto paper-execution built + futures off-hours fix + live-readiness audit",
+      "summary": "Enabled 24/7 crypto paper-EXECUTION (was signal-only). New bot/crypto_exec.py runs every 30 min (Hermes cron b3e62651e8fc): Donchian-20+200d-SMA long-only BTC/ETH, simulated fills (5bps slip + 10bps taker fee) + paper P&L ledger (POSITION#/TRADE#/RISK#). PAPER only, no Binance account.\n\nFixed futures off-hours bug: infra/bot_loop.py --daily bots no longer fire immediately on off-hours restart (gold had fired spurious UNKNOWN entries at 02:07 ET deploy-time). Now sleep to scheduled time unless within a 10-min catch-up window. Restarted live-index/gold/equities — verified \"off-schedule start, sleeping to 19:00/19:10/19:20\".\n\nLIVE-READINESS BLOCKERS (owner-gated, remaining):\n1. Gate 5 = 1/10 RTH sessions (session 2 in flight today).\n2. IBKR live $500 < MES/MGC/MNQ margins (~$1.3k-2k) — needs funding + 2FA on first login.\n3. RH Agentic flags OFF (RH_EXECUTION_MODE=PAPER, RH_LIVE_ENABLED=false) — RH lane needs paper-forward >=30 days before live.\n\nCommit: c2a7a8a.",
+      "commits": [
+        "c2a7a8a"
+      ],
+      "blockers": [
+        "Crypto now paper-trades 24/7 but has NO validated edge (buy-and-hold proxy) — building a track record, not expecting profit",
+        "To go live: fund IBKR live >= $1.5k + owner 2FA; keep RH flags OFF until Gate 5 + 30-day RH paper-forward complete"
+      ]
+    },
+    {
+      "ts": "2026-08-18T18:52:46-04:00",
+      "task": "Crypto lane upgraded to best option (pure momentum) after web+internal research",
+      "summary": "Researched best crypto strategy (web + internal sweep). Finding: momentum/trend-following is the ONLY crypto family that survives realistic cost (mean-reversion dies), and the real edge is concentrated in ALTS (SOL 2.30 / XRP 3.23 / ADA 1.57 OOS PF), NOT BTC/ETH (1.17 / 1.35). The prior Donch200 \"2.35 PF\" was a buy-and-hold proxy — its 200d-SMA filter = \"long during every bull\".\n\nUpdated crypto paper-execution (b9febc8): dropped the 200d-SMA crutch, now pure Donchian-20 channel momentum (entry close > 20d-high, exit close < 20d-low or 2xATR stop), universe expanded to BTC/ETH/SOL/XRP. SOL/XRP are forward-collecting candles (~4 days) and auto-start signaling once they reach 20+ bars. BTC/ETH trade now.\n\nHonest caveat: even the best crypto momentum is marginal on BTC/ETH — the lane builds a track record, not expected profit.",
+      "commits": [
+        "b9febc8"
+      ],
+      "blockers": [
+        "SOL/XRP momentum needs ~20 more days of forward-collected candles before they can signal",
+        "No validated crypto edge on BTC/ETH (momentum PF 1.17, marginal) — keep crypto LOWEST live-priority"
+      ]
+    },
+    {
+      "ts": "2026-08-18T20:11:23-04:00",
+      "task": "Staleness defect fixed + Gate-5-acceleration directive triaged",
+      "summary": "FIXED the staleness defect (root cause + code + state):\n- Root cause: daily bots called mark_ran_today() at run START, so the 02:02 ET deploy-time run stamped RUN# with stale intraday data and the 19:00 EOD run was skipped. \n- Fix: bot/control.py data_finalized() guard (ET >= 17:00 = close finalized); live.py/live_gc.py/live_equities.py now skip before 17:00 ET (no RUN#, no signal). Defense-in-depth on top of the earlier bot_loop off-hours fix. Commit 5277bc7.\n- Cleared today stale RUN# + 8 stale 02:xx daily signals.\n\nTRIAGED the Gate-5-acceleration directive (took inspiration, did NOT blindly follow):\n- DONE: crypto spec drift (STRATEGY_PORTFOLIO.md Donch200 -> MOM20) + scripts/verify_all_backtests.py (reproduces IS/OOS PF + verdicts from committed result JSONs).\n- SUPPORT: event-driven Gate 5 (error-free cycles, not calendar days) + Gate 5A infra / 5B alpha split.\n- PUSH BACK: \"fast-track to micro-live\" bypasses the plumbing proof — contradicts the capital-preservation directive. Keep paper for plumbing; micro-live is the execution-quality test (Gate 7), already planned.\n- ALREADY EXISTS (just different thresholds): daily loss cap, consec-loss brake (6, could tighten to 4), data-staleness guard (120s, could tighten to 15s for API).",
+      "commits": [
+        "5277bc7"
+      ],
+      "blockers": [
+        "Forward-test still 0 completed round-trips; first clean EOD run is tomorrow 19:00 ET",
+        "Gate 5 reframe decision is the owners call — event-driven vs 10-day, do not rush to live"
+      ]
+    },
+    {
+      "ts": "2026-08-19T09:26:23-04:00",
+      "task": "Gateway recovery + auto-recovery watchdog + cron cleanup (15→9 jobs)",
+      "summary": "Session 2026-08-19 (VPS ops) — gateway recovery, auto-recovery watchdog, cron cleanup.\n\n1. GATEWAY OUTAGE RECOVERED — IBKR paper gateway hung on its midnight daily auto-restart (login screen, port 4002 down 00:00→04:55 ET). OCR-verified PAPER mode, re-ran ibgateway-login.sh, confirmed DUR193467 (NetLiq $1.0M), reconcile back to MATCH.\n\n2. AUTO-RECOVERY WATCHDOG — enhanced infra/ibgateway-hang-watchdog.sh with a new rung: after a restart fails to restore 4002, fire the login helper DETACHED (systemd-run as ubuntu), OCR-guarded to confirm the SIMULATED TRADING banner before typing creds (structurally cannot reach live U26949861). Paper needs no 2FA, so the daily-restart hang now self-heals in ~10 min (was ~5h manual). Commit 2400f28.\n\n3. CRON CLEANUP (15→9 jobs) — removed 6 dead jobs: index/gold/RH-equities (exact systemd duplicates of live-index/live-gold/live-equities), bonds (live_bondsfx.py shelved/disarmed), IBGW one-shot (done), crypto Donch200 (superseded). KEPT equity_signals.py cron (broad research scanner, distinct from live_equities.py execution lane). Commit aa4424c.\n\n4. CRYPTO DONCH200 RETIRED — crypto_paper.py (Donch200 signal-only) was superseded by crypto_exec.py (MOM20) in b9febc8 but its cron kept writing stale SIGNAL#*_DONCH200. Removed cron+script; kept crypto_paper.py as helper module (crypto_exec.py imports live_price/load_yf/merge_live/wilder_atr). Verified import intact. Commit 6bb6162.\n\n5. DASHBOARD + DOCS SYNC — schedule table now shows systemd daily bots (was 'Hermes cron'), added live_equities 19:20 row, GC→MGC label, removed stale script labels in logs.py, corrected RECOVERY.md cron table.\n\n6. SKILLS UPDATED — ibkr-gateway-operations (auto-login rung documented), trading-system-ops (new pitfall: retire superseded lanes in the same commit).\n\nTRADING STATUS: flat, $0 P&L, 0 paper trades today (TRADE# today=0, POSITION# 0). Gate 5 still 2/10 RTH sessions, $0 realized round-trips. RTH session opened 09:30 ET today; first clean EOD run tonight 19:00 ET (after yesterday's staleness fix).\n\nBLOCKERS (unchanged): IBKR live U26949861 $500 below MES/MGC/MNQ margin (needs ~$1.5k+ funding + 2FA); Robinhood live flags off; Gate 5 time-based (2/10 sessions).",
+      "commits": [
+        "2400f28",
+        "aa4424c",
+        "6bb6162"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-19T11:27:38-04:00",
+      "task": "Fix: reconciler crashed on fractional crypto positions (first MOM20 paper trades)",
+      "summary": "Bug fix: reconciler crashed on fractional crypto positions (first crypto paper trades exposed it).\n\nWHAT HAPPENED — crypto_exec.py (MOM20) entered its FIRST paper trades at ~11:00 ET today on the up-move: BTCUSDT_MOM20 LONG 0.039992 @ $65,994 (stop $63,494) + ETHUSDT_MOM20 LONG 1.094102 @ $1,972 (stop $1,881). It wrote POSITION# rows with FRACTIONAL 'pos' (crypto is fractional, futures are integer).\n\nTHE BUG — the reconciler's _scan_positions() did int('0.039992') on EVERY POSITION# row -> ValueError -> whole reconcile returned UNKNOWN -> health monitor alerted \"RECONCILE UNKNOWN: invalid literal for int()\".\n\nTHE FIX — filter _scan_positions() to TRACKED_TAGS (futures only; crypto is simulated with no IBKR broker counterpart, so it must be ignored). Also float() in status_report.py + dashboard/app.py, fractional rendering in pulse.py. Regression test added.\n\nVERIFIED — 240 tests pass (was 239), RECONCILE back to MATCH, reconcile-daemon restarted. Commit 3453aba.\n\nCURRENT STATUS — first forward-test activity: 2 crypto paper positions OPEN (BTC + ETH MOM20). Futures flat. Control RUNNING, gateway up.",
+      "commits": [
+        "3453aba"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-19T12:05:17-04:00",
+      "task": "Trailing-stop study: crypto MOM20 -> chandelier; data says trailing helps trend, hurts mean-rev/TSMOM",
+      "summary": "Trailing-stop study complete — data-driven verdict per strategy family.\n\nAPPLIED: crypto MOM20 upgraded from fixed 2xATR stop to chandelier 3xATR trailing stop (best price since entry - 3*ATR, ratchets up only, persisted each 30-min cycle). Existing BTC/ETH paper positions auto-upgraded (BTC stop 63494->64387, ETH 1881->1929). Commit 9cb9ee8.\n\nBACKTEST VERDICT (26y ES/NQ/YM from trailing_stop_results.json + new TSMOM test):\n- Donchian (trend): chandelier 3xATR HELPS — ES PF 1.47->1.68 + maxDD -21k->-19k; NQ PF 1.69->1.77 + maxDD -42k->-32k. (YM exception: chandelier hurt.) Already applied to index/gold.\n- RSI2 (mean-reversion): trailing HURTS — 2xATR trail collapses win% 69%->47%, maxDD -22k->-28k (ES). KEEP fixed 2xATR.\n- TSMOM (12m momentum, gold): chandelier DESTROYS it — PF 1.81->0.60, net +$75k->-$33k. KEEP fixed 3xATR floor. Commit 5ff4b40.\n- Intraday VWAP/FADE/DONCH15: keep 2xATR + EOD flatten (no overnight hold).\n\nRULE going forward: trend-following = chandelier 3xATR trail; mean-reversion/momentum-flip = fixed stop + signal exit. 240 tests pass.",
+      "commits": [
+        "9cb9ee8",
+        "5ff4b40"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-19T12:35:27-04:00",
+      "task": "Adaptive-stop engine built + backtested; applied RSI2 breakeven-lock (the one clear win)",
+      "summary": "Adaptive-stop engine built, backtested, and the one clear win applied.\n\nPHASE C — bot/adaptive_stop.py: shared regime-adaptive stop engine. Three signals per bar: volatility-regime ratio (VR = ATR/100d-median), Kaufman efficiency ratio (ER = trend vs noise), and staged profit-lock (breakeven -> trail -> Parabolic acceleration). Edge-type router: trend=adaptive-trail, meanrev=breakeven-lock ONLY (no trail), momentum=volatility-scaling.\n\nPHASE A — research/adaptive_stop_study.py: 26y ES/NQ + gold + BTC/ETH, fixed vs chandelier vs adaptive, drawdown-first. Honest fills (gap-aware stops, slippage, fee). Results:\n- RSI2 (mean-rev): adaptive/breakeven WINS — ES PF 1.63->1.72 + maxDD -33k->-25k; NQ PF 1.45->1.54. (The 'intelligent' fix for mean-rev is a breakeven LOCK, not a trail.)\n- Donchian (trend): chandelier still best — adaptive over-tightens ES (PF 1.57->1.46). KEEP chandelier.\n- TSMOM (12m momentum): ALL stops negative since 2010 (adaptive worst, PF 0.47). KEEP fixed 3xATR floor. NOTE: TSMOM-on-gold is a losing strategy post-2010.\n- Crypto MOM20: adaptive helps BTC (PF 1.00->1.12, DD -20.7k->-17.8k), neutral ETH. Keep chandelier (already applied).\n\nPHASE B — applied the one clear win: RSI2 breakeven-lock in live.py (rsi2_trail: raise stop to entry once +1*ATR in profit, ratchet-only). Donchian keeps chandelier, TSMOM keeps fixed, crypto keeps chandelier — data says adaptive doesn't beat them there.\n\n240 tests pass. Commits: 9cb9ee8 (crypto chandelier), 5ff4b40 (TSMOM test), 5519d9c (engine + backtest + RSI2 apply).",
+      "commits": [
+        "5519d9c"
+      ],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-19T12:55:33-04:00",
+      "task": "Non-blocking full-system defect sweep + fixes + full trading report",
+      "summary": "FULL NON-BLOCKING SWEEP (nothing restarted, trading never halted). HEALTHY: 12/12 systemd units active (ibgateway-live DISABLED by design); gateway 4002 UP + reconcile MATCH (fix holding since 11:25); 240 tests pass; compile clean; CONTROL=RUNNING flatten=false. DATA CURRENT: daily bars->08-18, intraday 5min/15min->08-19, ticks live (QUOTE# fresh 12:51 ET), 9 cron jobs all ok, no systemd/Hermes double-fire. POSITIONS: BTCUSDT_MOM20 LONG 0.039992 @65994 (stop 64526, chandelier peak 68828) + ETHUSDT_MOM20 LONG 1.094102 @1972 (stop 1935.58, peak 2098) both in profit vs entry; futures flat; $0 realized. DEFECTS: (1) FIXED f654811 control_probe.py bare scan() dropped page-2+ rows (missed ETH). (2) DOCUMENTED-ONLY: 08-18 EOD was poisoned by the 02:02 ET off-hours deploy (pre-fix code stamped RUN# -> 19:00 EOD runs skipped by dedupe guard; gold fired 2 ENTRY-UNKNOWN off-hours). Already fixed by 5277bc7 (data_finalized guard + catch-up window + mark-ran-after-eval, verified in live.py/live_gc.py/live_equities.py); 08-18 data now stale, not re-runnable. FALSE ALARMS CAUGHT: tick-recorder '48h gap' was my own single-page S3 list bug (recorder healthy); 1m/1h bar 'gap' = backfill barsizes (live intraday uses 5min/15min, current). S3 list_objects_v2 single-page pitfall added to trading-system-ops skill.",
+      "commits": [
+        "f654811"
       ],
       "blockers": []
     }
