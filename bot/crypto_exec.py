@@ -190,7 +190,7 @@ def main():
                 if args.dry_run:
                     print(f'  [dry] {tag} BUY {qty:.6f} @ {entry:.2f} stop {stop:.2f}')
                 else:
-                    put_state(table, tag, pos=qty, side='LONG', entry=_s(entry),
+                    put_state(table, tag, pos=_s(qty), side='LONG', entry=_s(entry),
                               stop=_s(stop), entry_ts=now_ts, session_date=today)
                     record_trade(table, tag, 'BUY', qty, entry, 'breakout', 0.0, now_ts)
                 print(f'  [{sym}] ENTER LONG {qty:.6f} @ {entry:.2f} (stop {stop:.2f}) — {reason}')
