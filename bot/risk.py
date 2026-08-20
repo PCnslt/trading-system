@@ -30,6 +30,10 @@ class RiskConfig:
     risk_pct: float = 0.01             # fraction of budget risked per trade (to stop) — owner: 0.5-1% max
     min_contracts: int = 1
     max_contracts: int = 5             # hard cap regardless of sizing math
+    heat_cap_pct: float = 0.0          # portfolio heat cap: max TOTAL open risk as
+                                       # fraction of budget (0 = disabled). Caps the
+                                       # SUM of concurrent position risk, so N correlated
+                                       # strategies can't stack Nx on one signal.
 
     # --- Volatility overlay (1/realized-vol position scaling — HARD cap) ---
     # Co-equal with the protective stop: cap each position's expected DAILY
@@ -93,6 +97,7 @@ class RiskEngine:
         self.halted = False
         self.halt_reason = None
         self.open_positions = 0
+        self.open_risk_usd = 0.0        # sum of (stop_dist * point_value * qty) across open positions
         self._last_data_ts = time.time()
 
     # ---- persistence ----
@@ -116,6 +121,7 @@ class RiskEngine:
         self.halted = bool(state.get('halted', False))
         self.halt_reason = state.get('halt_reason') or None
         self.open_positions = int(state.get('open_positions', 0))
+        self.open_risk_usd = float(state.get('open_risk_usd', 0.0))
 
     def to_state(self) -> dict:
         return {
@@ -125,6 +131,7 @@ class RiskEngine:
             'halted': self.halted,
             'halt_reason': self.halt_reason,
             'open_positions': self.open_positions,
+            'open_risk_usd': round(self.open_risk_usd, 2),
         }
 
     def _persist(self):
@@ -148,6 +155,7 @@ class RiskEngine:
             self.halted = False
             self.halt_reason = None
             self._persist_error = False
+            self.open_risk_usd = 0.0
             self._persist()
 
     # ---- gates ----
@@ -176,9 +184,11 @@ class RiskEngine:
     def touch_data(self):
         self._last_data_ts = time.time()
 
-    def set_open_positions(self, n: int):
-        """Seed open_positions from authoritative state (existing open positions)."""
+    def set_open_positions(self, n: int, risk_usd: float = 0.0):
+        """Seed open_positions + open_risk_usd from authoritative state (existing
+        open positions). `risk_usd` = sum of (stop_dist * point_value * qty)."""
         self.open_positions = int(n)
+        self.open_risk_usd = float(risk_usd)
         self._persist()
 
     # ---- sizing ----
@@ -213,6 +223,18 @@ class RiskEngine:
                 contracts = min(contracts, int(vol_budget / per_contract_dollar_vol))
             if contracts < self.cfg.min_contracts:
                 return 0   # even one contract exceeds the vol budget — reject
+        if self.cfg.heat_cap_pct > 0:
+            # portfolio heat cap: cap the TOTAL open risk (sum of all concurrent
+            # position risk) at heat_cap_pct * budget. Prevents N correlated
+            # strategies from stacking Nx on a single signal.
+            heat_budget = self.cfg.heat_cap_pct * self.cfg.risk_budget_usd
+            per_contract_risk = stop_distance * point_value
+            room = heat_budget - self.open_risk_usd
+            if room <= 0 or per_contract_risk <= 0:
+                return 0   # no heat room left — reject
+            contracts = min(contracts, int(room / per_contract_risk))
+            if contracts < self.cfg.min_contracts:
+                return 0
         return contracts
 
     def stop_target(self, entry: float, atr: float, side: int) -> tuple[float, float]:
@@ -223,13 +245,15 @@ class RiskEngine:
         return entry + sl, entry - sl * self.cfg.risk_reward_ratio
 
     # ---- accounting ----
-    def record_fill(self):
+    def record_fill(self, risk_usd: float = 0.0):
         self.daily_trades += 1
         self.open_positions += 1
+        self.open_risk_usd += float(risk_usd)
         self._persist()
 
-    def record_close(self, pnl: float):
+    def record_close(self, pnl: float, risk_usd: float = 0.0):
         self.open_positions = max(0, self.open_positions - 1)
+        self.open_risk_usd = max(0.0, self.open_risk_usd - float(risk_usd))
         self.daily_pnl += pnl
         if pnl < 0:
             self.consecutive_losses += 1

@@ -64,6 +64,7 @@ IBKR_HOST = os.getenv('IBKR_HOST', '127.0.0.1')
 IBKR_PORT = int(os.getenv('IBKR_PORT', '4002'))
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 RISK_BUDGET = float(os.getenv('RISK_BUDGET', '50000'))
+HEAT_CAP_PCT = float(os.getenv('HEAT_CAP_PCT', '0.03'))   # portfolio heat cap: max total open risk (0=disabled)
 LIVE = os.getenv('LIVE', 'false').lower() == 'true'   # flip to true for real money
 
 LOOKBACK = 20
@@ -425,7 +426,8 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
                 return
             exit_px = res.avg_px if res.avg_px > 0 else detail['close']
             if risk is not None and entry_px is not None:
-                risk.record_close(realized_pnl('LONG', entry_px, exit_px, c['point_value'], pos))
+                close_risk = abs(entry_px - stop) * c['point_value'] * pos if stop is not None else 0.0
+                risk.record_close(realized_pnl('LONG', entry_px, exit_px, c['point_value'], pos), close_risk)
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
                 'side': 'EXIT', 'qty': pos, 'reason': xreason, 'strategy': sname,
                 'ts': int(time.time())})
@@ -440,7 +442,8 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
             if exit_px is None:
                 exit_px = stop if stop is not None else detail['close']
             if risk is not None and entry_px is not None:
-                risk.record_close(realized_pnl('LONG', entry_px, exit_px, c['point_value'], pos))
+                close_risk = abs(entry_px - stop) * c['point_value'] * pos if stop is not None else 0.0
+                risk.record_close(realized_pnl('LONG', entry_px, exit_px, c['point_value'], pos), close_risk)
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
                 'side': 'EXIT', 'qty': pos, 'reason': 'target/stop-filled (intraday)',
                 'strategy': sname, 'ts': int(time.time())})
@@ -508,7 +511,8 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
                 print(f">>> {mode} {tag} PARTIAL fill {res.filled_qty}/{size} — writing actual qty")
                 size = res.filled_qty
             entry_px_filled = res.avg_px if res.avg_px > 0 else detail['close']
-            risk.record_fill()
+            entry_risk = abs(entry_px_filled - stop_price) * c['point_value'] * size
+            risk.record_fill(entry_risk)
             log_dynamo(dynamo, f"TRADE#{tag}", f"{today}#{int(time.time())}", {
                 'side': 'BUY', 'qty': size, 'entry': str(round(entry_px_filled, 2)),
                 'stop': str(round(stop_price, 2)), 'contract': front_month(),
@@ -607,19 +611,25 @@ def main():
         #    an unreadable ledger HALTS the run (no new entries).
         risk_cfg = RiskConfig(risk_budget_usd=RISK_BUDGET,
                               max_concurrent_positions=len(CONTRACTS) * len(STRATEGIES),
-                              max_trades_per_day=len(CONTRACTS) * len(STRATEGIES))
+                              max_trades_per_day=len(CONTRACTS) * len(STRATEGIES),
+                              heat_cap_pct=HEAT_CAP_PCT)
         try:
             risk = RiskEngine.load(risk_cfg, RiskLedger(dynamo, scope='live'))
         except RiskStateUnavailable as e:
             print(f"[{today}] {mode} HALT — risk state unreadable (fail-closed): {e}")
             return
         open_n = 0
+        open_risk_usd = 0.0
         for c in CONTRACTS:
             for s in STRATEGIES:
                 st = get_state(dynamo, f"POSITION#{c['symbol']}_{s['name']}", 'current') or {}
-                if int(st.get('pos', 0)) > 0:
+                pos = int(st.get('pos', 0))
+                if pos > 0:
                     open_n += 1
-        risk.set_open_positions(open_n)
+                    entry = float(st.get('entry', 0) or 0)
+                    stop = float(st.get('stop', 0) or 0)
+                    open_risk_usd += abs(entry - stop) * c['point_value'] * pos
+        risk.set_open_positions(open_n, open_risk_usd)
         risk.touch_data()
 
         # 6. broker reconciliation — halt on any mismatch/unknown (fail-closed).

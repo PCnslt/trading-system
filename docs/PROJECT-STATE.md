@@ -139,6 +139,7 @@ Effective daily-loss halt, **as enforced by code**, is per-lane:
 | RH equities | `live_equities.py` `RH_DAY_LOSS_CAP` | **$150 flat** |
 
 - Futures lanes: `max_daily_loss_pct` (2%) × `risk_budget_usd`, checked before every entry, persisted in `RISK#`.
+- **Portfolio heat cap (2026-08-19):** `heat_cap_pct` (index lane default **3%**) caps the TOTAL open risk — the sum of `|entry−stop| × point_value × qty` across ALL concurrent positions — so RSI2/RSI2PT/REV2 (correlated dip-buys) can't stack N× on one signal. Persisted as `open_risk_usd` in `RISK#`; env `HEAT_CAP_PCT` (0=off). Other lanes default 0 (unchanged).
 - RH lane: flat `$150/day` realized-loss throttle, separate from RiskEngine.
 - **Micro-live note:** the "$150/day" plan target equals `2% × $7,500` sleeve. When funding live, set the sleeve so `2% × budget = $150` — do NOT carry the paper $350k/$250k sleeves into live. There is no single global "$1,000" limit; the value above is the one actually enforced.
 

@@ -74,6 +74,37 @@ def test_position_size_vol_missing_params_backward_compat():
     assert e.position_size(10.0, 5.0) == 5
 
 
+# --- portfolio heat cap (total open risk, prevents correlated stacking) ---
+def test_heat_cap_disabled_by_default():
+    e = make_engine()  # heat_cap_pct defaults 0.0
+    e.set_open_positions(3, risk_usd=9000.0)  # way over any cap
+    assert e.position_size(10.0, 5.0) == 5    # sizing unchanged when disabled
+
+
+def test_heat_cap_limits_total_open_risk():
+    e = make_engine(heat_cap_pct=0.03)        # budget 100k -> heat cap $3000
+    e.set_open_positions(1, risk_usd=2500.0)
+    # room $500 / ($50 per contract) = 10 -> capped by max_contracts 5
+    assert e.position_size(10.0, 5.0) == 5
+    e.set_open_positions(1, risk_usd=2900.0)
+    # room $100 -> 2 contracts
+    assert e.position_size(10.0, 5.0) == 2
+
+
+def test_heat_cap_rejects_when_no_room():
+    e = make_engine(heat_cap_pct=0.03)
+    e.set_open_positions(1, risk_usd=3000.0)  # at cap -> no room
+    assert e.position_size(10.0, 5.0) == 0
+
+
+def test_record_fill_close_tracks_open_risk():
+    e = make_engine(heat_cap_pct=0.03)
+    e.record_fill(risk_usd=500.0)
+    assert e.open_risk_usd == 500.0
+    e.record_close(pnl=-100.0, risk_usd=500.0)
+    assert e.open_risk_usd == 0.0
+
+
 def test_realized_vol_daily():
     import pandas as pd
     # flat series -> ~0
