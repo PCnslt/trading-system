@@ -101,8 +101,8 @@ EOD_FLATTEN = dt.time(15, 45)    # flatten any open position from 15:45 ET
 # Other bots that may hold the same symbol in the shared paper account.
 # Stand down on overlap (never net the same contract).
 OTHER_BOT_TAGS = {
-    'MES': ['MES_DONCHIAN', 'MES_RSI2', 'MES_RSI2PT', 'MES_FADESHORT', 'MES_DONCH15'],
-    'MNQ': ['MNQ_DONCHIAN', 'MNQ_RSI2', 'MNQ_RSI2PT'],
+    'MES': ['MES_DONCHIAN', 'MES_RSI2', 'MES_RSI2PT', 'MES_REV2', 'MES_FADESHORT', 'MES_DONCH15'],
+    'MNQ': ['MNQ_DONCHIAN', 'MNQ_RSI2', 'MNQ_RSI2PT', 'MNQ_REV2'],
 }
 
 

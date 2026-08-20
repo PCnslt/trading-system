@@ -75,6 +75,12 @@ RSI2_LO = 10.0    # RSI(2) buy-the-dip entry
 RSI2_HI = 70.0    # RSI(2) exit
 RSI2_TREND_SMA = 200   # Connors trend filter: entry requires close > 200d SMA
 
+# ---- 2-day short-term reversal (validated short-horizon edge, 2026-08-19;
+#      research/short_horizon_edges_study.py + short_horizon_deepdive.py) ----
+REV2_LOOKBACK = 2        # N-day reversal lookback
+REV2_THRESH_ATR = 1.0    # entry: N-day return < -1xATR (as % of price)
+REV2_MAX_HOLD = 3        # time stop (validated: avg hold 3.4d)
+
 # ---- trailing-stop params (validated: Donchian chandelier ONLY) ----
 CHAND_ATR = 3.0              # Donchian chandelier: 3*ATR below highest close
 
@@ -108,8 +114,10 @@ def compute(df):
     atr = wilder_atr(h, l, c, 14)
     r2 = rsi(c, 2)
     sma200 = c.rolling(RSI2_TREND_SMA).mean()
+    rev2 = c.pct_change(REV2_LOOKBACK)
     return pd.DataFrame({'close': c, 'don_hi': don_hi, 'don_lo': don_lo,
-                         'atr': atr, 'rsi2': r2, 'sma200': sma200}).iloc[-1]
+                         'atr': atr, 'rsi2': r2, 'sma200': sma200,
+                         'rev2': rev2}).iloc[-1]
 
 
 # ===== strategy interface: entry -> (bool, reason); exit -> (bool, reason);
@@ -120,7 +128,7 @@ def donchian_entry(detail):
     return False, f"close {detail['close']:.1f} <= 20d-high {detail['don_hi']:.1f}"
 
 
-def donchian_exit(detail, stop, held):
+def donchian_exit(detail, stop, held, entry_px=None):
     """Close-based exits, in backtest order: time stop -> ATR stop -> breakout."""
     if held >= MAX_HOLD:
         return True, f"time stop ({held}d >= {MAX_HOLD}d)"
@@ -154,7 +162,7 @@ def rsi2_entry(detail):
     return False, f"RSI(2) {detail['rsi2']:.1f} >= {RSI2_LO}"
 
 
-def rsi2_exit(detail, stop, held):
+def rsi2_exit(detail, stop, held, entry_px=None):
     if held >= MAX_HOLD:
         return True, f"time stop ({held}d >= {MAX_HOLD}d)"
     if detail['rsi2'] > RSI2_HI:
@@ -184,6 +192,34 @@ def rsi2_trail(detail, state):
         return entry_px, None, (f"breakeven-lock: +{profit_atr:.1f} ATR "
                                 f"-> stop=entry {entry_px:.1f}")
     return None, None, f"below breakeven (+{profit_atr:.1f} ATR < {BREAKEVEN_ATR})"
+
+
+# ===== 2-day short-term reversal (validated short-horizon edge) =====
+def rev2_entry(detail):
+    """Buy a 2-day drop larger than 1xATR (short-term reversal / mean reversion).
+
+    Validated 2026-08-19 (research/short_horizon_edges_study.py +
+    short_horizon_deepdive.py): ES PF 1.54 / NQ 1.62 / YM 1.26 @1t, OOS 1.19-1.70,
+    win 71-76%, hold 3.4d, survives 3-tick. Independent of RSI2 (corr +0.07-0.14,
+    19-21% entry overlap). No 200d-SMA filter — the reversal threshold itself is
+    the edge (moderate 2d drops, not just extreme RSI<10)."""
+    rv = detail['rev2']
+    if not np.isfinite(rv) or not np.isfinite(detail['atr']) or detail['atr'] <= 0:
+        return False, "no reversal data"
+    k = REV2_THRESH_ATR * detail['atr'] / detail['close']
+    if rv < -k:
+        return True, (f"2d return {rv:.2%} < -{REV2_THRESH_ATR:.0f}xATR "
+                      f"({-k:.2%}): mean-revert long")
+    return False, f"2d return {rv:.2%} >= -{REV2_THRESH_ATR:.0f}xATR ({-k:.2%})"
+
+
+def rev2_exit(detail, stop, held, entry_px=None):
+    """Revert-to-entry + 3-day time stop (the validated reversal exit)."""
+    if held >= REV2_MAX_HOLD:
+        return True, f"time stop ({held}d >= {REV2_MAX_HOLD}d)"
+    if entry_px is not None and detail['close'] > entry_px:
+        return True, f"revert: close {detail['close']:.1f} > entry {entry_px:.1f}"
+    return False, "hold"
 
 
 # ===== trailing-stop function (Donchian chandelier; tighten-only) =====
@@ -226,6 +262,10 @@ STRATEGIES = [
      'horizon': 'swing', 'exit_mode': 'target',
      'stop_width': '2xATR fixed + 0.5% broker-side take-profit',
      'take_profit_pct': TAKE_PROFIT_PCT},
+    {'name': 'REV2', 'label': '2-day reversal long (2d drop >1xATR, revert/3d exit)',
+     'entry': rev2_entry, 'exit': rev2_exit, 'stop': rsi2_stop,
+     'horizon': 'swing', 'exit_mode': 'close',
+     'stop_width': '2xATR fixed'},
 ]
 
 
@@ -338,6 +378,9 @@ def evaluate_signal(dynamo, df, detail, sym, strat, today):
             'don_lo': str(round(detail['don_lo'], 2)) if not np.isnan(detail['don_lo']) else '',
             'atr': str(round(detail['atr'], 2)),
         })
+    elif sname == 'REV2':
+        sig['rev2'] = str(round(detail['rev2'], 4))
+        sig['atr'] = str(round(detail['atr'], 2))
     else:
         sig['rsi2'] = str(round(detail['rsi2'], 2))
         sig['sma200'] = str(round(detail['sma200'], 2))
@@ -356,7 +399,7 @@ def run_strategy(ib, dynamo, con, sym, df, detail, c, strat, today, mode, ctrl=N
     entry, ereason, pos, held = evaluate_signal(dynamo, df, detail, sym, strat, today)
 
     if pos > 0:
-        should_exit, xreason = strat['exit'](detail, stop, held)
+        should_exit, xreason = strat['exit'](detail, stop, held, entry_px)
         if should_exit:
             # Cancel the resting GTC stop BEFORE the market close (race-free),
             # then close via the execution manager (idempotent + fill-verified).

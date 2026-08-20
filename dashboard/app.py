@@ -168,7 +168,7 @@ with tab_sched:
 | 18:15 | ~~fmp_ingest.py (quote/profile)~~ ⛔ FROZEN (2026-08-16) | system crontab |
 | 18:30 | yf_collect.py (ETFs/sectors/futures/**fx+crosses**/crypto — daily + 1h) | system crontab |
 | 18:45 | ~~newsapi_ingest.py~~ ⛔ FROZEN (2026-08-16) | system crontab |
-| **19:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2 + RSI2PT) | systemd |
+| **19:00** | **live.py — index EOD** (MES/MNQ Donchian + RSI2 + RSI2PT + REV2) | systemd |
 | 19:10 | live_gc.py (gold momentum — PAPER EXEC: MGC Donchian L/S + TSMOM) | systemd |
 | 19:15 | equity_signals.py (equities, signal-only) | Hermes cron |
 | 19:20 | live_equities.py (RH equities RSI2 — PAPER signal + fills) | systemd |
@@ -308,7 +308,7 @@ with tab_arch:
                      ┌─────────────────────┐
                      │  STRATEGY RUNNER     │
                      │  (3 bots, Hermes cron)│
-                     │  live.py        23:00 │  index MES/MNQ (Donchian + RSI2 + RSI2PT)
+                     │  live.py        23:00 │  index MES/MNQ (Donchian + RSI2 + RSI2PT + REV2)
                      │  live_bondsfx  SHELVED│  bonds ZB/ZN (disarmed)
                      │  live_intraday  */15  │  intraday MES (RTH)
                      └──────────┬──────────┘
@@ -493,7 +493,7 @@ with tab_road:
     st.markdown("#### 🗺️ Roadmap (refocused — Gate-1 decision, 2026-08-14)")
     st.markdown("""
 **Strategy question CLOSED — one independent edge:**
-- **INDEX LONG = PROMOTED** ✅ — Donchian + RSI2-LONG (live.py) is the live-capital candidate. Honest numbers: Donchian PF 1.56 full / 1.52 OOS / 1.43 @3t; RSI2-LONG 1.99 / 2.57 / 1.88 @3t (corr 0.002 → independent bets).
+- **INDEX LONG = PROMOTED** ✅ — Donchian + RSI2-LONG + RSI2PT + REV2 (live.py) is the live-capital candidate. Honest numbers: Donchian PF 1.56 full / 1.52 OOS / 1.43 @3t; RSI2-LONG 1.99 / 2.57 / 1.88 @3t (corr 0.002 → independent bets); REV2 (2-day reversal) PF 1.54/1.62/1.26 @1t, OOS 1.19-1.70, corr vs RSI2 +0.07-0.14.
 - **BONDS fade-SHORT = SHELVED** 📦 — dies at 1-tick slippage (S3 re-run + validate_edges.py agree); code kept + disarmed no-op, cron paused. Revisit only if cost/regime materially changes.
 - **BBAND_INDEX_LONG = TABLED** 📦 — paper forward-test candidate (redundant w/ RSI2-LONG, corr 0.69, PF 1.84 / OOS 1.71); revisit if RSI2-LONG underperforms live.
 - **Screening CLOSED** — weekly scan paused; no new strategy screening.
