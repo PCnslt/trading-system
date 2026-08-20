@@ -49,7 +49,7 @@ from ib_insync import IB, Future
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.s3_archive import archive_intraday_bars
 
-from risk import RiskEngine, RiskConfig, realized_pnl
+from risk import RiskEngine, RiskConfig, realized_pnl, realized_vol_daily
 from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
 from hardening.reconciler import reconcile
 from hardening.exec_manager import ExecutionManager, TradeIntent
@@ -337,7 +337,9 @@ def run_symbol(ib, dynamo, spec, df, now, today, mode, ctrl, risk, exec_mgr):
                 print(f">>> {mode} {tag} no ATR for stop — skip (fail-closed)")
                 return
             stop_dist = abs(stop_px - detail['close'])
-            size = risk.position_size(stop_dist, point_value=spec['point_value'])
+            vol = realized_vol_daily(df['Close'], 20)
+            size = risk.position_size(stop_dist, point_value=spec['point_value'],
+                                      realized_vol=vol, price=detail['close'])
             if size <= 0:
                 print(f">>> {mode} {tag} size=0 (stop too wide for budget), skip")
                 return

@@ -200,16 +200,24 @@ def rev2_entry(detail):
 
     Validated 2026-08-19 (research/short_horizon_edges_study.py +
     short_horizon_deepdive.py): ES PF 1.54 / NQ 1.62 / YM 1.26 @1t, OOS 1.19-1.70,
-    win 71-76%, hold 3.4d, survives 3-tick. Independent of RSI2 (corr +0.07-0.14,
-    19-21% entry overlap). No 200d-SMA filter — the reversal threshold itself is
-    the edge (moderate 2d drops, not just extreme RSI<10)."""
+    win 71-76%, hold 3.4d, survives 3-tick, independent of RSI2 (corr +0.07-0.14).
+    Connors 200d-SMA trend filter (SAME as RSI2) added 2026-08-19 — backtest
+    (research/rev2_sma_compare.py) showed it halves maxDD (ES -29k->-14k,
+    NQ -44k->-26k) and lifts PF (ES 1.54->2.07, NQ 1.61->2.04) by skipping
+    falling-knife dips below the 200d MA."""
     rv = detail['rev2']
     if not np.isfinite(rv) or not np.isfinite(detail['atr']) or detail['atr'] <= 0:
         return False, "no reversal data"
+    sma = detail['sma200']
+    if not np.isfinite(sma):
+        return False, "no 200d SMA yet (insufficient history)"
+    if detail['close'] <= sma:
+        return False, (f"2d return {rv:.2%} < -1xATR but close "
+                       f"{detail['close']:.1f} <= 200d SMA {sma:.1f} (falling knife)")
     k = REV2_THRESH_ATR * detail['atr'] / detail['close']
     if rv < -k:
         return True, (f"2d return {rv:.2%} < -{REV2_THRESH_ATR:.0f}xATR "
-                      f"({-k:.2%}): mean-revert long")
+                      f"({-k:.2%}) and close {detail['close']:.1f} > 200d SMA {sma:.1f}")
     return False, f"2d return {rv:.2%} >= -{REV2_THRESH_ATR:.0f}xATR ({-k:.2%})"
 
 
@@ -262,7 +270,7 @@ STRATEGIES = [
      'horizon': 'swing', 'exit_mode': 'target',
      'stop_width': '2xATR fixed + 0.5% broker-side take-profit',
      'take_profit_pct': TAKE_PROFIT_PCT},
-    {'name': 'REV2', 'label': '2-day reversal long (2d drop >1xATR, revert/3d exit)',
+    {'name': 'REV2', 'label': '2-day reversal long (2d drop >1xATR, >200d SMA, revert/3d exit)',
      'entry': rev2_entry, 'exit': rev2_exit, 'stop': rsi2_stop,
      'horizon': 'swing', 'exit_mode': 'close',
      'stop_width': '2xATR fixed'},
@@ -598,7 +606,8 @@ def main():
         #    daily-loss cap / consecutive-loss brake to zero. Fail-closed:
         #    an unreadable ledger HALTS the run (no new entries).
         risk_cfg = RiskConfig(risk_budget_usd=RISK_BUDGET,
-                              max_concurrent_positions=len(CONTRACTS) * len(STRATEGIES))
+                              max_concurrent_positions=len(CONTRACTS) * len(STRATEGIES),
+                              max_trades_per_day=len(CONTRACTS) * len(STRATEGIES))
         try:
             risk = RiskEngine.load(risk_cfg, RiskLedger(dynamo, scope='live'))
         except RiskStateUnavailable as e:

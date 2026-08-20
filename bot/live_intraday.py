@@ -57,7 +57,7 @@ from ib_insync import IB, Future
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data.s3_archive import archive_intraday_bars
 
-from risk import RiskEngine, RiskConfig, realized_pnl
+from risk import RiskEngine, RiskConfig, realized_pnl, realized_vol_daily
 from hardening.risk_ledger import RiskLedger, RiskStateUnavailable
 from hardening.reconciler import reconcile
 from hardening.exec_manager import ExecutionManager, TradeIntent
@@ -376,7 +376,9 @@ def run_strategy(ib, dynamo, con, strat, df, now, today, mode, ctrl=None, risk=N
                 return
             stop_px = strat['stop'](detail, 'SHORT' if entry_side == -1 else 'LONG')
             stop_dist = abs(stop_px - detail['close'])
-            size = risk.position_size(stop_dist, point_value=CONTRACT['point_value'])
+            vol = realized_vol_daily(df['Close'], 20)
+            size = risk.position_size(stop_dist, point_value=CONTRACT['point_value'],
+                                      realized_vol=vol, price=detail['close'])
             if size <= 0:
                 print(f">>> {mode} {tag} size=0 (stop too wide for budget), skip")
                 return
