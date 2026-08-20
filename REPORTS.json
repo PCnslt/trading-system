@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-19T18:38:39-04:00",
+  "updated": "2026-08-19T20:07:03-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -476,6 +476,24 @@
         "2c8e141"
       ],
       "blockers": []
+    },
+    {
+      "ts": "2026-08-19T19:48:13-04:00",
+      "task": "Daily status summary (cron)",
+      "summary": "Gateway active (port 4002 LISTENING); reconcile MATCH (0m ago); IBKR intraday bars archived today; no login errors. Intraday flat (MES FADESHORT/DONCH15 signal=NONE, pos=0). Index/gold futures flat. 2 crypto MOM20 paper positions (simulated): ETH LONG 1.094 @ 1972 (trail stop 2087, peak 2284, locked profit), BTC LONG 0.040 @ 65994 (stop 65406, ~flat).",
+      "commits": [],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-19T20:07:03-04:00",
+      "task": "Short-horizon edge build+validate, then deploy REV2 reversal lane",
+      "summary": "Built+validated the 2-3 day short-horizon candidates (next-action #3). Donchian 2/3/5d short-lookback = NO-GO (breakeven long-only, losing long-short; confirms overnight-vs-intraday momentum). 2-day reversal LONG-only = PROMOTE (ES/NQ/YM PF 1.54/1.62/1.26 @1t, OOS 1.19-1.70, win 71-76%, hold 3.4d, survives 3-tick, corr vs RSI2 +0.07-0.14 = independent). Deployed REV2 into live.py as a 4th index lane (2d drop >1xATR entry, 2xATR stop, revert/3d exit); exit interface now passes entry_px; reconciler TRACKED_TAGS + VWAP OTHER_BOT_TAGS updated; docs/diagram/dashboard synced. 240 tests pass, compile clean, manual dry-run verified. Picks up automatically next 19:00 ET run.",
+      "commits": [
+        "REV2 lane commit (live.py + cross-cutting sync)"
+      ],
+      "blockers": [
+        "forward-test REV2 on MES/MNQ paper alongside RSI2; watch grind-regime years (2001-02/2012/2018/2022)"
+      ]
     }
   ]
 }

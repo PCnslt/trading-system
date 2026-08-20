@@ -526,3 +526,18 @@ PHASE B — applied the one clear win: RSI2 breakeven-lock in live.py (rsi2_trai
 
 - **Summary**: Implemented the evidence-backed 'take profits frequently' move as an A/B variant. live.py: new RSI2PT strategy (same RSI2<10 entry, exits at a broker-side +0.5% limit target via the native bracket the exec_mgr already supported) running alongside RSI2 (RSI2>70/5d exit) to forward-test which exit wins. Added _last_fill_price() so an intraday target fill is attributed at the TARGET price (not mis-recorded as a stop fill). reconciler TRACKED_TAGS + VWAP OTHER_BOT_TAGS updated with MES/MNQ_RSI2PT. Synced: assets/architecture.html (RSI2PT + MGC + crypto_exec fixes), dashboard/app.py (schedule + ASCII diagram), docs/STRATEGY_PORTFOLIO.md lane 2, docs/PROJECT-STATE.md. CloudFormation: NO change (RSI2PT is a strategy tag, not a new resource — verified no strategy refs in the stack). DEFECT CHECK: 240 tests pass, all changed files compile, manual verification of STRATEGIES wiring + _last_fill_price attribution + reconciler/VWAP tags all pass. Research basis: 26y RSI2PT = 89% win PF 1.92 (vs baseline 72%/1.83, mixed DD); OR-fade + time-of-day seasonality FAIL honest costs (intraday premium is MR, per Lou-Polk-Skouras).
 - **Commits**: `2c8e141`
+
+---
+
+## 2026-08-19T19:48:13-04:00 — Daily status summary (cron)
+
+- **Summary**: Gateway active (port 4002 LISTENING); reconcile MATCH (0m ago); IBKR intraday bars archived today; no login errors. Intraday flat (MES FADESHORT/DONCH15 signal=NONE, pos=0). Index/gold futures flat. 2 crypto MOM20 paper positions (simulated): ETH LONG 1.094 @ 1972 (trail stop 2087, peak 2284, locked profit), BTC LONG 0.040 @ 65994 (stop 65406, ~flat).
+
+---
+
+## 2026-08-19T20:07:03-04:00 — Short-horizon edge build+validate, then deploy REV2 reversal lane
+
+- **Summary**: Built+validated the 2-3 day short-horizon candidates (next-action #3). Donchian 2/3/5d short-lookback = NO-GO (breakeven long-only, losing long-short; confirms overnight-vs-intraday momentum). 2-day reversal LONG-only = PROMOTE (ES/NQ/YM PF 1.54/1.62/1.26 @1t, OOS 1.19-1.70, win 71-76%, hold 3.4d, survives 3-tick, corr vs RSI2 +0.07-0.14 = independent). Deployed REV2 into live.py as a 4th index lane (2d drop >1xATR entry, 2xATR stop, revert/3d exit); exit interface now passes entry_px; reconciler TRACKED_TAGS + VWAP OTHER_BOT_TAGS updated; docs/diagram/dashboard synced. 240 tests pass, compile clean, manual dry-run verified. Picks up automatically next 19:00 ET run.
+- **Commits**: `REV2 lane commit (live.py + cross-cutting sync)`
+- **Blockers**:
+  - forward-test REV2 on MES/MNQ paper alongside RSI2; watch grind-regime years (2001-02/2012/2018/2022)
