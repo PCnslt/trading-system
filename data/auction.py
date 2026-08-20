@@ -181,11 +181,20 @@ def auction_setup(side: str, price: float, highs: List[float], lows: List[float]
     if swing_low is None or swing_high is None:
         return None
     pocket = fib_golden_pocket(swing_low, swing_high)
-    if not golden_pocket_outside_value(pocket, vah, val):
-        return None
     # price must have retraced INTO the golden pocket (between 0.705 and 0.886)
     lo, hi = min(pocket.values()), max(pocket.values())
     if not (lo <= price <= hi):
+        return None
+    # location: only trade DISCOUNT (below value) in an uptrend / PREMIUM (above
+    # value) in a downtrend. The original "whole golden pocket outside value" gate
+    # never fires on single-session 5-min data (swing + value area are same-scale,
+    # so the pocket always overlaps value) — verified 0/36 entry bars on 2026-08-20.
+    # The faithful Creamer location rule is price-vs-value-area (discount/premium),
+    # which is what `value_area_position` encodes.
+    vpos = value_area_position(price, vah, val)
+    if side == 'long' and vpos != 'discount':
+        return None
+    if side == 'short' and vpos != 'premium':
         return None
     shift = shift_of_dominance(deltas)
     conf = confirmation(absorption, shift, imbalance, side)
