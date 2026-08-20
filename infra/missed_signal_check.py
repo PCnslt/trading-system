@@ -104,9 +104,9 @@ def main():
 
     alerts = []
 
-    # ---- index edge (live.py): MES/MNQ Donchian + RSI2 (long-only) ----
+    # ---- index edge (live.py): MES/MNQ/MYM Donchian + RSI2 (long-only) ----
     run_marker = table.get_item(Key={'pk': 'RUN#live', 'sk': today}).get('Item')
-    for ticker, sym in [('ES=F', 'MES'), ('NQ=F', 'MNQ')]:
+    for ticker, sym in [('ES=F', 'MES'), ('NQ=F', 'MNQ'), ('YM=F', 'MYM')]:
         bar_date, want = replay_index(ticker)
         if bar_date is None:
             alerts.append(f"[missed-sig] {sym}: replay data fetch failed")
