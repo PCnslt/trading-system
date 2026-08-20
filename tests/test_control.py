@@ -96,7 +96,7 @@ def test_flatten_not_cleared_until_all_bots_ack(fake_table):
     assert fake_table.items[('CONTROL', 'system')]['flatten'] == 'true'
 
     # second bot acks; still not cleared
-    control.ack_flatten(fake_table, 'live_bondsfx')
+    control.ack_flatten(fake_table, 'live_vwap')
     control.clear_flatten(fake_table)
     assert fake_table.items[('CONTROL', 'system')]['flatten'] == 'true'
 

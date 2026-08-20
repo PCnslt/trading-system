@@ -277,8 +277,8 @@ def _other_open(dynamo, exclude, today):
 
 
 # The DAILY index bot (live.py, clientId 70) holds MES overnight in the SAME
-# paper account. Its tags:
-DAILY_MES_TAGS = ['MES_DONCHIAN', 'MES_RSI2']
+# paper account. Its tags (ALL FOUR strategies — keep in sync with live.py STRATEGIES):
+DAILY_MES_TAGS = ['MES_DONCHIAN', 'MES_RSI2', 'MES_RSI2PT', 'MES_REV2']
 
 
 def _daily_mes_held(dynamo):

@@ -38,6 +38,9 @@ INTRA_TAGS = ['MES_FADESHORT', 'MES_DONCH15']
 # strategy tag -> implied side when a POSITION row stores no explicit 'side'
 IMPLIED_SIDE = {
     'MES_DONCHIAN': 'LONG', 'MES_RSI2': 'LONG',
+    'MES_RSI2PT': 'LONG', 'MES_REV2': 'LONG',
+    'MNQ_DONCHIAN': 'LONG', 'MNQ_RSI2': 'LONG',
+    'MNQ_RSI2PT': 'LONG', 'MNQ_REV2': 'LONG',
     'ZB_RSI2SHORT': 'SHORT', 'ZN_RSI2SHORT': 'SHORT',
     'ZB_BBANDSHORT': 'SHORT', 'ZN_BBANDSHORT': 'SHORT',
     'MES_FADESHORT': 'SHORT',
