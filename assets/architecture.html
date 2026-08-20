@@ -122,9 +122,11 @@
         <text x="446" y="414">live.py — index MES/MNQ · Donchian + RSI2 + RSI2PT + REV2 (19:00 ET)</text>
         <text x="446" y="432">live_intraday.py — MES RTH · FADESHORT + DONCH15</text>
         <text x="446" y="450">live_gc.py — MGC Donchian + TSMOM · paper</text>
-        <text x="446" y="468">equity_signals.py — RSI2-dip + Donchian(200d) · signal-only</text>
-        <text x="446" y="486">crypto_exec.py — crypto MOM20 · paper-EXEC (30min)</text>
-        <text x="446" y="504">live_bondsfx.py — bonds ZB/ZN · SHELVED (disarmed)</text>
+        <text x="446" y="468">live_vwap.py — MES/MNQ VWAP 2σ reversion · paper-EXEC</text>
+        <text x="446" y="486">live_equities.py — RH equities RSI2 · paper→live</text>
+        <text x="446" y="504">crypto_exec.py — crypto MOM20 · paper-EXEC (24/7, 30min)</text>
+        <text x="446" y="522">equity_signals.py — RSI2-dip + Donchian(200d) · signal-only</text>
+        <text x="446" y="540">live_bondsfx.py — bonds ZB/ZN · SHELVED (disarmed)</text>
       </g>
     </g>
 
@@ -139,7 +141,7 @@
         <text x="446" y="677">stale-signal + data-health gate</text>
         <text x="446" y="695">session + account-id dedupe / idempotency</text>
         <text x="446" y="713" font-weight="700" fill="#fb7185">NEVER-LOSE-MONEY — refuse entry w/o protective stop</text>
-        <text x="446" y="731">1% risk/trade + 1% vol overlay (co-equal)</text>
+        <text x="446" y="731">1% risk/trade + 1% vol overlay + 3% heat cap (total open risk)</text>
       </g>
     </g>
 
@@ -290,7 +292,7 @@
   <text x="1075" y="1192" text-anchor="middle" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="8.5" fill="#94a3b8">status/alerts</text>
 
   <!-- ============ FOOTER ============ -->
-  <text x="40" y="1318" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="9.5" fill="#475569">AS-BUILT · 2026-08-16 · futures phase-1 (paper) · assets/architecture.html · solid = trade path · dashed = broker-truth / state · no target-only layers</text>
+  <text x="40" y="1318" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="9.5" fill="#475569">AS-BUILT · 2026-08-20 · futures phase-1 (paper) · assets/architecture.html · solid = trade path · dashed = broker-truth / state · no target-only layers</text>
   <text x="40" y="1332" font-family="'JetBrains Mono',ui-monospace,Consolas,monospace" font-size="9.5" fill="#475569">CloudFormation 'trading-system' (imported · DeletionPolicy Retain) · SG 22/8644/8645 auto-updated by laptop cron (IP-change self-heal)</text>
 </svg>
 </body>

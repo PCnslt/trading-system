@@ -96,6 +96,38 @@ def scan_signals(limit=30):
     return items[:limit]
 
 
+@st.cache_data(ttl=15)
+def realized_pnl_total():
+    """Sum realized P&L across all lanes (RISK#<date>/<scope> ledger rows)."""
+    items = _scan_all(Attr('pk').begins_with('RISK#'))
+    tot = 0.0
+    for it in items:
+        try:
+            tot += float(it.get('realized_pnl') or 0)
+        except (TypeError, ValueError):
+            pass
+    return tot
+
+
+def render_results():
+    """Compact 'numbers' strip + open-positions table."""
+    rp = realized_pnl_total()
+    positions = scan_positions()
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Realized P&L (all lanes)", f"${rp:,.2f}")
+    c2.metric("Open positions", len(positions))
+    c3.metric("Control", (get_control() or {}).get('state', '—'))
+    c4.metric("Gate 5 sessions", "1 / 10")
+    if positions:
+        st.markdown("| Position | Side | Qty | Entry | Stop |")
+        st.markdown("|---|---|---|---|---|")
+        for p in positions:
+            tag = p['pk'].split('#', 1)[-1]
+            side = p.get('side', 'LONG')
+            st.markdown(f"| `{tag}` | {'▲' if side == 'LONG' else '▼'} {side} "
+                        f"| {p.get('pos','0')} | {p.get('entry','—')} | {p.get('stop','—')} |")
+
+
 st.title("📈 Trading System")
 
 # --- Control state banner ---
@@ -116,6 +148,8 @@ tab_trade, tab_pulse, tab_data_hot, tab_data_cold, tab_sched, tab_live, tab_arch
 
 # ============================ TRADING TAB ============================
 with tab_trade:
+    render_results()
+    st.divider()
     render_trading()
 
 # ============================ LIVE PULSE TAB ============================
@@ -275,17 +309,15 @@ with tab_live:
 
 # ============================ ARCHITECTURE TAB ============================
 with tab_arch:
-    st.subheader("System architecture — AS-BUILT (the running system)")
-    st.caption("Hardening DONE — this IS the running architecture: strategy → risk/admission → "
-               "execution manager → IBKR → reconcile → risk ledger. No \"target-only\" layers remain.")
+    st.subheader("🗺️ System architecture — as-built (pictures & tables)")
+    st.caption("The running system: strategy → risk → execution → broker → reconcile. "
+               "Solid = trade path · dashed = broker-truth/state. Scroll the diagram.")
 
     _arch = _load_architecture_html()
     if _arch:
-        st.caption("🗺️ Primary view — full SVG topology (laptop → VPS → IBKR → AWS → Telegram). "
-                   "Solid = trade path · dashed = broker-truth / state. Scroll to explore.")
-        st.components.v1.html(_arch, height=880, scrolling=True)
+        st.components.v1.html(_arch, height=1000, scrolling=True)
     else:
-        st.warning("assets/architecture.html not found — falling back to legacy ASCII.")
+        st.warning("assets/architecture.html not found.")
 
     with st.expander("🗜️ Legacy ASCII topology (secondary view)", expanded=False):
         st.code("""                        RESEARCH / DATA LAKE
@@ -385,16 +417,35 @@ with tab_arch:
              ▲                       │
              └──── Telegram group ────┘  (user visibility, not transport)""", language="text")
 
-    st.markdown("#### Hardening — all landed & live (as-built)")
-    st.markdown("""
-- TradeIntent layer ✅ — strategies express intent, don't call broker (deterministic signal_id/intent_id)
-- Execution Manager ✅ — centralized order submission (idempotency, timeout=UNKNOWN)
-- Reconciliation ✅ — broker = source of truth for positions/orders/fills
-- Persistent Risk Ledger ✅ — restart-safe daily P&L + loss cap (never-lose-money)
-- IBC-based gateway → native auto-restart + token re-login ✅ **[DONE]**
-- control plane fail-open → fail-closed (unreadable state = HALT) ✅ **[DONE]**
-- fill verification before writing position/stop ✅ **[DONE]**
-""")
+    st.markdown("#### 🛡️ Hardening — all landed (as-built)")
+    st.markdown("""| Layer | Status |
+|---|---|
+| TradeIntent (deterministic signal_id) | ✅ |
+| Execution Manager (only IBKR submitter) | ✅ |
+| Reconciliation (broker = truth, 45s daemon) | ✅ |
+| Persistent Risk Ledger (restart-safe) | ✅ |
+| Portfolio heat cap (total open risk ≤3%) | ✅ |
+| Control plane fail-closed | ✅ |
+| Fill verification before state write | ✅ |
+| Native bracket stops (broker-side) | ✅ |""")
+
+    st.divider()
+    st.subheader("📊 Strategy portfolio — live status")
+    st.caption("🟢 live-paper · 🟡 paper/signal-only · 🔴 no-go (record kept) · ⚪ researching")
+    st.markdown("""| Strategy | Market | Status | Edge (PF) |
+|---|---|---|---|
+| 🟢 **Index Donchian** | MES/MNQ | LIVE-PAPER | 1.52 OOS (1.43 @3t) |
+| 🟢 **Index RSI2** | MES/MNQ | LIVE-PAPER | 2.57 OOS (1.88 @3t) |
+| 🟢 **Index RSI2PT** | MES/MNQ | LIVE-PAPER (A/B) | 1.92 · 89% win |
+| 🟢 **Index REV2** | MES/MNQ | LIVE-PAPER | 2.07 (SMA) · maxDD −$14k |
+| 🟢 **VWAP 2σ reversion** | MES/MNQ | paper-EXEC | 1.11–1.38 OOS |
+| 🟡 Gold Donchian+TSMOM | MGC | paper (size=0) | 1.42 / 1.35 |
+| 🟡 RH equities RSI2 | stocks | paper→live | 1.47 OOS |
+| 🟡 Crypto MOM20 | BTC/ETH | paper-EXEC 24/7 | 1.17 / 1.35 |
+| 🔴 Donchian short-lookback (2/3/5d) | index | NO-GO | 0.87–1.29 |
+| 🔴 Intraday ORB/MOM/DONCH15/FADE | MES | NO-GO | <1.0 |
+| 🔴 Bonds fade-SHORT | ZB/ZN | SHELVED | dies @1-tick |
+| ⚪ Order-flow (Creamer) | MNQ | researching | data-only |""")
 
 # ============================ ROADMAP TAB ============================
 with tab_road:
