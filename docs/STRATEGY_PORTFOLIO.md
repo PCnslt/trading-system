@@ -25,7 +25,7 @@
 | LIVE-PAPER | 3 |
 | LIVE-READY | 1 |
 | PARKED-PENDING | 1 |
-| NO-GO-WITH-REASON | 23 |
+| NO-GO-WITH-REASON | 24 |
 | RESEARCHING | 4 |
 | **Total lanes** | **31** |
 
@@ -77,6 +77,7 @@
 | 33 | **2-3 day short-term reversal (LONG-only)** | Index futures (ES/NQ/YM) | **LIVE-PAPER** (deployed 2026-08-19) | N=2 @1t: ES PF 1.54 / NQ 1.62 / YM 1.26, OOS 1.19-1.70 · **+200d-SMA filter: ES PF 2.07 maxDD -$14k / NQ 2.04 -$26k (halved)** · win 75-79% · hold 3.4d · survives 3-tick | Buy an N-day drop >1×ATR (N=2), **close > 200d SMA** (Connors filter, same as RSI2), 2×ATR stop, revert-to-entry or 3d exit. **Independent from RSI2** (corr +0.07-0.14, 19-21% overlap). ⚠️ **Long-beta caveat:** whole family (RSI2/RSI2PT/REV2) is "buy the dip in a bull market" — drift-inflated PFs, loses in bears (2022 PF 0.48); the SMA filter is the mitigation (skips falling knives). RTY fails. |
 | 34 | **Donchian L-day breakout (L=2/3/5)** | Index futures | **NO-GO-WITH-REASON** (2026-08-19) | LONG-only PF 0.87–1.29 (mostly ~1.0, breakeven) · LONG+SHORT 0.77–1.03 (clearly losing) | Short-horizon breakout/momentum has no edge — confirms Lou-Polk-Skouras (momentum alpha is overnight, not intraday/short). Long-only breakeven, long-short loses net on every index. Dies at cost. **No reactivation.** |
 | 35 | **Cross-asset 1-month TSMOM** (Zaremba "short-term momentum almost everywhere") | Futures (29-contract: index/rates/energy/metals/ags) | **NO-GO-WITH-REASON** (2026-08-20) | Vol-scaled equal-risk portfolio: **Sharpe 0.23, CAGR +2.2%, maxDD −62%**, flat/negative 2013–2026 · naive pooled PF 1.01–1.10, OOS 1.01 (train 1.40 → validate 0.94) | The academic 1-month momentum premium is statistically significant but **economically dead on our universe**: Sharpe 0.23 is noise, −62% maxDD fails drawdown-first instantly, and ALL the profit is pre-2012 commodity-supercycle (post-2012 flat/negative). Cost-fragile (12.6x annual turnover). Consistent w/ every short-horizon momentum test we've run. **No reactivation.** `research/cross_asset_momentum.py` + `cross_asset_momentum_volscale.py`. |
+| 36 | **Cross-sectional short-term reversal** (large-cap losers, de Groot/Huij/Zhou + FIM) | Equities (38 S&P100 large-caps) | **NO-GO-WITH-REASON** (2026-08-20) | Gross (L=5d/H=5d) Sharpe 1.07–1.13, CAGR +29–31% · **@5bps Sharpe 0.83–0.90, @10bps 0.58–0.67** · maxDD **−54% to −69%** | Confirms the literature (reversal survives GROSS in large caps) but weekly rebalance (~52×/yr bucket turnover) kills it at cost, and a long-only "buy-losers" bucket catches falling knives (2008 −42%, 2022 −21%, 2011 −34%) → drawdown-fatal, and redundant with live RSI2/REV2 (same buy-the-dip-in-large-caps exposure, but those carry a 200d-SMA filter + stops). **No reactivation.** `research/cross_sectional_reversal.py`. |
 
 ---
 
