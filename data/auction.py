@@ -148,12 +148,18 @@ def execution_levels(side: str, entry: float, pocket: dict, failed_extreme: floa
     invalidation = pocket.get('0.886')
     if side == 'long':
         stop = min(x for x in (failed_extreme, invalidation) if x is not None)
-        t1 = poc
+        # target ABOVE entry: POC only if it's actually above; else the shallow
+        # retracement (0.705) which sits above a proper long entry.
+        t1 = poc if (poc is not None and poc > entry) else pocket.get('0.705')
         t2 = pocket.get('0.705')
     else:
         stop = max(x for x in (failed_extreme, invalidation) if x is not None)
-        t1 = poc
-        t2 = pocket.get('0.705')
+        # target BELOW entry: POC only if it's actually below; else the deep
+        # retracement (0.886) which sits below a proper short entry. (The old
+        # unconditional `t1 = poc` produced targets ABOVE a short entry, so a
+        # "win" was trivially true and the R multiple went negative.)
+        t1 = poc if (poc is not None and poc < entry) else pocket.get('0.886')
+        t2 = pocket.get('0.886')
     return {'stop': stop, 'target_poc': t1, 'target_swing': t2}
 
 

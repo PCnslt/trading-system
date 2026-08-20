@@ -83,6 +83,16 @@ def test_execution_levels_long_stop_below_failed_sellers():
     assert ex['target_poc'] == 110.0
 
 
+def test_execution_levels_short_target_below_entry():
+    # short entered at 104; POC=110 is ABOVE entry (wrong direction) -> must fall
+    # back to the deep retracement (0.886 = 102.28) so the target is BELOW entry.
+    ex = execution_levels('short', 104.0, fib_golden_pocket(100, 120),
+                          failed_extreme=106.0, poc=110.0)
+    assert ex['stop'] == 106.0                      # max(failed, 0.886=102.28)
+    assert ex['target_poc'] < 104.0                 # target must be below entry
+    assert ex['target_poc'] == pytest.approx(102.28)
+
+
 # ---- orchestrator ----
 def _base_setup_args():
     return dict(
