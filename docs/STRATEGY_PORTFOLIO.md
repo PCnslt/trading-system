@@ -25,7 +25,7 @@
 | LIVE-PAPER | 3 |
 | LIVE-READY | 1 |
 | PARKED-PENDING | 1 |
-| NO-GO-WITH-REASON | 22 |
+| NO-GO-WITH-REASON | 23 |
 | RESEARCHING | 4 |
 | **Total lanes** | **31** |
 
@@ -76,6 +76,7 @@
 | 32 | **Order-flow / microstructure** (Creamer 4-step auction) | Index futures (MNQ 5-min) + small-ticket equities | **RESEARCHING** (data + signal-only, exec=NONE) | n/a (no backtest yet) | Collecting orderbook depth (IBKR L1-only — L2 not entitled; RH L2 price book for 15 names) + ticks (`kind`-tagged) + 1-min bars; computing footprint features (delta/absorption/value-area/imbalance/spread) → `MICRO#`; Creamer auction generator → `AUCTION#MNQ`. **0 setups / 8 sessions — needs swing-selection tuning + book data.** `docs/ORDERFLOW-LANE.md`. |
 | 33 | **2-3 day short-term reversal (LONG-only)** | Index futures (ES/NQ/YM) | **LIVE-PAPER** (deployed 2026-08-19) | N=2 @1t: ES PF 1.54 / NQ 1.62 / YM 1.26, OOS 1.19-1.70 · **+200d-SMA filter: ES PF 2.07 maxDD -$14k / NQ 2.04 -$26k (halved)** · win 75-79% · hold 3.4d · survives 3-tick | Buy an N-day drop >1×ATR (N=2), **close > 200d SMA** (Connors filter, same as RSI2), 2×ATR stop, revert-to-entry or 3d exit. **Independent from RSI2** (corr +0.07-0.14, 19-21% overlap). ⚠️ **Long-beta caveat:** whole family (RSI2/RSI2PT/REV2) is "buy the dip in a bull market" — drift-inflated PFs, loses in bears (2022 PF 0.48); the SMA filter is the mitigation (skips falling knives). RTY fails. |
 | 34 | **Donchian L-day breakout (L=2/3/5)** | Index futures | **NO-GO-WITH-REASON** (2026-08-19) | LONG-only PF 0.87–1.29 (mostly ~1.0, breakeven) · LONG+SHORT 0.77–1.03 (clearly losing) | Short-horizon breakout/momentum has no edge — confirms Lou-Polk-Skouras (momentum alpha is overnight, not intraday/short). Long-only breakeven, long-short loses net on every index. Dies at cost. **No reactivation.** |
+| 35 | **Cross-asset 1-month TSMOM** (Zaremba "short-term momentum almost everywhere") | Futures (29-contract: index/rates/energy/metals/ags) | **NO-GO-WITH-REASON** (2026-08-20) | Vol-scaled equal-risk portfolio: **Sharpe 0.23, CAGR +2.2%, maxDD −62%**, flat/negative 2013–2026 · naive pooled PF 1.01–1.10, OOS 1.01 (train 1.40 → validate 0.94) | The academic 1-month momentum premium is statistically significant but **economically dead on our universe**: Sharpe 0.23 is noise, −62% maxDD fails drawdown-first instantly, and ALL the profit is pre-2012 commodity-supercycle (post-2012 flat/negative). Cost-fragile (12.6x annual turnover). Consistent w/ every short-horizon momentum test we've run. **No reactivation.** `research/cross_asset_momentum.py` + `cross_asset_momentum_volscale.py`. |
 
 ---
 
