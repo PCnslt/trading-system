@@ -209,3 +209,73 @@ def auction_setup(side: str, price: float, highs: List[float], lows: List[float]
         'stop': ex['stop'], 'target_poc': ex['target_poc'],
         'target_swing': ex['target_swing'], 'participation': participation,
     }
+
+
+# ==================== score-based variant (replaces the AND-gate) ====================
+# Confirmation (absorption + shift) carries the most weight — that is the actual
+# "failed auction" edge; env/location/pocket gate it. Participation is a HARD gate
+# (Creamer: below the floor = skip), not a weighted factor — see auction_score.
+SCORE_WEIGHTS = {'env': 0.15, 'location': 0.15, 'pocket': 0.15,
+                 'absorption': 0.30, 'shift': 0.25}
+SCORE_THRESHOLD = 0.60
+
+
+def auction_score(side: str, price: float, highs: List[float], lows: List[float],
+                  vah: Optional[float], val: Optional[float], poc: Optional[float],
+                  deltas: List[float], absorption: dict, imbalance: Optional[float],
+                  swing_low: Optional[float], swing_high: Optional[float],
+                  failed_extreme: Optional[float], participation: float,
+                  min_participation: float = 20000.0, swing_n: int = 2) -> dict:
+    """Score a candidate bar 0-1 across the 5 Creamer factors (weighted).
+
+    Replaces the old 6-condition AND-gate (which had ~0 joint hit-rate) with a
+    faithful WEIGHTED read of the same factors — closer to how the discretionary
+    strategy actually weighs evidence. Participation is a HARD gate (returns
+    score 0.0 when below the floor). A bar with `score >= SCORE_THRESHOLD` is a
+    candidate setup. `components` is returned for transparency/ranking.
+    """
+    env = market_structure(highs, lows, swing_n)
+    comp = {k: 0.0 for k in SCORE_WEIGHTS}
+    comp['participation'] = min(1.0, participation / (2.0 * min_participation)) \
+        if participation >= min_participation else 0.0
+
+    # hard gate — participation floor (Creamer: below = skip)
+    if participation < min_participation:
+        return {'score': 0.0, 'components': comp, 'environment': env, 'setup': False}
+
+    # 1. environment — trend must align with the trade direction
+    env_ok = (side == 'long' and env == 'up') or (side == 'short' and env == 'down')
+    comp['env'] = 1.0 if env_ok else 0.0
+
+    # 2. location — discount for long / premium for short (partial credit inside value)
+    vpos = value_area_position(price, vah, val)
+    if side == 'long':
+        comp['location'] = 1.0 if vpos == 'discount' else (0.4 if vpos == 'inside' else 0.0)
+    else:
+        comp['location'] = 1.0 if vpos == 'premium' else (0.4 if vpos == 'inside' else 0.0)
+
+    # 3. golden pocket — in-pocket (0.705-0.886 retracement); deeper = stronger
+    if swing_low is not None and swing_high is not None and swing_high > swing_low:
+        pocket = fib_golden_pocket(swing_low, swing_high)
+        lo, hi = min(pocket.values()), max(pocket.values())
+        if lo <= price <= hi:
+            r = (price - lo) / (hi - lo) if hi > lo else 0.0
+            comp['pocket'] = 0.5 + 0.5 * r          # 0.5 shallow -> 1.0 deep (0.886)
+
+    # 4. absorption — failed auction at the extreme (trapped participants)
+    if side == 'long':
+        comp['absorption'] = 1.0 if absorption.get('sell_absorption') else 0.0
+    else:
+        comp['absorption'] = 1.0 if absorption.get('buy_absorption') else 0.0
+
+    # 5. shift of dominance — delta flips in the trade's direction
+    if shift_of_dominance(deltas):
+        cur = deltas[-1] if deltas else 0.0
+        aligned = (side == 'long' and cur > 0) or (side == 'short' and cur < 0)
+        comp['shift'] = 1.0 if aligned else 0.3    # flipped but not yet aligned
+
+    score = sum(SCORE_WEIGHTS[k] * comp[k] for k in SCORE_WEIGHTS)
+    return {'score': round(score, 3),
+            'components': {k: round(v, 3) for k, v in comp.items()},
+            'environment': env,
+            'setup': score >= SCORE_THRESHOLD}

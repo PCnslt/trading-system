@@ -42,10 +42,10 @@ from infra.ssm_secrets import bootstrap as _sb
 _sb()
 
 from data.auction import (market_structure, find_swings, fib_golden_pocket,
-                          auction_setup)
+                          auction_score, execution_levels)
 from data.microstructure import bar_absorption, bid_ask_delta
-from microstructure_engine import (_load_bars, _load_ticks, _latest_book,
-                                   compute_session_features, _list_prefix)
+from bot.microstructure_engine import (_load_bars, _load_ticks, _latest_book,
+                                        compute_session_features, _list_prefix)
 
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
 S3_BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
@@ -100,6 +100,7 @@ def generate_setups(sym, structure_bars, target_bars, per_bar, profile, imbalanc
 
     deltas = [f['delta'] for f in per_bar]
     setups = []
+    scored = []                          # (score, side, ts) for ranking diagnostics
     for i, b in enumerate(target_bars):
         ts = b.get('ts')
         try:
@@ -115,17 +116,27 @@ def generate_setups(sym, structure_bars, target_bars, per_bar, profile, imbalanc
                 'buy_absorption': f['buy_absorption']}
         for side in ('long', 'short'):
             failed = b.get('low') if side == 'long' else b.get('high')
-            s = auction_setup(
+            sc = auction_score(
                 side=side, price=price, highs=h_highs, lows=h_lows,
                 vah=profile.get('vah'), val=profile.get('val'), poc=profile.get('poc'),
                 deltas=deltas[:i + 1], absorption=absn, imbalance=imbalance,
                 swing_low=swing_low, swing_high=swing_high, failed_extreme=failed,
                 participation=participation, min_participation=MIN_PARTICIPATION)
-            if s:
-                s['symbol'] = sym
-                s['bar_ts'] = ts
+            scored.append((sc['score'], side, ts))
+            if sc['setup']:
+                pocket = fib_golden_pocket(swing_low, swing_high) \
+                    if (swing_low is not None and swing_high is not None) else {}
+                ex = execution_levels(side, price, pocket, failed, profile.get('poc'))
+                s = {
+                    'side': side, 'environment': sc['environment'], 'entry': price,
+                    'score': sc['score'], 'components': sc['components'],
+                    'stop': ex['stop'], 'target_poc': ex['target_poc'],
+                    'target_swing': ex['target_swing'], 'participation': participation,
+                    'symbol': sym, 'bar_ts': ts,
+                }
                 setups.append(s)
-    return setups
+    setups.sort(key=lambda s: -s['score'])
+    return setups, sorted(scored, reverse=True)[:5]
 
 
 def main():
@@ -162,11 +173,13 @@ def main():
         window = all_dates[max(0, idx - 9):idx + 1]   # up to 10 sessions incl. target
         structure_bars = _load_bars_multi(s3, sym, window)
         per_bar, profile, imbalance = compute_session_features(sym, bars, ticks, book)
-        setups = generate_setups(sym, structure_bars, bars, per_bar, profile, imbalance)
+        setups, top_scores = generate_setups(sym, structure_bars, bars, per_bar, profile, imbalance)
         print(f'[{sym}] {date}: {len(bars)} bars, {len(window)}-session 1h window, '
               f'{len(setups)} candidate setups (imbalance={imbalance})')
+        for sc, sside, sts in top_scores:
+            print(f'  top-score {sc:.3f} {sside:5s} @ {sts}')
         for s in setups:
-            print(f'  {s["side"]:5s} @ {s["entry"]} stop={s["stop"]} '
+            print(f'  {s["side"]:5s} score={s["score"]:.3f} @ {s["entry"]} stop={s["stop"]} '
                   f't1(POC)={s["target_poc"]} t2(swing)={s["target_swing"]} '
                   f'env={s["environment"]} part={s["participation"]:.0f}')
         if args.dry_run:
@@ -175,13 +188,14 @@ def main():
         for s in setups:
             item = {'pk': f'AUCTION#{sym}', 'sk': s['bar_ts'],
                     'side': s['side'], 'entry': str(round(s['entry'], 2)),
-                    'environment': s['environment'], 'ts': now}
+                    'environment': s['environment'], 'ts': now,
+                    'score': str(round(s['score'], 3))}
             if s['stop'] is not None:
                 item['stop'] = str(round(s['stop'], 2))
             for k in ('target_poc', 'target_swing', 'participation'):
                 if s.get(k) is not None:
                     item[k] = str(round(s[k], 4))
-            item['confirmation'] = json.dumps(s['confirmation'])
+            item['components'] = json.dumps(s['components'])
             table.put_item(Item=item)
         print(f'[{sym}] wrote {len(setups)} AUCTION# rows')
 

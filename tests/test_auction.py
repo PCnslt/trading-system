@@ -8,7 +8,7 @@ import pytest
 
 from data.auction import (market_structure, fib_golden_pocket, value_area_position,
                           golden_pocket_outside_value, shift_of_dominance,
-                          confirmation, execution_levels, auction_setup)
+                          confirmation, execution_levels, auction_setup, auction_score)
 
 # synthetic uptrend: HH (8->10) + HL (2->3)
 UP_HIGHS = [5, 5, 5, 8, 5, 5, 5, 10, 5, 5, 5]
@@ -116,3 +116,26 @@ def test_auction_setup_rejects_wrong_environment_direction():
 def test_auction_setup_rejects_price_outside_pocket():
     a = _base_setup_args(); a['price'] = 110.0    # above the golden pocket
     assert auction_setup(**a) is None
+
+
+# ---- score-based variant ----
+def test_auction_score_full_alignment_is_setup():
+    sc = auction_score(**_base_setup_args())
+    assert 0.0 <= sc['score'] <= 1.0
+    assert sc['setup'] is True
+    assert sc['components']['absorption'] == 1.0
+    assert sc['components']['shift'] == 1.0
+
+
+def test_auction_score_hard_gate_below_participation_floor():
+    a = _base_setup_args(); a['participation'] = 15000.0
+    sc = auction_score(**a)
+    assert sc['setup'] is False
+    assert sc['score'] == 0.0
+
+
+def test_auction_score_wrong_direction_low_score():
+    a = _base_setup_args(); a['side'] = 'short'   # short in an uptrend -> env=0
+    sc = auction_score(**a)
+    assert sc['components']['env'] == 0.0
+    assert sc['score'] < 0.6
