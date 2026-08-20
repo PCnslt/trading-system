@@ -93,7 +93,7 @@ def render_trading():
 
     # ---- Daily index ----
     st.subheader('📅 Daily — index  (live.py: Donchian + RSI2)')
-    sym = st.radio('Symbol', ['MES', 'MNQ'], horizontal=True, key='daily_sym')
+    sym = st.radio('Symbol', ['MES', 'MNQ', 'MYM'], horizontal=True, key='daily_sym')
     df = charts.load_daily(sym)
     d_chart = charts.daily_chart(df)
     d_tag = f'{sym}_DONCHIAN'

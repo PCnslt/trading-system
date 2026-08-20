@@ -85,10 +85,11 @@ REV2_MAX_HOLD = 3        # time stop (validated: avg hold 3.4d)
 # ---- trailing-stop params (validated: Donchian chandelier ONLY) ----
 CHAND_ATR = 3.0              # Donchian chandelier: 3*ATR below highest close
 
-# data ticker -> execution contract. MES/MNQ are 1/10 size; % returns identical.
+# data ticker -> execution contract. MES/MNQ/MYM are 1/10 size; % returns identical.
 CONTRACTS = [
-    {'data': 'ES=F', 'symbol': 'MES', 'point_value': 5.0},
-    {'data': 'NQ=F', 'symbol': 'MNQ', 'point_value': 2.0},
+    {'data': 'ES=F', 'symbol': 'MES', 'point_value': 5.0,  'exchange': 'CME'},
+    {'data': 'NQ=F', 'symbol': 'MNQ', 'point_value': 2.0,  'exchange': 'CME'},
+    {'data': 'YM=F', 'symbol': 'MYM', 'point_value': 0.5,  'exchange': 'CBOT'},
 ]
 
 
@@ -653,7 +654,7 @@ def main():
 
             # 4. qualify contract (front-month, dynamic roll) — once per symbol
             try:
-                con = ib.qualifyContracts(Future(sym, front_month(), 'CME'))[0]
+                con = ib.qualifyContracts(Future(sym, front_month(), c['exchange']))[0]
             except Exception as e:
                 print(f"[{today}] {sym}: contract qualify failed: {e}")
                 continue

@@ -32,6 +32,8 @@ TRACKED_TAGS = {
     'MNQ_DONCHIAN': 'LONG', 'MNQ_RSI2': 'LONG',
     'MES_RSI2PT': 'LONG', 'MNQ_RSI2PT': 'LONG',
     'MES_REV2': 'LONG', 'MNQ_REV2': 'LONG',
+    'MYM_DONCHIAN': 'LONG', 'MYM_RSI2': 'LONG',
+    'MYM_RSI2PT': 'LONG', 'MYM_REV2': 'LONG',
     # intraday MES
     'MES_FADESHORT': 'SHORT', 'MES_DONCH15': None,
     # VWAP equity-index intraday sleeve (bidirectional — side stored in row)

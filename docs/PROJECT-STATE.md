@@ -132,7 +132,7 @@ Effective daily-loss halt, **as enforced by code**, is per-lane:
 
 | Lane | Enforced by | Daily-loss limit |
 |---|---|---|
-| Index futures (MES/MNQ) | `bot/risk.py` RiskEngine | 2% × sleeve ($350k) = **$7,000** (paper) |
+| Index futures (MES/MNQ/MYM) | `bot/risk.py` RiskEngine | 2% × sleeve ($350k) = **$7,000** (paper) |
 | Gold (MGC) | RiskEngine | 2% × sleeve ($250k) = **$5,000** (paper) |
 | VWAP sleeve (MES/MNQ) | RiskEngine | 2% × sleeve ($25k) = **$500** (paper) |
 | Intraday MES | RiskEngine | 2% × `INTRA_RISK_BUDGET` (paper) |
