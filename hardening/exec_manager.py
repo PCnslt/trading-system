@@ -143,7 +143,7 @@ class ExecutionManager:
 
     # ---- entry ----
     def submit_entry(self, intent: TradeIntent, contract, stop_tif='GTC',
-                     take_profit: float = None, fill_timeout=8.0) -> ExecutionResult:
+                     take_profit: float = None, fill_timeout=20.0) -> ExecutionResult:
         """Idempotently enter via a NATIVE BRACKET: entry + protective stop (and
         optional take-profit target) are submitted ATOMICALLY as parent+children,
         so the stop is held BROKER-SIDE from the moment of submission and survives
@@ -208,7 +208,10 @@ class ExecutionManager:
         """
         from ib_insync import MarketOrder, StopOrder, LimitOrder
 
-        parent = MarketOrder(intent.action, intent.qty, tif='DAY')
+        # GTC (not DAY): DAY orders on futures can be held/deferred when placed
+        # during Globex-only hours (the index bot enters at 19:00 ET, after the
+        # 16:00 ET RTH close) — 4 RSI2 entries timed out unfilled on 2026-08-20.
+        parent = MarketOrder(intent.action, intent.qty, tif='GTC')
         parent.transmit = False
         trade = self.ib.placeOrder(contract, parent)
 
@@ -238,7 +241,7 @@ class ExecutionManager:
 
     # ---- exit ----
     def submit_exit(self, intent: TradeIntent, contract, cancel_stop=True,
-                    symbol: str = None, fill_timeout=8.0) -> ExecutionResult:
+                    symbol: str = None, fill_timeout=20.0) -> ExecutionResult:
         """Idempotently close an open position (SELL a long / BUY a short).
 
         Cancels the resting protective stop FIRST (so stop-fill and exit-fill
@@ -253,7 +256,7 @@ class ExecutionManager:
         if cancel_stop:
             self.cancel_stop(sym, ref=intent.tag)
         from ib_insync import MarketOrder
-        trade = self.ib.placeOrder(contract, MarketOrder(intent.action, intent.qty, tif='DAY'))
+        trade = self.ib.placeOrder(contract, MarketOrder(intent.action, intent.qty, tif='GTC'))
         return self._confirm(trade, intent, fill_timeout)
 
     # ---- protective stop ----
