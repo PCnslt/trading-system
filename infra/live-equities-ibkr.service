@@ -1,0 +1,24 @@
+[Unit]
+Description=IBKR equities RSI(2) paper forward-test (native bracket stops, clientId 81)
+After=ibgateway.service
+Wants=ibgateway.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/trading-system
+Environment=IBEQ_PAPER_CAPITAL=50000
+Environment=IBEQ_RISK_PCT=0.01
+Environment=IBEQ_MAX_POS_PCT=0.05
+Environment=IBEQ_MAX_POSITIONS=20
+Environment=IBKR_PORT=4002
+Environment=AWS_REGION=us-east-1
+Environment=DYNAMODB_TABLE=trading-data
+ExecStart=/home/ubuntu/trading-system/venv/bin/python -u /home/ubuntu/trading-system/infra/bot_loop.py --daily 09:30 -- /home/ubuntu/trading-system/venv/bin/python -u /home/ubuntu/trading-system/bot/live_equities_ibkr.py
+Restart=on-failure
+RestartSec=30
+StandardOutput=append:/home/ubuntu/trading-system/logs/live-equities-ibkr.log
+StandardError=append:/home/ubuntu/trading-system/logs/live-equities-ibkr.log
+
+[Install]
+WantedBy=multi-user.target

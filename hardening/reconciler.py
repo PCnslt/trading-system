@@ -47,6 +47,21 @@ TRACKED_TAGS = {
     'ZN_RSI2SHORT': 'SHORT', 'ZN_BBANDSHORT': 'SHORT',
 }
 
+# IBKR equities RSI2 (long-only) — mirror of bot/live_equities.py UNIVERSE.
+# Added 2026-08-21 so the reconciler tracks the IBKR equities paper lane
+# (bot/live_equities_ibkr.py) instead of flagging its fills/positions as
+# unaccounted drift.
+_EQUITY_RSI2_SYMBOLS = [
+    'SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'XLF', 'XLK', 'XLV', 'XLP', 'XLI',
+    'MU', 'NVDA', 'MSFT', 'AAPL', 'AMD', 'TSLA', 'AMZN', 'INTC', 'GOOGL',
+    'META', 'AVGO', 'PLTR', 'ORCL', 'AMAT', 'LRCX', 'LLY', 'NOW', 'NFLX',
+    'CSCO', 'GEV', 'CAT', 'V', 'WMT', 'JPM', 'CRM', 'XOM', 'TXN', 'GS',
+    'JNJ', 'QCOM', 'IBM', 'UNH', 'BAC', 'COST', 'MA', 'T', 'CVX', 'UBER',
+    'KO', 'BA', 'ABBV', 'ISRG', 'C', 'ADBE', 'TMO', 'DHR', 'HD', 'MCD',
+    'PG', 'BKNG',
+]
+TRACKED_TAGS.update({f'{_s}_RSI2': 'LONG' for _s in _EQUITY_RSI2_SYMBOLS})
+
 # NEVER-LOSE-MONEY: every open position MUST rest a protective STOP order at the
 # broker. There is no per-tag opt-out anymore — the RSI2 buy-dip and intraday
 # FADESHORT previously rested no stop (backtest had none); they now rest their
