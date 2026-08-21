@@ -95,7 +95,7 @@ RH_LIVE_ACCOUNT = os.getenv('RH_LIVE_ACCOUNT', '515821577')  # 'Agentic' agentic
 RSI2_THR = 5.0
 STOP_ATR = 2.0
 MAX_HOLD = 5
-MAX_POSITIONS = 20
+MAX_POSITIONS = int(os.getenv('RH_MAX_POSITIONS', '20'))  # concurrent-position ceiling
 MIN_BARS = 260                       # >= 1y so SMA200 is fully warmed
 DATA_START = '2022-01-01'            # fixed anchor -> stable index positions
 
@@ -285,10 +285,18 @@ def put_item(table, pk, sk, fields, dry_run):
 
 
 def main():
+    global EXECUTION_MODE
     ap = argparse.ArgumentParser()
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--limit', type=int, default=0, help='cap symbols for a smoke test')
     args = ap.parse_args()
+
+    # SAFETY: --dry-run must NEVER place a real order. Force PAPER so no broker
+    # call path (entry or exit) is reachable, even with RH_EXECUTION_MODE=LIVE in
+    # the env. (Dry-run still exercises the full signal pipeline + gate logic.)
+    if args.dry_run and EXECUTION_MODE == 'LIVE':
+        print('[dry-run] LIVE env detected — forcing PAPER (dry-run never places orders)')
+        EXECUTION_MODE = 'PAPER'
 
     table = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
     today = dt.date.today().isoformat()
