@@ -110,6 +110,19 @@ STOCKS = ['MU', 'NVDA', 'MSFT', 'AAPL', 'AMD', 'TSLA', 'AMZN', 'INTC', 'GOOGL',
           'JNJ', 'QCOM', 'IBM', 'UNH', 'BAC', 'COST', 'MA', 'T', 'CVX', 'UBER',
           'KO', 'BA', 'ABBV', 'ISRG', 'C', 'ADBE', 'TMO', 'DHR', 'HD', 'MCD',
           'PG', 'BKNG']
+
+# Liquid sub-$35 small-ticket universe for the LIVE whole-share lane ($700).
+# Screened 2026-08-22 (research/small_cap_universe_screen.py): close $3-$35 AND
+# 20d avg $volume >= $50M. ETFs excluded (SPY $776 = 1 share > whole book).
+# NOTE: the RSI2 edge was VALIDATED on the S&P100 universe; this sub-universe is
+# a DIFFERENT (less-tested) exposure, forward-testing live under the $35/trade
+# satellite cap + $50/day loss cap. Refresh monthly (same rule as STOCKS).
+SMALL_CAP_STOCKS = [
+    'AAL', 'AGNC', 'CLF', 'CMCSA', 'CPRI', 'DOW', 'F', 'HBAN', 'HOG', 'KHC',
+    'KMI', 'KSS', 'KEY', 'KVUE', 'LCID', 'LYFT', 'M', 'MARA', 'MOS', 'NIO',
+    'NLY', 'PBR', 'PFE', 'RF', 'RIOT', 'RIVN', 'SIRI', 'SNAP', 'SOFI', 'T',
+    'VALE', 'VICI', 'VTRS', 'WBD',
+]
 UNIVERSE = ETFS + STOCKS
 BEAR_WARNING = ('true')  # this edge is negative in single bear years (2008 PF 0.36, 2022 PF 0.81)
 
@@ -320,7 +333,10 @@ def main():
         except Exception as e:
             print(f'[{today}] dedupe read failed (fail-open): {e!r}')
 
-    syms = UNIVERSE[:args.limit] if args.limit else UNIVERSE
+    # LIVE whole-share lane uses the liquid sub-$35 sub-universe (the S&P100
+    # universe is >$35, so $700 whole-share can't buy it). PAPER keeps full universe.
+    _syms = SMALL_CAP_STOCKS if EXECUTION_MODE == 'LIVE' else UNIVERSE
+    syms = _syms[:args.limit] if args.limit else _syms
     print(f'fetching {len(syms)} symbols (start={DATA_START})…')
     bars = fetch(syms)
     print(f'  got {len(bars)}/{len(syms)} symbols')
@@ -469,15 +485,15 @@ def main():
                                 if not ok:
                                     reason_l = f'LIVE gate: {greason}'
                                 else:
-                                    shares = size_usd / c if c > 0 else 0.0
-                                    if shares < 1.0:
-                                        reason_l = (f'LIVE skip: fractional {shares:.4f} '
-                                                    f'< 1 share cannot carry a broker stop')
+                                    shares = int(size_usd / c) if c > 0 else 0
+                                    if shares < 1:
+                                        reason_l = (f'LIVE skip: ${size_usd:.2f} < 1 whole '
+                                                    f'share of {sym} (@${c:.2f})')
                                     else:
                                         try:
                                             fill = client.place_equity_entry(
                                                 sym, 'buy', stop_price,
-                                                dollar_amount=f'{size_usd:.2f}',
+                                                quantity=str(shares),
                                                 client_order_ref=f'rh_{today}_{sym}')
                                             ep = (_f((fill.get('entry') or {}).get('average_price'))
                                                   or c)

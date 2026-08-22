@@ -124,7 +124,11 @@ rule discipline as today's top-50). The ETFs stay **fractional-only** at $700 (S
 = 1 share > whole book) — they remain paper/DCA, out of the whole-share live lane.
 
 **Before ANY live order, the build list is:**
-1. Small-ticket liquid sub-universe (above).
+1. ✅ **Small-ticket liquid sub-universe — DONE 2026-08-22** (`research/small_cap_universe_screen.py`
+   → `SMALL_CAP_STOCKS` in `bot/live_equities.py`: 34 liquid names $3–$35, ≥$50M/day
+   20d $volume). LIVE mode now uses it + whole-share `quantity=` sizing (was fractional
+   `dollar_amount=` → every signal skipped). Verified 8/8 sampled names whole-share
+   buyable, risk $1–$4 ≪ $7 (1%).
 2. `place_equity_entry` whole-share path already works (verified); confirm 1-share
    stop rests on a real $15 name via `review_equity_order` (simulate) → then one paper
    round-trip.
