@@ -102,27 +102,61 @@ DATA_START = '2022-01-01'            # fixed anchor -> stable index positions
 # ---- universe (deterministic liquidity rule, NOT return cherry-picking) ----
 # ETFs: the 10 validated names (XLE/XLB/XLU/XLRE excluded — KILL in the sweep).
 ETFS = ['SPY', 'QQQ', 'IWM', 'DIA', 'VTI', 'XLF', 'XLK', 'XLV', 'XLP', 'XLI']
-# Stocks: top-50 S&P100 by 20d avg dollar volume (recomputed 2026-08-16; GOOG
-# dual-class dropped, GOOGL kept). Refresh monthly per the plan's liquidity rule.
-STOCKS = ['MU', 'NVDA', 'MSFT', 'AAPL', 'AMD', 'TSLA', 'AMZN', 'INTC', 'GOOGL',
-          'META', 'AVGO', 'PLTR', 'ORCL', 'AMAT', 'LRCX', 'LLY', 'NOW', 'NFLX',
-          'CSCO', 'GEV', 'CAT', 'V', 'WMT', 'JPM', 'CRM', 'XOM', 'TXN', 'GS',
-          'JNJ', 'QCOM', 'IBM', 'UNH', 'BAC', 'COST', 'MA', 'T', 'CVX', 'UBER',
-          'KO', 'BA', 'ABBV', 'ISRG', 'C', 'ADBE', 'TMO', 'DHR', 'HD', 'MCD',
-          'PG', 'BKNG']
-
-# Liquid sub-$35 small-ticket universe for the LIVE whole-share lane ($700).
-# Screened 2026-08-22 (research/small_cap_universe_screen.py): close $3-$35 AND
-# 20d avg $volume >= $50M. ETFs excluded (SPY $776 = 1 share > whole book).
-# NOTE: the RSI2 edge was VALIDATED on the S&P100 universe; this sub-universe is
-# a DIFFERENT (less-tested) exposure, forward-testing live under the $35/trade
-# satellite cap + $50/day loss cap. Refresh monthly (same rule as STOCKS).
-SMALL_CAP_STOCKS = [
-    'AAL', 'AGNC', 'CLF', 'CMCSA', 'CPRI', 'DOW', 'F', 'HBAN', 'HOG', 'KHC',
-    'KMI', 'KSS', 'KEY', 'KVUE', 'LCID', 'LYFT', 'M', 'MARA', 'MOS', 'NIO',
-    'NLY', 'PBR', 'PFE', 'RF', 'RIOT', 'RIVN', 'SIRI', 'SNAP', 'SOFI', 'T',
-    'VALE', 'VICI', 'VTRS', 'WBD',
+# Stocks: liquid S&P-1500 names, 20d avg $volume >= $500M/day (screened 2026-08-24).
+STOCKS = [
+    'AAL', 'AAPL', 'ABBV', 'ABNB', 'ABT', 'ACN', 'ADBE', 'ADI',
+    'ADP', 'AMAT', 'AMD', 'AMGN', 'AMZN', 'ANET', 'APH', 'APP',
+    'AVGO', 'AXON', 'AXP', 'AZO', 'BA', 'BAC', 'BKNG', 'BLK',
+    'BMY', 'BRK-B', 'BSX', 'BX', 'C', 'CAT', 'CB', 'CDE',
+    'CDNS', 'CEG', 'CI', 'CIEN', 'CMCSA', 'CME', 'CMG', 'CMI',
+    'COF', 'COHR', 'COIN', 'COP', 'COST', 'CRM', 'CRWD', 'CSCO',
+    'CSX', 'CTSH', 'CVNA', 'CVS', 'CVX', 'DASH', 'DDOG', 'DE',
+    'DELL', 'DHR', 'DIS', 'DUK', 'EQIX', 'ETN', 'F', 'FCX',
+    'FERG', 'FIX', 'FSLR', 'FTNT', 'GE', 'GEV', 'GILD', 'GLW',
+    'GOOG', 'GOOGL', 'GS', 'HCA', 'HD', 'HL', 'HLT', 'HON',
+    'HONA', 'HOOD', 'HPE', 'HUM', 'HWM', 'IBM', 'ICE', 'INTC',
+    'INTU', 'ISRG', 'JCI', 'JNJ', 'JPM', 'KKR', 'KLAC', 'KO',
+    'LIN', 'LITE', 'LLY', 'LMT', 'LOW', 'LRCX', 'MA', 'MAR',
+    'MCD', 'MCHP', 'MCK', 'MDLZ', 'MDT', 'META', 'MMM', 'MNST',
+    'MO', 'MPC', 'MPWR', 'MRK', 'MRNA', 'MRVL', 'MS', 'MSFT',
+    'MU', 'NEE', 'NEM', 'NFLX', 'NKE', 'NOW', 'NVDA', 'NXPI',
+    'ON', 'ORCL', 'ORLY', 'PANW', 'PATH', 'PEP', 'PFE', 'PG',
+    'PGR', 'PH', 'PLD', 'PLTR', 'PM', 'PSX', 'PWR', 'PYPL',
+    'QCOM', 'RCL', 'RDDT', 'REGN', 'ROST', 'RTX', 'SBUX', 'SCHW',
+    'SHW', 'SMCI', 'SNDK', 'SNPS', 'SPGI', 'STX', 'SYK', 'T',
+    'TDG', 'TER', 'TGT', 'TJX', 'TMO', 'TMUS', 'TRV', 'TSLA',
+    'TT', 'TTWO', 'TWLO', 'TXN', 'UBER', 'UNH', 'UNP', 'UPS',
+    'V', 'VLO', 'VRT', 'VRTX', 'VST', 'VZ', 'WBD', 'WDAY',
+    'WDC', 'WELL', 'WFC', 'WMT', 'XOM', 'ZTS'
 ]
+# Liquid sub-$35 small-ticket universe for the LIVE whole-share lane ($700).
+# Screened 2026-08-24 (research/expand_universe_screen.py): close $3-$35 AND
+# 20d avg $volume >= $50M, from the S&P 1500. Speculative crypto-miner/meme/
+# distressed names (MARA/CLSK/RIOT/GME/PTON/SEDG/HIMS/CELH/RUN) excluded.
+# RSI2 edge was validated on S&P100; this is forward-testing breadth.
+SMALL_CAP_STOCKS = [
+    'AAL', 'ACHC', 'ACI', 'ADT', 'AEO', 'AES', 'AGNC', 'ALHC',
+    'AM', 'AMH', 'AMTM', 'AROC', 'ARR', 'AVTR', 'BANC', 'BAX',
+    'BBWI', 'BEN', 'BF-B', 'BNL', 'BOX', 'BRX', 'BTU', 'CAG',
+    'CCL', 'CDE', 'CHWY', 'CLF', 'CMCSA', 'CNH', 'COLB', 'CPB',
+    'CPRI', 'CPRT', 'CRBG', 'CRGY', 'CSGP', 'CUZ', 'CZR', 'DBX',
+    'DOC', 'DOCS', 'DOW', 'DV', 'EBC', 'ELAN', 'F', 'FA',
+    'FHN', 'FIVN', 'FLG', 'FNB', 'GAP', 'GEN', 'GEO', 'GNTX',
+    'GPK', 'GT', 'GTES', 'HAL', 'HBAN', 'HL', 'HOG', 'HPQ',
+    'HR', 'HRL', 'HST', 'INVH', 'IVZ', 'JBLU', 'KD', 'KDP',
+    'KEY', 'KHC', 'KIM', 'KMI', 'KMT', 'KRG', 'KSS', 'KVUE',
+    'LBRT', 'LCID', 'LKQ', 'LUMN', 'LYFT', 'M', 'MAC', 'MAT',
+    'MBGL', 'MGY', 'MIR', 'MOS', 'NCLH', 'NIO', 'NLY', 'NOG',
+    'NOV', 'NVST', 'NWL', 'NWSA', 'OLN', 'ONB', 'OPCH', 'OPLN',
+    'OUT', 'PATH', 'PBR', 'PCG', 'PEGA', 'PFE', 'PINS', 'PK',
+    'PPL', 'PR', 'PSKY', 'PTEN', 'RELY', 'REZI', 'RF', 'RITM',
+    'RIVN', 'RSI', 'RYN', 'SARO', 'SBRA', 'SHC', 'SIRI', 'SLM',
+    'SMCI', 'SNAP', 'SOFI', 'STWD', 'T', 'TDC', 'TTD', 'UAA',
+    'VALE', 'VFC', 'VICI', 'VLY', 'VNT', 'VSH', 'VTRS', 'VVV',
+    'WAY', 'WBD', 'WEN', 'WMG', 'WRBY', 'WSC', 'WT', 'WU',
+    'WY', 'XRAY'
+]
+
 UNIVERSE = ETFS + STOCKS
 BEAR_WARNING = ('true')  # this edge is negative in single bear years (2008 PF 0.36, 2022 PF 0.81)
 
