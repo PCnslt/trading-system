@@ -546,6 +546,67 @@ class RHClient:
         raw = self._tool("get_equity_quotes", symbols=[s.upper() for s in symbols])
         return ((raw.get("data") or {}).get("results") or [])
 
+    # ---- research (Robinhood MCP research surface — Cortex-adjacent) ----
+    def get_earnings_calendar(self, start_date: str | None = None, days: int = 7,
+                              high_market_cap: bool = False) -> dict:
+        """Upcoming/prior earnings across the market over a date window."""
+        args: dict = {"days": days}
+        if start_date:
+            args["start_date"] = start_date
+        if high_market_cap:
+            args["filter"] = "high_market_cap"
+        return self._tool("get_earnings_calendar", **args)
+
+    def get_earnings_results(self, symbol: str) -> dict:
+        return self._tool("get_earnings_results", symbol=symbol.upper())
+
+    def get_equity_fundamentals(self, symbols: list[str], bounds: str = "regular") -> dict:
+        return self._tool("get_equity_fundamentals",
+                          symbols=[s.upper() for s in symbols], bounds=bounds)
+
+    def get_financials(self, symbols: list[str], period: str = "quarterly",
+                       limit: int = 4) -> dict:
+        return self._tool("get_financials", symbols=[s.upper() for s in symbols],
+                          period=period, limit=limit)
+
+    def get_equity_historicals(self, symbols: list[str], start_time: str,
+                               end_time: str | None = None, interval: str | None = None,
+                               bounds: str = "regular") -> dict:
+        args: dict = {"symbols": [s.upper() for s in symbols],
+                      "start_time": start_time, "bounds": bounds}
+        if end_time:
+            args["end_time"] = end_time
+        if interval:
+            args["interval"] = interval
+        return self._tool("get_equity_historicals", **args)
+
+    def get_equity_technical_indicators(self, symbol: str, type: str, interval: str,
+                                        start_time: str, end_time: str | None = None,
+                                        bounds: str = "regular") -> dict:
+        args: dict = {"symbol": symbol.upper(), "type": type, "interval": interval,
+                      "start_time": start_time, "bounds": bounds}
+        if end_time:
+            args["end_time"] = end_time
+        return self._tool("get_equity_technical_indicators", **args)
+
+    def get_scans(self) -> list[dict]:
+        raw = self._tool("get_scans")
+        return ((raw.get("data") or {}).get("scans") or raw.get("scans") or [])
+
+    def run_scan(self, scan_id: str) -> dict:
+        return self._tool("run_scan", scan_id=scan_id)
+
+    def create_scan(self, preset: str | None = None, filters: list | None = None,
+                    columns: list | None = None) -> dict:
+        args: dict = {}
+        if preset:
+            args["preset"] = preset
+        if filters:
+            args["filters"] = filters
+        if columns:
+            args["columns"] = columns
+        return self._tool("create_scan", **args)
+
     def list_orders(self, account_number: str | None = None, symbol: str | None = None,
                     state: str | None = None, order_id: str | None = None) -> list[dict]:
         acct = self._resolve_account(account_number)

@@ -15,6 +15,7 @@ CRON_TZ=America/New_York
 # ---- data ingestion (system crontab) ----
 */10 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/crypto_tick.py >> /home/ubuntu/trading-system/data/crypto.log 2>&1
 0 17 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/ingest.py >> /home/ubuntu/trading-system/data/ingest.log 2>&1
+15 17 * * * cd /home/ubuntu/trading-system && ./venv/bin/python research/rh_research.py >> /home/ubuntu/trading-system/data/rh_research.log 2>&1
 */30 * * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/market_research.py >> /home/ubuntu/trading-system/data/research.log 2>&1
 45 17 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/options_chains.py >> /home/ubuntu/trading-system/data/options_chains.log 2>&1
 0 18 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/fred_collect.py >> /home/ubuntu/trading-system/data/fred.log 2>&1
