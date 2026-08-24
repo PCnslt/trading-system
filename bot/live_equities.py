@@ -69,6 +69,7 @@ from infra.ssm_secrets import bootstrap as _sb  # noqa: E402
 _sb()
 
 from data.s3_archive import archive_scan_results  # noqa: E402
+from bot.earnings_guard import load_upcoming_earnings  # noqa: E402
 
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
@@ -98,6 +99,7 @@ MAX_HOLD = 5
 MAX_POSITIONS = int(os.getenv('RH_MAX_POSITIONS', '20'))  # concurrent-position ceiling
 MIN_BARS = 260                       # >= 1y so SMA200 is fully warmed
 DATA_START = '2022-01-01'            # fixed anchor -> stable index positions
+EARNINGS_GUARD_DAYS = int(os.getenv('EARNINGS_GUARD_DAYS', '5'))  # no entry into a name reporting within N days
 
 # ---- universe (deterministic liquidity rule, NOT return cherry-picking) ----
 # ETFs: the 10 validated names (XLE/XLB/XLU/XLRE excluded — KILL in the sweep).
@@ -371,6 +373,10 @@ def main():
     # universe is >$35, so $700 whole-share can't buy it). PAPER keeps full universe.
     _syms = SMALL_CAP_STOCKS if EXECUTION_MODE == 'LIVE' else UNIVERSE
     syms = _syms[:args.limit] if args.limit else _syms
+    earnings_blacklist = load_upcoming_earnings(table, days_ahead=EARNINGS_GUARD_DAYS)
+    if earnings_blacklist:
+        print(f'  earnings guard: will not ENTER {len(earnings_blacklist)} symbols '
+              f'reporting within {EARNINGS_GUARD_DAYS}d')
     print(f'fetching {len(syms)} symbols (start={DATA_START})…')
     bars = fetch(syms)
     print(f'  got {len(bars)}/{len(syms)} symbols')
@@ -497,6 +503,15 @@ def main():
 
         # --- 3. new entry (flat, no exit this bar, cap/limit not breached) ---
         if pos is None and not exited and r2 is not None and ma200 is not None:
+            if sym.upper() in earnings_blacklist:
+                put_item(table, f'RHSIG#{sym}', today, {
+                    'action': 'NONE', 'signal': 'NONE', 'strategy': 'RSI2',
+                    'rsi2': _s(r2), 'close': _s(c),
+                    'reason': f'earnings guard: reports within {EARNINGS_GUARD_DAYS}d '
+                              f'(no naked-gap entries)',
+                    'mode': 'PAPER', 'execution': 'NONE', 'ts': int(time.time())},
+                    args.dry_run)
+                continue
             if r2 < RSI2_THR and c > ma200:
                 if committed < MAX_POSITIONS and day_loss_used < DAY_LOSS_CAP:
                     size_usd, stop_pct = position_size(PAPER_CAPITAL, c, atr or 0.0)

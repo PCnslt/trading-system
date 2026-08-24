@@ -45,7 +45,9 @@ _sb()
 from bot.live_equities import (  # noqa: E402 — reuse the validated signal helpers
     fetch, indicators, position_size, RSI2_THR, STOP_ATR, MAX_HOLD,
     ETFS, STOCKS, UNIVERSE, MIN_BARS, DATA_START, BEAR_WARNING, _f, _s,
+    EARNINGS_GUARD_DAYS,
 )
+from bot.earnings_guard import load_upcoming_earnings  # noqa: E402
 
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
@@ -126,6 +128,10 @@ def main():
             return
 
     syms = UNIVERSE[:args.limit] if args.limit else UNIVERSE
+    earnings_blacklist = load_upcoming_earnings(table, days_ahead=EARNINGS_GUARD_DAYS)
+    if earnings_blacklist:
+        print(f'  earnings guard: will not ENTER {len(earnings_blacklist)} symbols '
+              f'reporting within {EARNINGS_GUARD_DAYS}d')
     print(f'fetching {len(syms)} symbols (start={DATA_START})…')
     bars = fetch(syms)
     print(f'  got {len(bars)}/{len(syms)} symbols')
@@ -223,6 +229,8 @@ def main():
 
         # --- new entry: signal on completed close, enter today at open ---
         if pos is None and not exited and r2 is not None and ma200 is not None:
+            if sym.upper() in earnings_blacklist:
+                continue
             if r2 < RSI2_THR and c > ma200:
                 if committed < MAX_POSITIONS:
                     size_usd, stop_pct = position_size(PAPER_CAPITAL, c, atr or 0.0)
