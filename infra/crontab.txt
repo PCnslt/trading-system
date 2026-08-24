@@ -106,3 +106,4 @@ CRON_TZ=America/New_York
 #   live.py fires daily 19:00 ET (NO weekend skip) -> evaluates the Sunday globex
 #   session ~1h after reopen. Saturday = crypto only (paper-signal, 0 validated edge).
 
+25 19 * * 1-5 cd /home/ubuntu/trading-system && ./venv/bin/python bot/live_multi.py >> /home/ubuntu/trading-system/data/live_multi.log 2>&1  # multi-strategy signal scan (paper)

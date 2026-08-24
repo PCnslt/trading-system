@@ -97,7 +97,8 @@ RH_LIVE_ACCOUNT = os.getenv('RH_LIVE_ACCOUNT', '515821577')  # 'Agentic' agentic
 RSI2_THR = 5.0
 STOP_ATR = 2.0
 MAX_HOLD = 5
-MAX_POSITIONS = int(os.getenv('RH_MAX_POSITIONS', '20'))  # concurrent-position ceiling
+MAX_POSITIONS = int(os.getenv('RH_MAX_POSITIONS', '20'))  # LIVE concurrent-position ceiling
+PAPER_MAX_POSITIONS = int(os.getenv('RH_PAPER_MAX_POSITIONS', '20'))  # PAPER ceiling (breadth testing)
 MIN_BARS = 260                       # >= 1y so SMA200 is fully warmed
 DATA_START = '2022-01-01'            # fixed anchor -> stable index positions
 EARNINGS_GUARD_DAYS = int(os.getenv('EARNINGS_GUARD_DAYS', '5'))  # no entry into a name reporting within N days
@@ -465,6 +466,7 @@ def main():
     # universe is >$35, so $700 whole-share can't buy it). PAPER keeps full universe.
     _syms = SMALL_CAP_STOCKS if EXECUTION_MODE == 'LIVE' else UNIVERSE
     syms = _syms[:args.limit] if args.limit else _syms
+    pos_cap = MAX_POSITIONS if EXECUTION_MODE == 'LIVE' else PAPER_MAX_POSITIONS
     earnings_blacklist = load_upcoming_earnings(table, days_ahead=EARNINGS_GUARD_DAYS)
     if earnings_blacklist:
         print(f'  earnings guard: will not ENTER {len(earnings_blacklist)} symbols '
@@ -605,7 +607,7 @@ def main():
                     args.dry_run)
                 continue
             if r2 < RSI2_THR and c > ma200:
-                if committed < MAX_POSITIONS and day_loss_used < DAY_LOSS_CAP:
+                if committed < pos_cap and day_loss_used < DAY_LOSS_CAP:
                     size_usd, stop_pct = position_size(PAPER_CAPITAL, c, atr or 0.0)
                     if size_usd > 0:
                         stop_price = c - STOP_ATR * (atr or 0.0)
@@ -696,7 +698,7 @@ def main():
                 else:
                     reason = ('cap/limit: ' + (
                         f'day loss {day_loss_used:.0f} >= {DAY_LOSS_CAP:.0f}' if day_loss_used >= DAY_LOSS_CAP
-                        else f'{committed} >= {MAX_POSITIONS} positions'))
+                        else f'{committed} >= {pos_cap} positions'))
                     put_item(table, f'RHSIG#{sym}', today, {
                         'action': 'NONE', 'signal': 'NONE', 'strategy': 'RSI2',
                         'rsi2': _s(r2), 'close': _s(c), 'reason': reason,
@@ -727,7 +729,7 @@ def main():
 
     print(f'\nlive_equities done [{today}]: {len(enters)} ENTER, {len(exits)} EXIT, '
           f'day_loss_used=${day_loss_used:.2f} (cap ${DAY_LOSS_CAP:.0f}) '
-          f'{"BREACHED" if cap_breached else "ok"}, committed={committed}/{MAX_POSITIONS}')
+          f'{"BREACHED" if cap_breached else "ok"}, committed={committed}/{pos_cap}')
     for e in enters:
         print(f'  ENTER {e["sym"]:6s} size=${e["size_usd"]} stop={e["stop_price"]}')
     for x in exits:
