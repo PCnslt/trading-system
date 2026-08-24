@@ -30,3 +30,4 @@ data/ibkr_full_backfill.COMPLETE
 infra/*.pem
 infra/terraform.tfstate*
 ibgateway-creds.env
+*.pkl
