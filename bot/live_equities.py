@@ -338,7 +338,15 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--limit', type=int, default=0, help='cap symbols for a smoke test')
+    ap.add_argument('--force', action='store_true',
+                    help='bypass the daily-close finalization guard (dry-run TEST only)')
     args = ap.parse_args()
+
+    # SAFETY: --force may ONLY bypass finalization for a --dry-run (no orders). It
+    # must never let a LIVE run trade on a partial (unfinalized) bar.
+    if args.force and not args.dry_run:
+        print('[force] requires --dry-run — refusing (never bypass finalization for live orders)')
+        return
 
     # SAFETY: --dry-run must NEVER place a real order. Force PAPER so no broker
     # call path (entry or exit) is reachable, even with RH_EXECUTION_MODE=LIVE in
@@ -354,7 +362,7 @@ def main():
     try:
         import datetime as _dt
         from zoneinfo import ZoneInfo
-        if _dt.datetime.now(ZoneInfo('America/New_York')).hour < 17:
+        if _dt.datetime.now(ZoneInfo('America/New_York')).hour < 17 and not args.force:
             print(f'[{today}] live_equities SKIP — before daily-close finalization (stale-data guard)')
             return
     except Exception:
