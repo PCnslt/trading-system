@@ -110,9 +110,17 @@ class ReconcileResult:
 
 # ---- broker-side queries (duck-typed; raise -> UNKNOWN) ----
 def broker_positions(ib) -> dict:
-    """symbol -> net signed position at the broker."""
+    """symbol -> net signed position at the broker.
+
+    CRYPTO positions (secType=CRYPTO, fractional qty) are EXCLUDED — the crypto
+    lane manages its own software stop (IBKR crypto = market/limit only, no native
+    stop) and has no integer-contract counterpart in TRACKED_TAGS. ``int(p.position)``
+    would crash on a fractional BTC/ETH qty and false-flag a MISMATCH otherwise.
+    """
     out = {}
     for p in ib.positions():
+        if getattr(p.contract, 'secType', None) == 'CRYPTO':
+            continue
         sym = p.contract.symbol
         out[sym] = out.get(sym, 0) + int(p.position)
     return out
