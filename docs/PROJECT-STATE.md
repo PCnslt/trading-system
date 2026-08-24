@@ -31,7 +31,7 @@ Execution-layer hardening is **done** (3 phases):
    (missing/orphaned stop = MISMATCH → halt). `exec_manager.submit_entry` refuses
    any unprotected entry fail-closed.
 
-## Live paths wired (BOTH brokers — OFF by default, 2026-08-16)
+## Live paths wired (RH LIVE since 08-20; IBKR live-ready, gateway disabled)
 
 - **IBKR LIVE gateway** (`U26949861`): second GWClient on `:100`, settings dir
   `/home/ubuntu/Jts-live` (`tradingMode=l`), systemd `ibgateway-live.service`
@@ -40,16 +40,15 @@ Execution-layer hardening is **done** (3 phases):
   switched to "Live Trading" at first login, then verify
   `managedAccounts()==['U26949861']`. See `docs/IBGATEWAY-LIVE-OPS.md`.
 - **Robinhood LIVE client** (`hardening/rh_client.py`, committed `77fbb1e`): OAuth
-  via SSM `/trading/robinhood/*` (MCP-gateway transport); live orders gated behind
-  **`RH_EXECUTION_MODE=LIVE` + `RH_LIVE_ENABLED=true`** (both default OFF,
-  fail-closed). **✅ LIVE path operational (2026-08-17):** token fresh (re-authed
-  2026-08-16 21:58 ET) + transport fixed (`notifications/initialized` now a proper
-  MCP notification — was rejected as `unexpected id`). Read path verified live
-  (acct `515821577`, `agentic_allowed=true`); **no live order placed**. **Live
-  balance (get_portfolio, 2026-08-16): total $700.06 · cash $675.00 · buying power
-  $675.00 · pending deposits $700** · positions = SPY 0.016 + QQQ 0.017 (DCA base
-  layer ~$25). Plan: `docs/ROBINHOOD-LIVE-PLAN.md`; sizing:
-  `docs/SMALL-CAPITAL-LIVE-PLAN.md`.
+  via SSM `/trading/robinhood/*` (MCP-gateway transport). **✅ LIVE since
+  2026-08-20 (owner-approved go-live):** deployed `RH_EXECUTION_MODE=LIVE` +
+  `RH_LIVE_ENABLED=true` + `RH_MAX_POSITIONS=5` + `RH_DAY_LOSS_CAP=$50` in BOTH
+  `.env` and the `live-equities.service` unit (systemd overrides `.env` — edit
+  both). Code default stays PAPER/OFF (fail-closed). Token fresh (re-authed
+  2026-08-16 21:58 ET); read path verified live (acct `515821577`,
+  `agentic_allowed=true`). 0 live FILLS through 08-24 (rare RSI2 dips +
+  whole-share sub-$35 universe — no naked exposure). Plan:
+  `docs/ROBINHOOD-LIVE-PLAN.md`; sizing: `docs/SMALL-CAPITAL-LIVE-PLAN.md`.
 
 ## Active edges
 

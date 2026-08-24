@@ -41,19 +41,17 @@ credential separation: only this VPS holds/rotates the live token.
 - `audit()` — the accessibility-matrix row for Robinhood.
 - `python infra/robinhood.py` — one-shot audit.
 
-## Current state (2026-08-16)
+## Current state (2026-08-24)
 
-**BLOCKED — both tokens revoked.** The SSM `access_token` is still within its `exp`
-(~71 h), but Robinhood revoked it server-side (the laptop has since rotated the
-token during its own live-trading session). Observed errors:
+**✅ Re-authenticated (2026-08-16 21:58 ET) — LIVE read path operational.** The
+token was revoked server-side during a laptop live-trading session, re-authed on
+the VPS the same day, and `hardening/rh_client.py` now reads acct `515821577` live.
+(Historical symptom, kept for the record: MCP `initialize` → `HTTP 401 "token
+revoked"`; refresh grant → `HTTP 401 {"error":"invalid_grant"}`.)
 
-- MCP `initialize` → `HTTP 401 "token revoked"`
-- refresh grant → `HTTP 401 {"error":"invalid_grant"}`
-
-The refresh_token is also dead (a refresh revokes the prior token), so the only
-recovery is a **fresh authorization_code flow** (browser login + 2FA). This is
-owner/laptop-gated — the redirect_uri is `http://127.0.0.1:58244/callback`
-(localhost on the *laptop*), and the login requires Robinhood credentials + 2FA.
+The refresh_token ROTATES on every refresh (a refresh revokes the prior token).
+If re-auth is ever needed again it is a **fresh authorization_code flow** (browser
+login + 2FA) — now VPS-owned (see Recovery below), not laptop-gated.
 
 ## Recovery (owner action — VPS single-writer re-auth)
 

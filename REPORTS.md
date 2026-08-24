@@ -580,3 +580,12 @@ PHASE B — applied the one clear win: RSI2 breakeven-lock in live.py (rsi2_trai
 - **Blockers**:
   - RH crypto: owner create API key + Ed25519 keypair at robinhood.com/account/crypto, store in SSM /trading/robinhood-crypto/*
   - IBKR crypto: needs LIVE account (U26949861) funded + crypto trading enabled — PAXOS paper does not fill
+
+---
+
+## 2026-08-24T17:06:51-04:00 — Build persistent autonomous bots: trade-info, research, backtesting, strategy-research (run constantly/in parallel)
+
+- **Summary**: Built 4 autonomous Hermes cron jobs running in parallel: (1) Trade & position watch — event-driven via infra/trade_watch_state.py byte-stable fingerprint (monitor_script), LLM fires ONLY on state change (new trade/position/reconcile/service flip) every 10min, read-only; (2) Market research & trade info — LLM 3x/day (09:00/12:00/16:00 ET) reads live book + regime/news/catalysts; (3) Backtest queue worker — LLM 2x/day pops ~/.hermes/state/backtest_queue.json, honest backtests, additive STRATEGY_PORTFOLIO lanes, commits; (4) Strategy research — LLM daily literature scan feeding the queue. Queue seeded with 2 confirmed-but-unbuilt ideas (spot-VIX level contrarian z>=2 +0.78%/5d; overnight MOC close-entry +10.7bp/trade). All deliver to Telegram. Also audited gaps: collectors/reconciler/watchdogs already 24/7 via systemd+cron.
+- **Commits**: `66c0b5b`
+- **Blockers**:
+  - Hit + diagnosed a Hermes cron lifecycle-guard false positive (parenthesized ~/trading-system path → blocked job creation); fixed prompts, recorded pitfall in trading-bot-operations skill. All 4 jobs created green.

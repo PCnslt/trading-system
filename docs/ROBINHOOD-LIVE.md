@@ -1,7 +1,10 @@
 # Robinhood LIVE — client, flags, and blockers
 
-VPS-side Robinhood live path. **PAPER remains the operating default** — LIVE is
-double-gated and fail-closed. No live order has been placed.
+VPS-side Robinhood live path. **LIVE since 2026-08-20** (owner-approved go-live).
+Deployed in BOTH `.env` AND `live-equities.service` env: `RH_EXECUTION_MODE=LIVE`,
+`RH_LIVE_ENABLED=true`, `RH_MAX_POSITIONS=5`, `RH_DAY_LOSS_CAP=$50`. Code default
+stays PAPER/OFF (fail-closed); the systemd unit OVERRIDES `.env`, so a go-live
+change must touch both.
 
 ## The client (prior build, confirmed)
 
@@ -36,7 +39,8 @@ Live execution requires **BOTH** (each independent, both default OFF):
 | `RH_LIVE_ACCOUNT` | `515821577` | the `agentic_allowed` account |
 
 Order-time LIVE also requires: `agentic_allowed` account mode, `RISK_PCT <= 0.01`,
-`$150/day` loss cap, and a protective stop (`stop_price > 0`). Full spec:
+`$50/day` loss cap (deployed; code default `$150`) + `RH_MAX_POSITIONS=5` (deployed;
+code default `20`), and a protective stop (`stop_price > 0`). Full spec:
 `docs/ROBINHOOD_EXECUTION.md`.
 
 ## Auth status (verified 2026-08-17): TOKEN FRESH — LIVE path operational
