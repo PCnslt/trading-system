@@ -107,3 +107,4 @@ CRON_TZ=America/New_York
 #   session ~1h after reopen. Saturday = crypto only (paper-signal, 0 validated edge).
 
 25 19 * * 1-5 cd /home/ubuntu/trading-system && ./venv/bin/python bot/live_multi.py >> /home/ubuntu/trading-system/data/live_multi.log 2>&1  # multi-strategy signal scan (paper)
+*/5 9-16 * * 1-5 cd /home/ubuntu/trading-system && ./venv/bin/python bot/rh_trailing.py >> /home/ubuntu/trading-system/data/rh_trailing.log 2>&1  # RH trailing-stop manager (universal profit protection)

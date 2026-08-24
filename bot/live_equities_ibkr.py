@@ -60,6 +60,13 @@ MAX_POSITIONS = int(os.getenv('IBEQ_MAX_POSITIONS', '20'))
 CLIENT_ID = 81
 SCOPE = 'live_equities_ibkr'
 
+# ---- go-live switch (owner flips IBEQ_EXECUTION_MODE=LIVE once the live acct is
+# funded + the Jts-live gateway is enabled; PAPER default keeps it safe) ----
+EXECUTION_MODE = os.getenv('IBEQ_EXECUTION_MODE', 'PAPER').strip().upper()  # PAPER | LIVE
+IBKR_LIVE_PORT = int(os.getenv('IBKR_LIVE_PORT', '4001'))  # Jts-live gateway
+LIVE_MAX_POSITIONS = int(os.getenv('IBEQ_LIVE_MAX_POSITIONS', '5'))
+DAY_LOSS_CAP = float(os.getenv('IBEQ_DAY_LOSS_CAP', '100'))  # $/day realized-loss cap (LIVE)
+
 
 def _tag(sym: str) -> str:
     return f'{sym}_RSI2'
@@ -138,6 +145,8 @@ def main():
 
     book = load_book(table) if not args.dry_run else {}
     committed = len(book)
+    pos_cap = LIVE_MAX_POSITIONS if EXECUTION_MODE == 'LIVE' else MAX_POSITIONS
+    day_loss_used = 0.0
 
     # ---- broker connection (only when not dry-run) ----
     ib = None
@@ -146,7 +155,8 @@ def main():
         from ib_insync import IB, Stock
         from hardening.exec_manager import ExecutionManager, TradeIntent
         ib = IB()
-        ib.connect('127.0.0.1', int(os.getenv('IBKR_PORT', '4002')), clientId=CLIENT_ID, timeout=10)
+        port = IBKR_LIVE_PORT if EXECUTION_MODE == 'LIVE' else int(os.getenv('IBKR_PORT', '4002'))
+        ib.connect('127.0.0.1', port, clientId=CLIENT_ID, timeout=10)
         exec_mgr = ExecutionManager(ib, table, scope=SCOPE)
 
     enters, exits = [], []
@@ -209,6 +219,8 @@ def main():
                 if shares <= 0 and entry_price > 0:
                     shares = size_usd / entry_price
                 pnl = (exit_price - entry_price) * shares if exit_price else 0.0
+                if pnl < 0:
+                    day_loss_used += -pnl
                 pnl_pct = (exit_price / entry_price - 1.0) if entry_price else 0.0
                 put_item(table, f'TRADE#{_tag(sym)}', str(pos.get('entry_date', '')), {
                     'entry_date': pos.get('entry_date', ''), 'entry_price': _s(entry_price),
@@ -232,7 +244,7 @@ def main():
             if sym.upper() in earnings_blacklist:
                 continue
             if r2 < RSI2_THR and c > ma200:
-                if committed < MAX_POSITIONS:
+                if committed < pos_cap and day_loss_used < DAY_LOSS_CAP:
                     size_usd, stop_pct = position_size(PAPER_CAPITAL, c, atr or 0.0)
                     stop_price = c - STOP_ATR * (atr or 0.0)
                     shares = size_usd / c if c > 0 else 0.0
