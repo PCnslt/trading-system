@@ -10,9 +10,8 @@ mean-reversion dies). Pure Donchian-20 channel breakout, LONG-only spot:
 
 No 200d-SMA filter — the prior DONCH200 variant's 200d-SMA "regime filter" is
 what made it a buy-and-hold proxy (long during every bull), inflating its PF.
-The sweep's honest momentum numbers: BTC 1.17 / ETH 1.35 (marginal) but
-SOL 2.30 / XRP 3.23 (strong). So the universe is BTC/ETH (deep history) + SOL/XRP
-(strong momentum, forward-collecting candles).
+Universe is BLUE-CHIP ONLY (owner directive 2026-08-24): BTC/ETH. SOL/XRP had
+stronger backtest momentum (2.30 / 3.23) but are NOT blue-chip and were dropped.
 
 Fill model (honest, from the crypto sweep cost convention):
   entry = live price * (1 + slippage); exit = live price * (1 - slippage)
@@ -56,11 +55,15 @@ LOOKBACK = 20
 CHAND_ATR = 3.0    # chandelier trailing stop: best price since entry - 3*ATR (ratchets up only)
 MIN_BARS = 25            # enough for a Donchian-20 channel (vs 220 for the old 200d-SMA)
 
+# BLUE-CHIP-ONLY guard (owner directive 2026-08-24): crypto is the LOWEST
+# live-priority lane and the owner distrusts it — only BTC + ETH (deepest
+# liquidity, longest history, lowest regulatory tail-risk) may ever be traded.
+# SOL/XRP were forward-collected as research but are BLOCKED from execution.
+BLUE_CHIP = {'BTCUSDT', 'ETHUSDT'}
+
 UNIVERSE = [
     {'yf': 'BTC-USD', 'binance': 'BTCUSDT', 'history': 'yf'},
     {'yf': 'ETH-USD', 'binance': 'ETHUSDT', 'history': 'yf'},
-    {'yf': None,      'binance': 'SOLUSDT', 'history': 'candles'},
-    {'yf': None,      'binance': 'XRPUSDT', 'history': 'candles'},
 ]
 
 
@@ -163,6 +166,9 @@ def main():
 
     for u in UNIVERSE:
         sym = u['binance']
+        if sym not in BLUE_CHIP:  # hard backstop — never trade a non-blue-chip coin
+            print(f'  [{sym}] NOT blue-chip — SKIP (owner directive: blue-chip only)')
+            continue
         tag = f'{sym}_{FAMILY}'
         try:
             px = live_price(sym)

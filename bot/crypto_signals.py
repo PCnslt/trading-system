@@ -6,10 +6,8 @@ Execution stays MANUAL/paper — this lane emits SIGNAL#<sym>_<FAMILY> to Dynamo
 to research/scan-results/crypto-signals/. No IBKR, no clientId, no orders
 (execution='NONE'). Spot is LONG-only; shorts (perp/futures) are out of scope.
 
-Universe:
+Universe (BLUE-CHIP ONLY — owner directive 2026-08-24):
   BTC-USD/BTCUSDT, ETH-USD/ETHUSDT  -> history = yf/crypto (2014->), live = Binance.US
-  SOLUSDT, XRPUSDT                   -> history = crypto-candles/ (forward-collecting,
-                                        ~2d today -> thin), live = Binance.US
 
 Families (candidate until Gate-1 sweep promotes):
   MOM_DONCHIAN  close > prior 20d high        (LONG, stop 2*ATR)
@@ -50,11 +48,13 @@ DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 BINANCE_URL = 'https://api.binance.us/api/v3/ticker/price'
 
 # yf_symbol -> binance_symbol; None yf_symbol => forward-collecting (candles only)
+# BLUE-CHIP-ONLY (owner directive 2026-08-24): only BTC + ETH may be signaled
+# for investment. SOL/XRP dropped from the sweep (not blue-chip).
+BLUE_CHIP = {'BTCUSDT', 'ETHUSDT'}
+
 UNIVERSE = [
     {'yf': 'BTC-USD', 'binance': 'BTCUSDT', 'history': 'yf'},
     {'yf': 'ETH-USD', 'binance': 'ETHUSDT', 'history': 'yf'},
-    {'yf': None,      'binance': 'SOLUSDT', 'history': 'candles'},
-    {'yf': None,      'binance': 'XRPUSDT', 'history': 'candles'},
 ]
 
 PROMOTED = {}          # {family: [sym, ...]} — filled after Gate-1 sweep
