@@ -23,6 +23,8 @@ CRON_TZ=America/New_York
 30 18 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/yf_collect.py >> /home/ubuntu/trading-system/data/yf.log 2>&1
 45 18 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/newsapi_ingest.py >> /home/ubuntu/trading-system/data/newsapi.log 2>&1
 20 19 * * * cd /home/ubuntu/trading-system && ./venv/bin/python data/daily_collect.py >> /home/ubuntu/trading-system/data/daily_collect.log 2>&1
+30 19 * * 1-5 cd /home/ubuntu/trading-system && ./venv/bin/python bot/microstructure_engine.py --symbols MES,MNQ >> /home/ubuntu/trading-system/data/orderflow_micro.log 2>&1
+35 19 * * 1-5 cd /home/ubuntu/trading-system && ./venv/bin/python bot/auction_signals.py --symbols MNQ >> /home/ubuntu/trading-system/data/orderflow_auction.log 2>&1
 
 # ---- bot execution (Hermes cron — NOT here) ----
 #   ⚠️ Hermes-cron TZ note: the Hermes gateway (user systemd svc) CACHES its
