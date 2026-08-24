@@ -48,13 +48,13 @@ DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 BINANCE_URL = 'https://api.binance.us/api/v3/ticker/price'
 
 # yf_symbol -> binance_symbol; None yf_symbol => forward-collecting (candles only)
-# BLUE-CHIP-ONLY (owner directive 2026-08-24): only BTC + ETH may be signaled
-# for investment. SOL/XRP dropped from the sweep (not blue-chip).
-BLUE_CHIP = {'BTCUSDT', 'ETHUSDT'}
+# BLUE-CHIP-ONLY (owner directive 2026-08-24): BTC + ETH + XRP only.
+BLUE_CHIP = {'BTCUSDT', 'ETHUSDT', 'XRPUSDT'}
 
 UNIVERSE = [
     {'yf': 'BTC-USD', 'binance': 'BTCUSDT', 'history': 'yf'},
     {'yf': 'ETH-USD', 'binance': 'ETHUSDT', 'history': 'yf'},
+    {'yf': None,      'binance': 'XRPUSDT', 'history': 'candles'},
 ]
 
 PROMOTED = {}          # {family: [sym, ...]} — filled after Gate-1 sweep

@@ -56,14 +56,14 @@ CHAND_ATR = 3.0    # chandelier trailing stop: best price since entry - 3*ATR (r
 MIN_BARS = 25            # enough for a Donchian-20 channel (vs 220 for the old 200d-SMA)
 
 # BLUE-CHIP-ONLY guard (owner directive 2026-08-24): crypto is the LOWEST
-# live-priority lane and the owner distrusts it — only BTC + ETH (deepest
-# liquidity, longest history, lowest regulatory tail-risk) may ever be traded.
-# SOL/XRP were forward-collected as research but are BLOCKED from execution.
-BLUE_CHIP = {'BTCUSDT', 'ETHUSDT'}
+# live-priority lane — trade ONLY blue-chip coins: BTC + ETH + XRP (owner added
+# XRP 2026-08-24). SOL and other alts are blocked from execution.
+BLUE_CHIP = {'BTCUSDT', 'ETHUSDT', 'XRPUSDT'}
 
 UNIVERSE = [
     {'yf': 'BTC-USD', 'binance': 'BTCUSDT', 'history': 'yf'},
     {'yf': 'ETH-USD', 'binance': 'ETHUSDT', 'history': 'yf'},
+    {'yf': None,      'binance': 'XRPUSDT', 'history': 'candles'},
 ]
 
 
