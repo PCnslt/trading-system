@@ -541,3 +541,42 @@ PHASE B — applied the one clear win: RSI2 breakeven-lock in live.py (rsi2_trai
 - **Commits**: `REV2 lane commit (live.py + cross-cutting sync)`
 - **Blockers**:
   - forward-test REV2 on MES/MNQ paper alongside RSI2; watch grind-regime years (2001-02/2012/2018/2022)
+
+---
+
+## 2026-08-20T19:47:02-04:00 — Daily trading-system status summary (cron)
+
+- **Summary**: IB Gateway active (port 4002 listening). OPEN PAPER POSITIONS: 2 crypto MOM20 longs only (BTC 0.039992 @ 65994.42, ETH 1.094102 @ 1972.19) — no futures/index positions open. INTRADAY: MES_FADESHORT NONE, MES_DONCH15 SHORT @ 7667.5 but pos=0 (flat, signal logged no fill), last tick ~4h ago. DATA HEALTH: IBKR intraday bars ok (2026-08-20), broker reconcile ok 0m ago; equity OHLCV#AAPL 4d stale + crypto QUOTE#BTCUSDT 4d (both frozen/cosmetic). IBKR login errors: none.
+
+---
+
+## 2026-08-21T09:08:47-04:00 — DCA STOP + RH live/intraday status
+
+- **Summary**: Owner directive: no set-and-hold, wants more intraday. (1) Removed dormant bot/dca.py (plan-only, never scheduled, no order placement) — commit 479a9b9. (2) ACTION FOR LAPTOP: STOP the weekly $25 SPY/QQQ fractional DCA buy (it's laptop-side; VPS has no such execution). (3) RH live (~$700) runs RSI2 buy-the-dip only; no live fills yet (first live run 19:20 ET tonight). (4) Cleared 6 stale paper RHPOS# positions that would have blocked the first live run. (5) Reconciler MISMATCH (my GTC-test fills) resolved → MATCH, CONTROL RUNNING.
+- **Commits**: `479a9b9`
+- **Blockers**:
+  - LAPTOP: stop weekly $25 SPY/QQQ DCA. IBKR live U26949861 unfunded (MES margin ~$1.3k) — needed before VWAP futures can go live.
+
+---
+
+## 2026-08-21T19:46:12-04:00 — Daily trading-system status summary
+
+- **Summary**: Gateway active (port 4002 listening); open paper positions: BTCUSDT_MOM20 LONG 0.039992, ETHUSDT_MOM20 LONG 1.094102 (crypto simulated); intraday MES FADESHORT/DONCH15 both signal=NONE pos=0 (no trades today); data health: IBKR intraday bars ok (08-21), reconcile MATCH, equity OHLCV# + crypto ticker stale 5d (frozen lanes, cosmetic); IBKR login log clean.
+
+---
+
+## 2026-08-22T19:48:06-04:00 — Daily trading-system status summary (cron)
+
+- **Summary**: IB Gateway (paper) service active but API port 4002 NOT listening — soft-token re-auth failed after 00:06 restart, stuck at login; reconcile-daemon cannot connect (Errno 111). Open paper positions: crypto MOM20 only (BTCUSDT LONG 0.04 @ 65994, ETHUSDT LONG 1.094 @ 1972); no futures positions. Intraday MES_FADESHORT/MES_DONCH15 signal=NONE pos=0 (Fri close, ~28h). Data: IBKR intraday bars ok (last 08-21); equity ingest stale (AAPL 08-14); crypto ticker QUOTE#BTCUSDT stale ~6d. No login errors in logs (IBC retired, native launcher).
+- **Blockers**:
+  - Paper IB Gateway stuck at login (port 4002 down since 00:06 Sat) — needs Sunday 2FA re-auth; equity/crypto ingest ~6d stale.
+
+---
+
+## 2026-08-24T12:12:45-04:00 — Robinhood leverage + crypto fractional trading (RH + IBKR) — owner 'do all'
+
+- **Summary**: 1) RH research lane LIVE: earnings calendar + screener presets → DynamoDB RESEARCH#/S3, cron 17:15 ET. 2) RH Crypto API client built (Ed25519 signing, fractional + XRP + native stop_loss), fail-closed pending owner keys. 3) IBKR crypto lane built (MOM20 fractional cashQty, software chandelier stop) + reconciler CRYPTO exclusion — DORMANT: PAXOS crypto is live-only, paper orders don't fill. 4) XRP added to blue-chip universe (BTC/ETH/XRP). 253 tests pass.
+- **Commits**: `d94f0c6` `7c300d2` `ec02623` `b99cc53`
+- **Blockers**:
+  - RH crypto: owner create API key + Ed25519 keypair at robinhood.com/account/crypto, store in SSM /trading/robinhood-crypto/*
+  - IBKR crypto: needs LIVE account (U26949861) funded + crypto trading enabled — PAXOS paper does not fill
