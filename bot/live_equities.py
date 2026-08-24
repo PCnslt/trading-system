@@ -57,6 +57,7 @@ import numpy as np
 import pandas as pd
 import yfinance as yf
 import boto3
+import json
 from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -159,7 +160,25 @@ SMALL_CAP_STOCKS = [
     'WY', 'XRAY'
 ]
 
-UNIVERSE = ETFS + STOCKS
+def _load_broad_universe():
+    """Load the ~1,459-name tradeable universe (S&P 1500, price>$2, adv>=$10M)
+    from the generated artifact `research/universe_1500.json`. Falls back to the
+    hardcoded STOCKS list if the file is missing/unreadable — the bot must never
+    break on a universe-load failure. Broad universe is PAPER-only; the LIVE lane
+    stays on SMALL_CAP_STOCKS (sub-$35 whole-share)."""
+    try:
+        p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         'research', 'universe_1500.json')
+        with open(p, encoding='utf-8') as f:
+            syms = json.load(f).get('symbols', [])
+        if syms:
+            return syms
+    except Exception as e:
+        print(f'  [universe] broad universe load failed ({e!r}) — falling back to STOCKS')
+    return STOCKS
+
+
+UNIVERSE = ETFS + _load_broad_universe()
 BEAR_WARNING = ('true')  # this edge is negative in single bear years (2008 PF 0.36, 2022 PF 0.81)
 
 
@@ -364,14 +383,38 @@ def load_book(table, dry_run):
     return book
 
 
+_pending_writes = []  # batched DynamoDB writes, flushed once at end of run
+
+
 def put_item(table, pk, sk, fields, dry_run):
     if dry_run:
         print(f'  [dry] {pk} / {sk} : ' + ', '.join(f'{k}={v}' for k, v in fields.items()))
         return
+    _pending_writes.append({'pk': pk, 'sk': sk, **fields})
+
+
+def flush_writes(table):
+    """Flush accumulated writes via batch_writer (25 items/call → ~60 calls for
+    1,500 names instead of 1,500). Fail-safe: on any error fall back to individual
+    put_item so no position/signal write is ever lost. This is the cost lever for
+    the vast-universe architecture."""
+    if not _pending_writes:
+        return
+    n = len(_pending_writes)
     try:
-        table.put_item(Item={'pk': pk, 'sk': sk, **fields})
+        with table.batch_writer() as bw:
+            for item in _pending_writes:
+                bw.put_item(Item=item)
+        print(f'  [batch] wrote {n} DynamoDB items (batch_writer)')
     except Exception as e:
-        print(f'  [put] {pk}/{sk} failed: {e!r}')
+        print(f'  [batch] flush failed ({e!r}) — falling back to individual writes')
+        for item in _pending_writes:
+            try:
+                table.put_item(Item=item)
+            except Exception as e2:
+                print(f'  [put] {item["pk"]}/{item["sk"]} failed: {e2!r}')
+    finally:
+        _pending_writes.clear()
 
 
 def main():
@@ -671,6 +714,7 @@ def main():
               'n_enter': len(enters), 'n_exit': len(exits), 'ts': int(time.time())}
     put_item(table, f'RHLEDGER#{today}', 'summary', ledger, args.dry_run)
     put_item(table, 'RUN#live_equities', today, {'ts': int(time.time())}, args.dry_run)
+    flush_writes(table)
 
     # --- S3 snapshot (forward-test history) ---
     payload['signals'] = enters + exits
