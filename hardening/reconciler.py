@@ -62,6 +62,18 @@ _EQUITY_RSI2_SYMBOLS = [
 ]
 TRACKED_TAGS.update({f'{_s}_RSI2': 'LONG' for _s in _EQUITY_RSI2_SYMBOLS})
 
+
+def is_tracked_tag(tag: str) -> bool:
+    """True if the reconciler should track a POSITION#/TRADE# tag.
+
+    TRACKED_TAGS enumerates futures tags. Equity RSI2 tags (<SYM>_RSI2, from
+    bot/live_equities_ibkr.py) track an arbitrary ~1,459-name universe and cannot
+    be enumerated — the old 62-name whitelist went stale the moment the universe
+    expanded. Any `_RSI2` suffix is tracked as LONG; crypto MOM20 (fractional,
+    simulated, no broker counterpart) is deliberately excluded.
+    """
+    return tag in TRACKED_TAGS or tag.endswith('_RSI2')
+
 # NEVER-LOSE-MONEY: every open position MUST rest a protective STOP order at the
 # broker. There is no per-tag opt-out anymore — the RSI2 buy-dip and intraday
 # FADESHORT previously rested no stop (backtest had none); they now rest their
@@ -87,7 +99,7 @@ def signed_pos(tag: str, state: dict) -> int:
     pos = int(state.get('pos', 0) or 0)
     if pos == 0:
         return 0
-    side = state.get('side') or TRACKED_TAGS.get(tag)
+    side = state.get('side') or TRACKED_TAGS.get(tag) or ('LONG' if tag.endswith('_RSI2') else None)
     if side == 'LONG':
         return pos
     if side == 'SHORT':
@@ -228,7 +240,7 @@ def _scan_positions(table):
     out = []
     for it in _scan_prefix(table, 'POSITION#'):
         tag = it['pk'].split('#', 1)[1]
-        if tag not in TRACKED_TAGS:
+        if not is_tracked_tag(tag):
             continue
         if int(it.get('pos', 0) or 0) != 0:
             out.append((tag, it))
@@ -255,7 +267,7 @@ def expected_stops(rows) -> dict:
         pos = int(state.get('pos', 0) or 0)
         if pos <= 0:
             continue
-        side = state.get('side') or TRACKED_TAGS.get(tag)
+        side = state.get('side') or TRACKED_TAGS.get(tag) or ('LONG' if tag.endswith('_RSI2') else None)
         action = 'SELL' if side == 'LONG' else 'BUY'   # the stop CLOSES the position
         out.setdefault(symbol_of(tag), []).append((action, pos))
     return out

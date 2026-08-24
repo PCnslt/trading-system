@@ -8,8 +8,8 @@ account (DUR193467) gives us a second, independent execution venue for the edge.
 
 Signal logic is UNCHANGED (reused from live_equities): Wilder RSI(2) < 5 AND
 close > SMA200 -> LONG. Exit = 2xATR hard stop (native bracket, broker-side),
-5-day time stop, or revert (close>SMA5 / RSI2>70). Universe = the same 10 ETFs
-+ top-50 S&P100 by liquidity.
+5-day time stop, or revert (close>SMA5 / RSI2>70). Universe = UNIVERSE (imported
+from live_equities — dynamic broad list).
 
 Fill model (mirrors the backtest "signal at close t -> enter at open t+1"):
 run daily at 09:30 ET, compute the signal on the LAST COMPLETED daily bar
@@ -247,8 +247,12 @@ def main():
                 if committed < pos_cap and day_loss_used < DAY_LOSS_CAP:
                     size_usd, stop_pct = position_size(PAPER_CAPITAL, c, atr or 0.0)
                     stop_price = c - STOP_ATR * (atr or 0.0)
-                    shares = size_usd / c if c > 0 else 0.0
-                    if shares > 0 and stop_price > 0:
+                    # WHOLE shares only: IBKR STP orders are whole-share, so a
+                    # fractional-qty bracket stop is REJECTED and the parent market
+                    # order never transmits (root cause of the 2026-08-24 NVDA/INTC
+                    # ENTRY UNKNOWN timeout). Round down; skip if under 1 share.
+                    shares = int(size_usd / c) if c > 0 else 0
+                    if shares >= 1 and stop_price > 0:
                         reason = (f'RSI(2) {r2:.2f} < {RSI2_THR} AND close {c:.2f} > '
                                   f'SMA200 {ma200:.2f}')
                         if args.dry_run:
@@ -275,6 +279,7 @@ def main():
                                 'status': 'OPEN', 'entry_date': today,
                                 'entry_price': _s(ep), 'stop_price': _s(stop_price),
                                 'size_usd': _s(size_usd), 'size_shares': str(shares),
+                                'pos': str(shares),  # whole-share count for the reconciler
                                 'atr': _s(atr or 0), 'side': 'LONG', 'ts': int(time.time())},
                                 args.dry_run)
                             enters.append({'sym': sym, 'shares': shares,
