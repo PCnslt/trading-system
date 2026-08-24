@@ -50,6 +50,14 @@ CRON_TZ=America/New_York
 #   "Broker reconcile watchdog"        script reconcile_watchdog.sh    @ */5 * * * *
 #   "Weekly strategy scan + refine"    prompt (strategy_scan.py)       @ 0 18 * * 0    ⛔ PAUSED 2026-08-14 (screening CLOSED)
 #
+#   --- AUTONOMOUS research/backtest/trade-info fleet (added 2026-08-24) ---
+#   "Trade & position watch"        monitor trade_watch_state.sh  @ */10 * * * *   (event-driven: LLM fires ONLY on state-change; deliver=telegram)
+#   "Market research & trade info"  prompt (LLM)                  @ 0 13,16,20 * * 1-5  (09:00/12:00/16:00 ET; deliver=telegram)
+#   "Backtest queue worker"         prompt (LLM)                  @ 0 14,22 * * *  (pops ~/.hermes/state/backtest_queue.json; deliver=telegram)
+#   "Strategy research (literature)" prompt (LLM)                 @ 30 15 * * 1-5  (feeds the backtest queue; deliver=telegram)
+#   Backtest queue = ~/.hermes/state/backtest_queue.json (runtime state, NOT committed).
+#   Trade-watch fingerprint = infra/trade_watch_state.py (read-only DynamoDB/systemd snapshot, byte-stable).
+#
 # The intraday bot (live_intraday.py) self-gates internally on ET wall-clock
 # (zoneinfo America/New_York): entries 09:30-15:30 ET, EOD flatten 15:45 ET.
 
