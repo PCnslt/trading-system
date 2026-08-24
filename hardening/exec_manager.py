@@ -63,7 +63,7 @@ class TradeIntent:
     symbol: str         # 'MES'
     action: str         # 'BUY' / 'SELL'
     side: str           # 'LONG' / 'SHORT'
-    qty: int
+    qty: float
     order_type: str     # 'MKT' / 'STP'
     stop_price: float   # 0.0 when no protective stop
     contract_month: str
@@ -117,7 +117,7 @@ class IntentStore:
 @dataclass
 class ExecutionResult:
     status: str          # FILLED | PARTIAL | REJECTED | UNKNOWN | DUPLICATE
-    filled_qty: int = 0
+    filled_qty: float = 0.0
     avg_px: float = 0.0
     signal_id: str = ''
     intent_id: str = ''

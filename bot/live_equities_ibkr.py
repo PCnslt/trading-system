@@ -188,9 +188,9 @@ def main():
             elif (ma5 is not None and c > ma5) or (r2 is not None and r2 > 70.0):
                 reason, exit_price = 'revert', c
             if reason is not None and not args.dry_run:
-                shares = int(float(pos.get('size_shares') or 0) or 0)
+                shares = float(pos.get('size_shares') or 0) or 0.0
                 if shares <= 0 and entry_price > 0:
-                    shares = int(float(pos.get('size_usd') or 0) / entry_price)
+                    shares = float(pos.get('size_usd') or 0) / entry_price
                 con = Stock(sym, 'SMART', 'USD')
                 ib.qualifyContracts(con)
                 exit_intent = TradeIntent(scope=SCOPE, tag=_tag(sym), symbol=sym,
@@ -205,9 +205,9 @@ def main():
                     print(f'  {sym} duplicate exit — skip'); exited = True; pos = None; continue
             if reason is not None:
                 size_usd = float(pos.get('size_usd') or 0)
-                shares = int(float(pos.get('size_shares') or 0) or 0)
+                shares = float(pos.get('size_shares') or 0) or 0.0
                 if shares <= 0 and entry_price > 0:
-                    shares = int(size_usd / entry_price)
+                    shares = size_usd / entry_price
                 pnl = (exit_price - entry_price) * shares if exit_price else 0.0
                 pnl_pct = (exit_price / entry_price - 1.0) if entry_price else 0.0
                 put_item(table, f'TRADE#{_tag(sym)}', str(pos.get('entry_date', '')), {
@@ -235,8 +235,8 @@ def main():
                 if committed < MAX_POSITIONS:
                     size_usd, stop_pct = position_size(PAPER_CAPITAL, c, atr or 0.0)
                     stop_price = c - STOP_ATR * (atr or 0.0)
-                    shares = int(size_usd / c) if c > 0 else 0
-                    if shares >= 1 and stop_price > 0:
+                    shares = size_usd / c if c > 0 else 0.0
+                    if shares > 0 and stop_price > 0:
                         reason = (f'RSI(2) {r2:.2f} < {RSI2_THR} AND close {c:.2f} > '
                                   f'SMA200 {ma200:.2f}')
                         if args.dry_run:
