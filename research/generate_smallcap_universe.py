@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Screen the FULL US common-stock universe (~6,000) for sub-$35 whole-share names.
+"""Screen the FULL US common-stock universe (~6,000) for sub-PRICE_HI whole-share names.
 
 The LIVE lane needs WHOLE shares (Robinhood fractional can't carry a stop), so
 with $700 the tradeable universe is sub-$35 names. The current SMALL_CAP_STOCKS
@@ -22,7 +22,7 @@ import yfinance as yf
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from data_engine.universe import load_symbols  # noqa: E402
 
-PRICE_LO, PRICE_HI = 2.0, 35.0
+PRICE_LO, PRICE_HI = 2.0, 50.0
 ADV_MIN_M = 50.0
 
 
@@ -55,7 +55,7 @@ def main():
                     out.append((sym, round(close, 2), round(adv, 1)))
             except Exception:
                 continue
-        print(f'  ...processed through {min(i + CH, len(uni))}/{len(uni)} ({len(out)} sub-$35 so far)')
+        print(f'  ...processed through {min(i + CH, len(uni))}/{len(uni)} ({len(out)} sub-${PRICE_HI:.0f} so far)')
     out.sort(key=lambda x: -x[2])
     symbols = [s for s, _, _ in out]
     payload = {'generatedAt': pd.Timestamp.now(tz='UTC').isoformat(),
@@ -69,7 +69,7 @@ def main():
     s3 = boto3.client('s3', region_name='us-east-1')
     s3.put_object(Bucket='trading-datalake-920641308584',
                   Key='data-engine/universe/smallcap-full.json', Body=json.dumps(payload))
-    print(f'\nsub-$35 liquid: {len(symbols)} names -> {p}')
+    print(f'\\nsub-${PRICE_HI:.0f} liquid: {len(symbols)} names -> {p}')
     print('top 30 by ADV:', ', '.join(symbols[:30]))
 
 

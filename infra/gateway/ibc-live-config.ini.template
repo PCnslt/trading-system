@@ -1,0 +1,18 @@
+# IBC configuration - LIVE trading (account U26949861)
+IbLoginId=mushfiqrhmn1-live
+IbPassword=<SET_LOCALLY_ONLY__NEVER_COMMIT>
+TradingMode=live
+AcceptIncomingConnectionAction=accept
+ReadOnlyApi=no
+AutoRestartTime=04:00 AM
+ColdRestartTime=13:00
+ReloginAfterSecondFactorAuthenticationTimeout=yes
+SecondFactorAuthenticationTimeout=180
+AcceptNonBrokerageAccountWarning=yes
+DismissNSEComplianceNotice=yes
+SuppressInfoMessages=yes
+MinimizeMainWindow=yes
+ExistingSessionDetectedAction=primary
+StoreSettingsOnServer=no
+OverrideTwsApiPort=4001
+LoginDialogDisplayTimeout=300
