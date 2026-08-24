@@ -227,6 +227,47 @@ def fetch(syms, start=DATA_START):
     return out
 
 
+def fetch_batch(syms, start=DATA_START):
+    """Batch yfinance daily OHLCV — ONE download for all symbols -> {sym: df}.
+
+    Drop-in replacement for fetch(): identical output shape (lowercased OHLCV
+    columns, tz-naive DatetimeIndex, deduped, >= MIN_BARS rows). Falls back to
+    the sequential fetch() if the batch call fails, so a yfinance change or a
+    rate-limit can never break the bot. This is the scale lever: 1,500 names =
+    1 network round-trip instead of 1,500.
+    """
+    if not syms:
+        return {}
+    out = {}
+    try:
+        raw = yf.download(' '.join(syms), start=start, interval='1d',
+                          auto_adjust=True, progress=False, group_by='ticker',
+                          threads=True)
+    except Exception as e:
+        print(f'  [fetch_batch] batch download failed ({e!r}) — falling back to sequential')
+        return fetch(syms, start)
+    if raw is None or raw.empty:
+        return out
+    tickers = raw.columns.get_level_values(0).unique()
+    for sym in syms:
+        try:
+            if sym not in tickers:
+                continue
+            sub = raw[sym]
+            if isinstance(sub, pd.Series):  # single-field degenerate case
+                continue
+            df = sub[['Open', 'High', 'Low', 'Close', 'Volume']].copy()
+            df.columns = [c.lower() for c in df.columns]
+            df.index = pd.to_datetime(df.index).tz_localize(None)
+            df = df[~df.index.duplicated(keep='last')].sort_index()
+            df = df[df['close'].notna() & (df['close'] > 0)]
+            if len(df) >= MIN_BARS:
+                out[sym] = df
+        except Exception as e:
+            print(f'  [{sym}] fetch_batch error: {e!r}')
+    return out
+
+
 def position_size(capital, close, atr):
     """$ per name = min(1%/stop_pct, 5% cap). Returns (size_usd, stop_dist_pct)."""
     stop_dist = STOP_ATR * atr
@@ -386,7 +427,7 @@ def main():
         print(f'  earnings guard: will not ENTER {len(earnings_blacklist)} symbols '
               f'reporting within {EARNINGS_GUARD_DAYS}d')
     print(f'fetching {len(syms)} symbols (start={DATA_START})…')
-    bars = fetch(syms)
+    bars = fetch_batch(syms)
     print(f'  got {len(bars)}/{len(syms)} symbols')
 
     book = load_book(table, args.dry_run)
