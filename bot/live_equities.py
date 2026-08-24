@@ -161,6 +161,27 @@ SMALL_CAP_STOCKS = [
     'WY', 'XRAY'
 ]
 
+def _load_smallcap_universe():
+    """Load the expanded sub-$35 whole-share universe (full ~6,000-stock screen,
+    ~363 names, blocklist-filtered) from smallcap_universe_full.json. Fallback to
+    the hardcoded SMALL_CAP_STOCKS (154) if the file is missing/unreadable."""
+    try:
+        p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         'research', 'smallcap_universe_full.json')
+        with open(p, encoding='utf-8') as f:
+            syms = [s for s in json.load(f).get('symbols', [])
+                    if s.upper() not in SMALLCAP_BLOCKLIST]
+        if syms:
+            return syms
+    except Exception as e:
+        print(f'  [universe] smallcap load failed ({e!r}) — fallback to SMALL_CAP_STOCKS')
+    return SMALL_CAP_STOCKS
+
+
+SMALLCAP_BLOCKLIST = {'MARA', 'RIOT', 'CLSK', 'WULF', 'CIFR', 'BITF', 'HUT', 'IREN',
+                      'GME', 'PTON', 'SEDG', 'HIMS', 'CELH', 'RUN'}
+
+
 def _load_broad_universe():
     """Load the ~1,459-name tradeable universe (S&P 1500, price>$2, adv>=$10M)
     from the generated artifact `research/universe_1500.json`. Falls back to the
@@ -464,7 +485,7 @@ def main():
 
     # LIVE whole-share lane uses the liquid sub-$35 sub-universe (the S&P100
     # universe is >$35, so $700 whole-share can't buy it). PAPER keeps full universe.
-    _syms = SMALL_CAP_STOCKS if EXECUTION_MODE == 'LIVE' else UNIVERSE
+    _syms = _load_smallcap_universe() if EXECUTION_MODE == 'LIVE' else UNIVERSE
     syms = _syms[:args.limit] if args.limit else _syms
     pos_cap = MAX_POSITIONS if EXECUTION_MODE == 'LIVE' else PAPER_MAX_POSITIONS
     earnings_blacklist = load_upcoming_earnings(table, days_ahead=EARNINGS_GUARD_DAYS)
