@@ -74,6 +74,10 @@ RH_MCP_URL = "https://agent.robinhood.com/mcp/trading"
 RH_MCP_PROTOCOL = "2025-06-18"
 RH_SSM_PREFIX = "/trading/robinhood/"
 RH_TOKEN_ENDPOINT_DEFAULT = "https://api.robinhood.com/oauth2/token/"
+# Async fill confirmation. Robinhood returns queued/pending on order creation and
+# fills arrive later, so a protected entry must POLL before resting its stop.
+RH_FILL_TIMEOUT_S = float(os.getenv("RH_FILL_TIMEOUT_S", "45"))
+RH_FILL_POLL_S = float(os.getenv("RH_FILL_POLL_S", "2"))
 
 # Dynamic token fields (rotate on refresh) — must all be written back together.
 TOKEN_FIELDS = ("access_token", "refresh_token", "token_type", "scope",
@@ -728,11 +732,60 @@ class RHClient:
             time_in_force=time_in_force, market_hours=market_hours,
             client_order_ref=client_order_ref)
 
-        # Confirm fill (Robinhood states: filled / partially_filled / confirmed /
-        # queued / rejected / cancelled …). Fail-closed: only a filled entry counts.
+        # Confirm the fill by POLLING — Robinhood fills are ASYNCHRONOUS.
+        #
+        # ROOT CAUSE OF ZERO LIVE FILLS 2026-08-20 → 2026-08-24: this used to read
+        # entry['state'] ONCE from the creation response and demand 'filled'. A real
+        # order's creation response comes back queued/pending (often with NO state
+        # field at all -> state=''), so every single live entry raised
+        # RHOrderError("entry not confirmed filled (state='')") and fail-closed.
+        # 10 valid RSI2 signals were rejected this way on 2026-08-24 alone.
+        #
+        # Never-naked guarantee on timeout: an order left resting could fill LATER,
+        # after we've given up, leaving a position with no protective stop. So on
+        # timeout we CANCEL and then re-check — and if the cancel lost the race and
+        # it actually filled, we fall through and protect it instead of abandoning it.
+        order_id = str(entry.get("id") or entry.get("order_id") or "")
         state = (entry.get("state") or "").lower()
+        TERMINAL = ("filled", "partially_filled", "rejected", "cancelled", "canceled",
+                    "failed")
+
+        def _refresh() -> str:
+            """Re-read the order; returns the latest lowercase state."""
+            nonlocal entry
+            if not order_id:
+                return state
+            try:
+                latest = self.list_orders(account_number=acct, order_id=order_id)
+            except Exception:  # noqa: BLE001 - transient read, keep polling
+                return (entry.get("state") or "").lower()
+            for o in latest or []:
+                if str(o.get("id") or o.get("order_id") or "") == order_id:
+                    entry = o
+                    break
+            else:
+                if latest:
+                    entry = latest[0]
+            return (entry.get("state") or "").lower()
+
+        deadline = time.monotonic() + RH_FILL_TIMEOUT_S
+        while state not in TERMINAL and order_id and time.monotonic() < deadline:
+            time.sleep(RH_FILL_POLL_S)
+            state = _refresh()
+
         if state not in ("filled", "partially_filled"):
-            raise RHOrderError(f"entry not confirmed filled (state={state!r})")
+            if order_id and state not in ("rejected", "cancelled", "canceled", "failed"):
+                try:
+                    self.cancel_order(order_id, account_number=acct)
+                except Exception:  # noqa: BLE001 - cancel is best-effort; re-check decides
+                    pass
+                time.sleep(RH_FILL_POLL_S)
+                state = _refresh()
+            if state not in ("filled", "partially_filled"):
+                raise RHOrderError(
+                    f"{sym}: entry not confirmed filled within {RH_FILL_TIMEOUT_S:.0f}s "
+                    f"(state={state!r}, order_id={order_id or 'n/a'}) — order cancelled, "
+                    f"nothing left resting")
 
         filled_qty = float(entry.get("cumulative_quantity")
                            or entry.get("quantity") or 0)
