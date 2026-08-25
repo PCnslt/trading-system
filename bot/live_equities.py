@@ -703,10 +703,30 @@ def main():
                                     args.dry_run)
                         else:
                             # --- PAPER (default): signal + simulated next-open fill ---
+                            # EXECUTABILITY PARITY WITH LIVE: every entry in this system
+                            # must carry a whole-share protective stop, so PAPER trades
+                            # WHOLE SHARES ONLY. Before this, paper "bought" $35 slices of
+                            # $500-800 names (NVDA, GEV @ stop 844, EME @ 705) that live can
+                            # NEVER hold with a stop — on 2026-08-24 only ~1 of 4 paper
+                            # candidates was affordable as a whole share. That made the
+                            # forward-test record optimistic and non-predictive of live.
+                            # A paper trade we could not have taken is not evidence.
+                            shares_p = int(size_usd / c) if c > 0 else 0
+                            if shares_p < 1:
+                                put_item(table, f'RHSIG#{sym}', today, {
+                                    'action': 'NONE', 'signal': 'NONE', 'strategy': 'RSI2',
+                                    'rsi2': _s(r2), 'close': _s(c),
+                                    'reason': (f'PAPER skip: ${size_usd:.2f} buys <1 whole '
+                                               f'share of {sym} (@${c:.2f}) — live cannot '
+                                               f'carry a whole-share stop on it'),
+                                    'mode': 'PAPER', 'execution': 'NONE',
+                                    'ts': int(time.time())}, args.dry_run)
+                                continue
+                            fill_usd = shares_p * c
                             sig = {'action': 'ENTER', 'side': 'LONG', 'strategy': 'RSI2',
                                    'signal': 'LONG', 'entry': 'next_open',
-                                   'stop_price': _s(stop_price), 'size_usd': _s(size_usd),
-                                   'size_shares': _s(size_usd / c if c > 0 else 0),
+                                   'stop_price': _s(stop_price), 'size_usd': _s(fill_usd),
+                                   'size_shares': str(shares_p),
                                    'rsi2': _s(r2), 'sma200': _s(ma200), 'sma5': _s(ma5 or 0),
                                    'atr14': _s(atr or 0), 'stop_pct': _s(stop_pct),
                                    'regime': regime, 'bear_warning': BEAR_WARNING,
@@ -716,10 +736,12 @@ def main():
                             put_item(table, f'RHSIG#{sym}', today, sig, args.dry_run)
                             put_item(table, f'RHPOS#{sym}', 'current', {
                                 'status': 'PENDING', 'entry_date': str(today_dt.date()),
-                                'size_usd': _s(size_usd), 'atr': _s(atr or 0),
+                                'size_usd': _s(fill_usd), 'size_shares': str(shares_p),
+                                'atr': _s(atr or 0),
                                 'stop_ref': _s(stop_price), 'ts': int(time.time())},
                                 args.dry_run)
-                            enters.append({'sym': sym, 'size_usd': _s(size_usd),
+                            enters.append({'sym': sym, 'shares': shares_p,
+                                           'size_usd': _s(fill_usd),
                                            'stop_price': _s(stop_price)})
                             committed += 1
                 else:
