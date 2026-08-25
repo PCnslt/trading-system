@@ -126,3 +126,70 @@
 - Lane 24 (daily re-test): `research/LANE24_KAMA_DAILY.md`.
 - Lane 14: `bot/wheel_backtest.py`, `research/OPTIONS_PLAN.md`.
 - Lanes 39–41 (subagent edge-hunts 2026-08-24): `research/turn_of_month_backtest.py`, `research/intraday_reversal_single_name_backtest.py`, `research/pead_backtest.py`.
+
+---
+
+## Lane 47 — BROKEN ARROW (buy the big-down close, sell the next open) — RESEARCHING, strongest candidate
+
+Source: Alvarez, via `research/edge-research-20260825/PRACTITIONER_CODE_CANDIDATES.md` #2.
+Backtest: `research/candidate_backtest.py` → `research/candidate_backtest_results.json`.
+375 symbols, 2006-2026, sub-$50 only, dollar-vol > $5M, LONG-ONLY, 6 bp round-trip, OOS from 2022.
+
+Rules: setup = prev close > 40-day MA AND 40-day MA rising. Trigger = today closes down ≥ X%.
+Entry = that day's CLOSE (~15:55). Exit = the NEXT OPEN. No stop needed (1 overnight hold).
+
+| drop | trades | PF | win% | net/trade | t | OOS n | OOS net | **OOS t** |
+|---|---|---|---|---|---|---|---|---|
+| −5% | 13,306 | 1.151 | 52.8% | +14.8 bp | 4.67 | 6,976 | +9.4 bp | 2.25 |
+| **−8%** | **4,174** | **1.423** | **56.2%** | **+49.6 bp** | **6.41** | **2,386** | **+34.4 bp** | **3.96** |
+| **−10%** | **2,144** | **1.552** | **56.7%** | **+73.6 bp** | **5.56** | **1,231** | **+54.0 bp** | **3.85** |
+| −15% | 621 | 1.887 | 58.0% | +135.6 bp | 3.88 | 359 | +73.2 bp | 2.20 |
+| −20% | 232 | 2.337 | 57.3% | +225.7 bp | 2.85 | 142 | +103.6 bp | 1.72 |
+
+**INDEPENDENT REPLICATION:** Alvarez reports +0.77%/trade, 56% winners at −15% on top-1000.
+We get **+1.36%/trade, 58.0% winners** full-sample and **+0.73% OOS** on a sub-$50 universe —
+i.e. his headline number reproduces almost exactly out-of-sample on different data. That is the
+strongest external corroboration any lane in this registry has.
+
+**−8%/−10% is a better operating point than his published −15%:** 7× and 3.5× the trade count
+with the highest OOS t-stats on the table (3.96 / 3.85).
+
+Why it fits this account: buys at the CLOSE, which is the CHEAPEST window we measured
+(1.9 bp buy half-spread at 15:45-16:00 on 2026-08-25, vs 3.6 bp mid-session and 18.1 bp in the
+16:00-16:05 auction). Long-only, whole-share, no stop required, both legs inside regular hours.
+Corroborates the same overnight-drift mechanism that made `close_to_open_backtest.py` NEARLOW
+(+3.94 bp OOS) work and that killed the pre-close exit (Lane 46 revert).
+
+**BLOCKER before any capital — one honest gap:** the 1.9 bp buy half-spread was measured on
+NORMAL names. This strategy deliberately buys names that just fell 8-15% in a day, whose closing
+spread will be materially wider. Cron `478789a67115` samples 15:50-16:00 and 09:30-09:40 at
+1-minute resolution; the specific test needed is **the closing spread on names down ≥8% that
+day**. Edge is +34 bp OOS, so it tolerates far more cost than the 8 bp close-to-open trade —
+but it must be measured, not assumed. NO capital until then.
+
+## Lane 48 — MIND THE GAP (buy gap-down open above 200SMA, sell next open) — RESEARCHING, weaker
+
+Source: Quantitativo, ibid. #1 (author withheld his gap threshold; we swept it).
+Same script/data. Cap 7 names/day, least-volatile first, both legs at the open.
+
+| gap ≤ | trades | PF | net/trade | t | portfolio bp/day | OOS PF | OOS net | OOS t |
+|---|---|---|---|---|---|---|---|---|
+| −1% | 21,672 | 1.140 | +13.1 bp | 6.24 | +13.5 | 1.092 | +6.8 bp | 1.04 |
+| −3% | 6,358 | 1.167 | +29.0 bp | 4.14 | +20.7 | 1.098 | +16.0 bp | 0.96 |
+| −4% | 3,620 | 1.301 | +59.8 bp | 5.28 | +30.2 | 1.111 | +22.7 bp | 0.98 |
+| −7% | 1,040 | 1.472 | +126.5 bp | 4.36 | +55.3 | 1.026 | +7.9 bp | 0.16 |
+
+Cost-robust at −3% (PF 1.167 @6bp → 1.083 @20bp, t still 2.14). BUT every OOS day-level
+t-stat is ≈1.0 or below — the post-2022 evidence does not clear significance, consistent with
+the author's own admission that he excluded pre-2010 because it was "significantly better"
+(i.e. documented decay). **Ranked BELOW Broken Arrow. Do not build yet.**
+
+## Lane 49 — Unconditional close-to-open — NO-GO (confirmed twice)
+
+`research/close_to_open_backtest.py`: buying every sub-$50 name at the close and selling the
+next open returns +1.55 bp/trade at 6 bp with a MEDIAN of −6.00 bp, and is negative from 10 bp.
+Independently confirmed by Basdekidou (2017), open-access, SPY 1993-2011, 4,624 trades: 9.23%/yr
+gross, Sharpe 0.89 — but the author states $0.02/share commission makes total net profit
+NEGATIVE, and $0.01/share destroys 57% of gross. **The overnight premium is not harvestable
+unconditionally.** The edge requires the weak-close / big-drop conditioning of Lanes 47/49-adjacent
+variants (NEARLOW +3.94 bp OOS t=5.30, DOWN3 +4.24 bp OOS t=3.06).
