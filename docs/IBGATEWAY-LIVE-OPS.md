@@ -82,3 +82,72 @@ pointed at `:4002` can never reach live (`:4001`/`:4003`), and vice versa.
 Reference: the live jts.ini is committed as `infra/jts-live.ini` (CRLF runtime
 copy at `/home/ubuntu/Jts-live/jts.ini`). The paper native launcher was also
 committed (`infra/ibgateway-native-start.sh`) to close a prior IaC gap.
+
+---
+
+## 2026-08-25 — live login identity, and why orders are still blocked
+
+### Finding 1: `~/ibc-live/config.ini` had DRIFTED to the paper username
+`ibgateway-live-start-ibc.sh` documents the intended split:
+
+```
+#   username mushfiqrhmn1-live  <-- IBKR forbids 2 concurrent sessions per username
+```
+
+but the live config actually contained `IbLoginId=mushfiqrhmn1` (the PAPER login) with
+`TradingMode=live`. So the "live" gateway was authenticating as the paper username and
+landing on a live account attached to it — **U26949861** — which is the freshly-created
+account that demands e-mail-token verification. **Check this file before trusting which
+account you are on.**
+
+### Finding 2: `mushfiqrhmn1-live` is NOT an activated login — do NOT switch to it
+SSM holds both identities:
+
+| param | value |
+|---|---|
+| `/trading/ibkr/username` | `mushfiqrhmn1` (10-char pw) |
+| `/trading/ibkr-live/username` | `mushfiqrhmn1-live` (15-char pw) |
+
+Switching the live config to `mushfiqrhmn1-live` + its SSM password produced
+**"Unrecognized Username or Password"** on login attempt 1 (2026-08-25 18:36 ET).
+The credentials were staged for an account that was never activated — which is what the
+old note *"restore paper when mushfiqrhmn1-live activates"* actually meant. Config was
+restored from `config.ini.bak.<epoch>` immediately.
+
+**Lockout discipline:** stop the service after the FIRST failure. A prior incident hit
+106 failed logins in ~7 minutes and risked an IBKR username lockout; that is why the
+launcher has a `LOGIN_FAILED.lock` circuit breaker. This event was stopped at **1
+attempt**.
+
+### Finding 3: gateway 2FA and order permission are DIFFERENT gates
+Restarting the live gateway opens a **Second Factor Authentication** dialog:
+
+> "Open the IBKR notification on your phone — IBKR sent you a notification to your phone.
+>  Tap the IBKR notification to complete two-factor authentication"
+
+Only the owner can tap it. Once tapped, `IBC: Login has completed`, port 4001 listens and
+**historical data reads work** (verified: F 5 daily bars, last 2026-08-25 close 13.95).
+
+That does **NOT** unblock trading. Order placement still returns:
+
+```
+Error 201: Order rejected - reason: BEFORE WE CAN ACCEPT YOUR ORDER IN THIS SECURITY,
+PLEASE LOGIN TO CLIENT PORTAL AND VERIFY USING THE TOKEN WE EMAILED TO YOU.
+```
+
+Re-verified AFTER a successful 2FA login (whatIf BUY on BB and FNB, both rejected, empty
+margin fields). **Gateway 2FA != Client Portal token verification.** The latter is a
+one-time account-level gate the owner must clear at portal.interactivebrokers.com using
+the e-mailed token. Until then the IBKR equity lane can read data but cannot trade, and
+`exec_manager._confirm()` now surfaces `BROKER SAYS: <reason>` so this never again shows
+up as a bare "ENTRY UNKNOWN (timeout)".
+
+### Recovery recipe
+```bash
+grep -nE '^IbLoginId|^TradingMode' ~/ibc-live/config.ini   # expect mushfiqrhmn1 / live
+ls ~/ibc-live/LOGIN_FAILED.lock                            # must NOT exist
+sudo systemctl restart ibgateway-live.service
+# owner taps the phone notification, then:
+ss -tlnp | grep :4001                                      # LISTEN = logged in
+DISPLAY=:100 scrot -o /tmp/gw.png && tesseract /tmp/gw.png -   # read any stuck dialog
+```
