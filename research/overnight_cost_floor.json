@@ -1,301 +1,352 @@
 {
- "extended_label": "premarket_0917",
- "rth_label": "rth_0935",
- "n": 36,
+ "extended_labels": [
+  "premarket_0917",
+  "premarket_0923",
+  "premarket_0925",
+  "premarket_0927"
+ ],
+ "rth_labels": [
+  "rth_0931",
+  "rth_0935",
+  "rth_0942"
+ ],
+ "n_names": 36,
+ "method": "RH get_equity_price_book L2 walked to $250/side; eff half-spread vs mid, both legs",
  "rth_roundtrip_bp_median": 14.0,
- "extended_roundtrip_bp_median": 44.9,
- "extended_over_rth_ratio_median": 3.2,
+ "extended_roundtrip_bp_median": 51.1,
+ "extended_roundtrip_bp_median_excl_stale": 50.8,
+ "extended_over_rth_ratio_median": 3.42,
+ "stale_excluded": [
+  "SIRI"
+ ],
  "statutory_fees_bp": 0.37,
- "min_roundtrip_bp_extended": 45.2,
+ "min_roundtrip_bp_extended": 51.5,
  "min_roundtrip_bp_rth": 14.4,
+ "caveat": "extended snapshots were taken 09:12-09:28 ET, the PEAK-liquidity window of the extended session, so this is a LOWER BOUND for 16:05-20:00 and 20:00-04:00; the latter remains unmeasured",
  "per_symbol": [
   {
    "symbol": "AAL",
-   "mid": 13.805,
-   "rth_bp": 7.3,
+   "mid": 14.025,
+   "rth_bp": 7.2,
    "ext_bp": 7.2,
-   "ratio": 0.99,
-   "tick_floor_bp": 7.2
+   "ratio": 1.0,
+   "tick_floor_bp": 7.1,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "ACHR",
-   "mid": 6.08,
+   "mid": 6.12,
    "rth_bp": 32.8,
-   "ext_bp": 16.2,
-   "ratio": 0.49,
-   "tick_floor_bp": 16.4
+   "ext_bp": 20.4,
+   "ratio": 0.62,
+   "tick_floor_bp": 16.3,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "APLD",
-   "mid": 27.72,
+   "mid": 27.44,
    "rth_bp": 14.4,
    "ext_bp": 50.8,
    "ratio": 3.53,
-   "tick_floor_bp": 3.6
+   "tick_floor_bp": 3.6,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "BP",
-   "mid": 43.545,
+   "mid": 43.445,
    "rth_bp": 2.3,
    "ext_bp": 4.6,
    "ratio": 2.0,
-   "tick_floor_bp": 2.3
+   "tick_floor_bp": 2.3,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "CCL",
-   "mid": 26.09,
+   "mid": 26.285,
    "rth_bp": 15.4,
    "ext_bp": 101.5,
    "ratio": 6.59,
-   "tick_floor_bp": 3.8
+   "tick_floor_bp": 3.8,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "CDE",
-   "mid": 20.885,
+   "mid": 20.405,
    "rth_bp": 4.8,
-   "ext_bp": 73.2,
-   "ratio": 15.25,
-   "tick_floor_bp": 4.8
+   "ext_bp": 87.8,
+   "ratio": 18.29,
+   "tick_floor_bp": 4.9,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "CLSK",
-   "mid": 12.18,
+   "mid": 12.055,
    "rth_bp": 16.4,
    "ext_bp": 127.2,
    "ratio": 7.76,
-   "tick_floor_bp": 8.2
+   "tick_floor_bp": 8.3,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "CMCSA",
-   "mid": 26.805,
+   "mid": 26.95,
    "rth_bp": 3.8,
    "ext_bp": 80.9,
    "ratio": 21.29,
-   "tick_floor_bp": 3.7
+   "tick_floor_bp": 3.7,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "F",
-   "mid": 13.855,
+   "mid": 13.95,
    "rth_bp": 7.2,
-   "ext_bp": 17.6,
-   "ratio": 2.44,
-   "tick_floor_bp": 7.2
+   "ext_bp": 23.9,
+   "ratio": 3.32,
+   "tick_floor_bp": 7.2,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "GRAB",
-   "mid": 3.555,
+   "mid": 3.535,
    "rth_bp": 28.2,
-   "ext_bp": 44.5,
-   "ratio": 1.58,
-   "tick_floor_bp": 28.1
+   "ext_bp": 52.5,
+   "ratio": 1.86,
+   "tick_floor_bp": 28.3,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "HBAN",
-   "mid": 17.015,
+   "mid": 17.185,
    "rth_bp": 5.8,
    "ext_bp": 75.8,
    "ratio": 13.07,
-   "tick_floor_bp": 5.9
+   "tick_floor_bp": 5.8,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "HL",
-   "mid": 20.355,
+   "mid": 19.925,
    "rth_bp": 14.8,
-   "ext_bp": 49.8,
-   "ratio": 3.36,
-   "tick_floor_bp": 4.9
+   "ext_bp": 75.2,
+   "ratio": 5.08,
+   "tick_floor_bp": 5.0,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "IONQ",
-   "mid": 41.97,
+   "mid": 41.895,
    "rth_bp": 14.2,
-   "ext_bp": 98.7,
-   "ratio": 6.95,
-   "tick_floor_bp": 2.4
+   "ext_bp": 69.2,
+   "ratio": 4.87,
+   "tick_floor_bp": 2.4,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "JOBY",
-   "mid": 7.265,
+   "mid": 7.31,
    "rth_bp": 13.8,
-   "ext_bp": 31.6,
-   "ratio": 2.29,
-   "tick_floor_bp": 13.8
+   "ext_bp": 41.2,
+   "ratio": 2.99,
+   "tick_floor_bp": 13.7,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "KHC",
-   "mid": 25.33,
-   "rth_bp": 3.9,
-   "ext_bp": 23.4,
-   "ratio": 6.0,
-   "tick_floor_bp": 3.9
+   "mid": 25.645,
+   "rth_bp": 7.8,
+   "ext_bp": 54.8,
+   "ratio": 7.03,
+   "tick_floor_bp": 3.9,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "KVUE",
-   "mid": 19.215,
-   "rth_bp": 5.2,
+   "mid": 19.31,
+   "rth_bp": 10.4,
    "ext_bp": 144.6,
-   "ratio": 27.81,
-   "tick_floor_bp": 5.2
+   "ratio": 13.9,
+   "tick_floor_bp": 5.2,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "LCID",
-   "mid": 5.025,
+   "mid": 5.145,
    "rth_bp": 20.0,
-   "ext_bp": 77.6,
-   "ratio": 3.88,
-   "tick_floor_bp": 19.9
+   "ext_bp": 97.2,
+   "ratio": 4.86,
+   "tick_floor_bp": 19.4,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "LUV",
-   "mid": 41.13,
-   "rth_bp": 19.4,
+   "mid": 41.625,
+   "rth_bp": 16.8,
    "ext_bp": 51.5,
-   "ratio": 2.65,
-   "tick_floor_bp": 2.4
+   "ratio": 3.07,
+   "tick_floor_bp": 2.4,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "MARA",
-   "mid": 11.19,
+   "mid": 11.16,
    "rth_bp": 8.9,
-   "ext_bp": 8.8,
-   "ratio": 0.99,
-   "tick_floor_bp": 8.9
+   "ext_bp": 17.8,
+   "ratio": 2.0,
+   "tick_floor_bp": 9.0,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "NOK",
    "mid": 10.345,
-   "rth_bp": 9.6,
+   "rth_bp": 9.8,
    "ext_bp": 9.8,
-   "ratio": 1.02,
-   "tick_floor_bp": 9.7
+   "ratio": 1.0,
+   "tick_floor_bp": 9.7,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "OPEN",
-   "mid": 3.485,
+   "mid": 3.455,
    "rth_bp": 28.6,
    "ext_bp": 28.8,
    "ratio": 1.01,
-   "tick_floor_bp": 28.7
+   "tick_floor_bp": 28.9,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "PFE",
-   "mid": 27.955,
+   "mid": 27.92,
    "rth_bp": 3.6,
-   "ext_bp": 19.6,
-   "ratio": 5.44,
-   "tick_floor_bp": 3.6
+   "ext_bp": 58.9,
+   "ratio": 16.36,
+   "tick_floor_bp": 3.6,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "PLUG",
-   "mid": 2.235,
+   "mid": 2.215,
    "rth_bp": 44.8,
    "ext_bp": 45.2,
    "ratio": 1.01,
-   "tick_floor_bp": 44.7
+   "tick_floor_bp": 45.1,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "QBTS",
-   "mid": 18.89,
-   "rth_bp": 10.6,
-   "ext_bp": 47.2,
-   "ratio": 4.45,
-   "tick_floor_bp": 5.3
+   "mid": 18.995,
+   "rth_bp": 5.3,
+   "ext_bp": 89.1,
+   "ratio": 16.81,
+   "tick_floor_bp": 5.3,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "RGTI",
-   "mid": 16.575,
+   "mid": 16.655,
    "rth_bp": 12.0,
    "ext_bp": 6.0,
    "ratio": 0.5,
-   "tick_floor_bp": 6.0
+   "tick_floor_bp": 6.0,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "RIOT",
-   "mid": 20.145,
+   "mid": 20.085,
    "rth_bp": 24.8,
    "ext_bp": 99.6,
    "ratio": 4.02,
-   "tick_floor_bp": 5.0
+   "tick_floor_bp": 5.0,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "RIVN",
-   "mid": 16.68,
+   "mid": 16.8,
    "rth_bp": 17.6,
-   "ext_bp": 23.8,
-   "ratio": 1.35,
-   "tick_floor_bp": 6.0
+   "ext_bp": 35.8,
+   "ratio": 2.03,
+   "tick_floor_bp": 6.0,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "SIRI",
-   "mid": 28.5,
+   "mid": 28.8,
    "rth_bp": 21.0,
-   "ext_bp": 884.6,
-   "ratio": 42.12,
-   "tick_floor_bp": 3.5
+   "ext_bp": 744.8,
+   "ratio": 35.47,
+   "tick_floor_bp": 3.5,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "SNAP",
-   "mid": 5.485,
+   "mid": 5.55,
    "rth_bp": 18.2,
    "ext_bp": 18.0,
    "ratio": 0.99,
-   "tick_floor_bp": 18.2
+   "tick_floor_bp": 18.0,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "SOFI",
-   "mid": 18.175,
+   "mid": 18.355,
    "rth_bp": 11.1,
    "ext_bp": 27.2,
    "ratio": 2.45,
-   "tick_floor_bp": 5.5
+   "tick_floor_bp": 5.4,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "SOUN",
-   "mid": 7.005,
+   "mid": 7.035,
    "rth_bp": 14.2,
    "ext_bp": 14.2,
    "ratio": 1.0,
-   "tick_floor_bp": 14.3
+   "tick_floor_bp": 14.2,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "T",
-   "mid": 25.64,
+   "mid": 25.545,
    "rth_bp": 11.7,
-   "ext_bp": 94.9,
-   "ratio": 8.11,
-   "tick_floor_bp": 3.9
+   "ext_bp": 50.7,
+   "ratio": 4.33,
+   "tick_floor_bp": 3.9,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "TEVA",
-   "mid": 37.3,
-   "rth_bp": 21.4,
+   "mid": 37.185,
+   "rth_bp": 24.1,
    "ext_bp": 53.6,
-   "ratio": 2.5,
-   "tick_floor_bp": 2.7
+   "ratio": 2.22,
+   "tick_floor_bp": 2.7,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "VALE",
-   "mid": 14.975,
+   "mid": 15.03,
    "rth_bp": 6.6,
    "ext_bp": 26.6,
    "ratio": 4.03,
-   "tick_floor_bp": 6.7
+   "tick_floor_bp": 6.7,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "WBD",
-   "mid": 28.82,
-   "rth_bp": 7.0,
-   "ext_bp": 41.8,
-   "ratio": 5.97,
-   "tick_floor_bp": 3.5
+   "mid": 28.785,
+   "rth_bp": 3.5,
+   "ext_bp": 24.4,
+   "ratio": 6.97,
+   "tick_floor_bp": 3.5,
+   "snaps_rth_ext": "3/3"
   },
   {
    "symbol": "WULF",
-   "mid": 15.84,
-   "rth_bp": 18.5,
+   "mid": 15.815,
+   "rth_bp": 18.8,
    "ext_bp": 56.3,
-   "ratio": 3.04,
-   "tick_floor_bp": 6.3
+   "ratio": 2.99,
+   "tick_floor_bp": 6.3,
+   "snaps_rth_ext": "3/3"
   }
  ]
 }

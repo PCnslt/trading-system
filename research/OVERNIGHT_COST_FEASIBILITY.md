@@ -8,6 +8,16 @@ per-position size on the ~$700 RH account)
 16:05–20:00 evening session is CONDITIONALLY viable but must clear ≥45 bp
 round-trip — 3.2× the regular-hours cost.**
 
+> **REVISION (same session, more data):** pooling **4 clean extended snapshots**
+> (09:12–09:28 ET) and **3 clean regular snapshots** (09:31–09:43 ET) instead of
+> one of each moves the extended median from 44.9 → **51.1 bp** and the ratio
+> from 3.20× → **3.42×**. The regular-hours baseline is **unchanged at 14.0 bp**,
+> which is a good stability check. **The number is therefore 51.5 bp, not 45 bp.**
+> One snapshot file (`rth_0945.jsonl`) was found to contain rows from *both*
+> sessions and has been quarantined as `.MIXED_DO_NOT_USE`; the original headline
+> inputs (`premarket_0917`, `rth_0935`) were verified 100% single-session, so the
+> first estimate was not contaminated — only under-sampled.
+
 ---
 
 ## 0. Which source produced which number (read this first)
@@ -168,10 +178,12 @@ controlled by size alone.
 ## 7. THE NUMBER
 
 > **A 24-hour/overnight strategy on this universe must overcome a minimum
-> round-trip cost of 45 bp** (44.9 bp measured effective spread at $250/side
-> + 0.37 bp statutory fees).
+> round-trip cost of 51.5 bp** (51.1 bp pooled measured effective spread at
+> $250/side + 0.37 bp statutory fees), from 4 clean extended snapshots × 36 names.
 >
-> Regular-hours equivalent: **14.4 bp**. The extended session costs **3.2×** more.
+> Regular-hours equivalent: **14.4 bp**. The extended session costs **3.42×** more.
+> Excluding the one stale quote (SIRI) the extended median is 50.8 bp — the
+> headline does not depend on the outlier.
 
 **Status of this number — stated precisely:**
 - It is **measured**, not estimated: real RH L2 books, real sizes, our order size.
