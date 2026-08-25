@@ -1,0 +1,47 @@
+{
+ "FIXED": {
+  "n": 11760,
+  "PF": 1.11,
+  "win%": 62.9,
+  "avg_ret_bp": 18.1,
+  "med_ret_bp": 85.4,
+  "t_stat": 3.3,
+  "avg_hold": 2.25,
+  "reasons": {
+   "revert": 8531,
+   "stop": 1629,
+   "time": 1243,
+   "gap_stop": 357
+  }
+ },
+ "NAIVE": {
+  "n": 11928,
+  "PF": 1.004,
+  "win%": 60.2,
+  "avg_ret_bp": 0.6,
+  "med_ret_bp": 72.4,
+  "t_stat": 0.13,
+  "avg_hold": 2.06,
+  "reasons": {
+   "revert": 8031,
+   "stop": 2509,
+   "time": 731,
+   "gap_stop": 657
+  }
+ },
+ "SMART": {
+  "n": 11827,
+  "PF": 0.927,
+  "win%": 55.2,
+  "avg_ret_bp": -11.8,
+  "med_ret_bp": 38.9,
+  "t_stat": -2.64,
+  "avg_hold": 2.14,
+  "reasons": {
+   "revert": 7563,
+   "stop": 2335,
+   "time": 1041,
+   "gap_stop": 888
+  }
+ }
+}
