@@ -31,7 +31,7 @@ Execution-layer hardening is **done** (3 phases):
    (missing/orphaned stop = MISMATCH → halt). `exec_manager.submit_entry` refuses
    any unprotected entry fail-closed.
 
-## Live paths wired (RH LIVE since 08-20; IBKR live-ready, gateway disabled)
+## Live paths wired (RH LIVE since 08-20; **IBKR LIVE since 08-24** — U26949861, NetLiq $506.90)
 
 - **IBKR LIVE gateway** (`U26949861`): second GWClient on `:100`, settings dir
   `/home/ubuntu/Jts-live` (`tradingMode=l`), systemd `ibgateway-live.service`
@@ -46,8 +46,14 @@ Execution-layer hardening is **done** (3 phases):
   `.env` and the `live-equities.service` unit (systemd overrides `.env` — edit
   both). Code default stays PAPER/OFF (fail-closed). Token fresh (re-authed
   2026-08-16 21:58 ET); read path verified live (acct `515821577`,
-  `agentic_allowed=true`). 0 live FILLS through 08-24 (rare RSI2 dips +
-  whole-share sub-$35 universe — no naked exposure). Plan:
+  `agentic_allowed=true`). 0 live FILLS through 08-24 — **CAUSE CORRECTED
+  2026-08-24: this was a BUG, not rare signals.** `place_equity_entry` read the
+  order state once from the CREATION response and demanded 'filled'; Robinhood
+  fills asynchronously (creation returns state='') so every entry raised
+  RHOrderError and fail-closed. On 08-24 alone 10 signals fired and 9 live orders
+  were placed and thrown away (see RHSIG# rows). Fixed in `492262f` (poll to a
+  terminal state, cancel on timeout). Entry also moved 19:20 -> 09:32 ET because a
+  regular-hours market order placed after the close cannot fill at all. Plan:
   `docs/ROBINHOOD-LIVE-PLAN.md`; sizing: `docs/SMALL-CAPITAL-LIVE-PLAN.md`.
 
 ## Active edges
@@ -58,7 +64,7 @@ Execution-layer hardening is **done** (3 phases):
 | **intraday MES** (FADESHORT + DONCH15, `live_intraday.py`) | ▶️ paper | RTH entries, EOD flatten 15:45 ET. |
 | **gold momentum** (MGC Donchian L/S + TSMOM, `live_gc.py`) | ✅ paper-EXEC | Promoted (EDGE_SWEEP) → IBKR paper execution (clientId 78, ~19:10 ET). Donchian 1.45/1.81 OOS/1.31 IB, 3-tick 1.42; TSMOM 1.37/1.73/1.99, 3-tick 1.35. Donchian = chandelier 3·ATR trail; TSMOM = fixed 3·ATR stop. **Forward-test runs on MGC micro ($10/pt, GC_CONTRACT=MGC, $250k sleeve)** — full GC ($100/pt) at 1% risk needs a ~$2.3M sleeve (size=0); MGC sizes 1 contract (~$2.3k stop risk). **HORIZON NOTE (2026-08-19): both strategies are LONG-HOLD (Donchian ~weeks, TSMOM ~months) — mismatched vs owner's intraday→2-3-day-swing mandate. At elevated gold ATR (85.6, +38% 12m bull) the 3·ATR stop = $2,569 > 1% budget $2,500 → size=0 = correct fail-closed, NOT a defect. Parked (not deleted); do not bump sleeve to force long-hold trades the owner does not want.** |
 | **equities RSI2-dip + Donchian(200d)** (`equity_signals.py`) | ▶️ paper-signal | Promoted (EQUITIES_SWEEP). RSI2 champion (both regimes); Donchian gated by close>200d-MA. Robinhood stays manual. |
-| **RH equities RSI2** (`live_equities.py`) | ▶️ paper → **LIVE-READY (ACTIVE — enabled, not blocked)** | Robinhood lane (VPS `rh_client` submits — single-writer; laptop MCP retired). RSI(2)<5 + SMA200, 2xATR whole-share stop, 5d cap, revert. 1%/trade (5% cap), $150/day loss cap. Index regime gate REJECTED (2022 0.81→0.21). OOS PF 1.47 (all 5 folds >1.0)/1.36@5bps. **Whole-share small-ticket live ENABLED** — $675 buying power, 20-pos hard ceiling / 5–15 recommended. Plan: `docs/ROBINHOOD-LIVE-PLAN.md`; sizing: `docs/SMALL-CAPITAL-LIVE-PLAN.md`. |
+| **RH equities RSI2** (`live_equities.py`) | ▶️ paper → **LIVE-READY (ACTIVE — enabled, not blocked)** | Robinhood lane (VPS `rh_client` submits — single-writer; laptop MCP retired). RSI(2)<5 + SMA200, 2xATR whole-share stop, 5d cap, revert. 1%/trade (**15% cap** `RH_MAX_POS_PCT=0.15`, raised from 5% on 08-24 — at 5% a $700 account capped a position at $35, which skipped every stock over $35/share), **$50/day** loss cap. Index regime gate REJECTED (2022 0.81→0.21). OOS PF 1.47 (all 5 folds >1.0)/1.36@5bps. **Whole-share small-ticket live ENABLED** — $675 buying power, **5-pos ceiling** (`RH_MAX_POSITIONS=5`), universe = **524 sub-$50** screened names (512 after blocklist), NOT the old sub-$35 list. Plan: `docs/ROBINHOOD-LIVE-PLAN.md`; sizing: `docs/SMALL-CAPITAL-LIVE-PLAN.md`. |
 | **crypto Donchian-20 momentum MOM20** (`crypto_exec.py` paper-EXEC, `crypto_paper.py` signal) | ▶️ paper-EXEC | Pure Donchian-20 channel (no 200d-SMA — that was the buy-and-hold proxy). BTC/ETH/SOL/XRP; marginal on BTC/ETH, edge in alts. LOWEST live-priority. |
 | **bonds fade-SHORT** (ZB/ZN, `live_bondsfx.py`) | 📦 SHELVED | Dies at 1-tick slip. Code kept + disarmed no-op; cron paused. Revisit only if cost/regime materially changes. |
 | **BBAND_INDEX_LONG** | 📦 TABLED | Redundant w/ RSI2-LONG (corr 0.69, PF 1.84 / OOS 1.71). Paper fwd-test candidate if RSI2-LONG underperforms live. |
@@ -135,7 +141,7 @@ Effective daily-loss halt, **as enforced by code**, is per-lane:
 | Gold (MGC) | RiskEngine | 2% × sleeve ($250k) = **$5,000** (paper) |
 | VWAP sleeve (MES/MNQ) | RiskEngine | 2% × sleeve ($25k) = **$500** (paper) |
 | Intraday MES | RiskEngine | 2% × `INTRA_RISK_BUDGET` (paper) |
-| RH equities | `live_equities.py` `RH_DAY_LOSS_CAP` | **$150 flat** |
+| RH equities | `live_equities.py` `RH_DAY_LOSS_CAP` | **$50 flat** (deployed in unit + .env; the old "$150" was never the enforced value) |
 
 - Futures lanes: `max_daily_loss_pct` (2%) × `risk_budget_usd`, checked before every entry, persisted in `RISK#`.
 - **Portfolio heat cap (2026-08-19):** `heat_cap_pct` (index lane default **3%**) caps the TOTAL open risk — the sum of `|entry−stop| × point_value × qty` across ALL concurrent positions — so RSI2/RSI2PT/REV2 (correlated dip-buys) can't stack N× on one signal. Persisted as `open_risk_usd` in `RISK#`; env `HEAT_CAP_PCT` (0=off). Other lanes default 0 (unchanged).

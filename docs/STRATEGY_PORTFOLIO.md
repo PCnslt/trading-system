@@ -18,7 +18,7 @@
 | **NO-GO-WITH-REASON** | Killed/retired for a recorded reason. **Stays here** with the exact re-activation trigger. |
 | **RESEARCHING** | Active research; no promote/kill verdict yet. |
 
-## Status counts (2026-08-18)
+## Status counts (2026-08-18 — STALE: the table below enumerates lanes 1-46, not 31)
 
 | Status | Count |
 |---|---|
@@ -27,7 +27,14 @@
 | PARKED-PENDING | 1 |
 | NO-GO-WITH-REASON | 24 |
 | RESEARCHING | 4 |
-| **Total lanes** | **31** |
+| **Total lanes** | **46** (rows 1-46 below; this summary table has not been recounted since 08-18) |
+
+### Execution verdicts (evidence-based, added 2026-08-24)
+
+| Decision | Evidence | Outcome |
+|---|---|---|
+| **Trailing stop vs fixed 2xATR stop** on the RSI2 family | `research/stock_mr_results.json` → `trailing_vs_fixed`, walk-forward: @0bps fixed PF 1.543 / trail 1.499 · @5bps fixed **1.319** win 65.6% hold 2.10d / trail **1.269** win 59.0% hold 1.66d · @10bps fixed 1.211 / trail 1.174 | **FIXED WINS at every cost level.** Trailing ratchets into winners and cuts them short (~16% of net edge, ~6.6pp of win rate). `bot/rh_trailing.py` DISABLED in cron 2026-08-24. Re-enable only with a backtest showing trail >= fixed. |
+| **Live fills to date** | DynamoDB: 7 TRADE#/RHTRADE# rows total; 2 are strategy round trips (AMZN +$0.6703, AVGO -$0.3603 = **+$0.31**); 25 RISK# rows all show `daily_trades=0` | **The RSI2 lane has never filled a live trade.** Only lifetime live fills are the retired DCA fractions (SPY/QQQ, 2026-08-14, ~$25). No lane in this registry has a live track record. |
 
 ---
 
