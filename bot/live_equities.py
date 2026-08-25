@@ -459,17 +459,50 @@ def _live_exit_position(client, sym, shares):
     work required before go-live (see docs/ROBINHOOD_EXECUTION.md).
     """
     from hardening.rh_client import RHOrderError
+    # Robinhood returns a stop order as type='market' + trigger='stop' + stop_price,
+    # NOT type='stop_market'. The old filter therefore matched NOTHING, so the
+    # resting stop was never cancelled: the market sell below would close the
+    # position and leave an ORPHAN sell-stop that can later trigger and SHORT the
+    # account. Detect by stop_price presence (verified live 2026-08-25).
+    cancelled = 0
     for o in client.list_orders(symbol=sym):
-        if (o.get('type') in ('stop_market', 'stop_limit')
-                and (o.get('state') or '') in ('confirmed', 'queued', 'new',
-                                                'partially_filled')):
+        is_stop = (o.get('stop_price') not in (None, '', '0', '0.000000')
+                   or o.get('type') in ('stop_market', 'stop_limit'))
+        if (is_stop
+                and (o.get('state') or '').lower() in ('confirmed', 'queued',
+                                                       'unconfirmed', 'new',
+                                                       'partially_filled')):
             try:
                 client.cancel_order(o['id'])
+                cancelled += 1
             except Exception as e:  # noqa: BLE001 - best-effort stop cancel
                 print(f'[live] cancel stop {o.get("id")} failed (non-fatal): {e!r}')
+    print(f'[live] {sym}: cancelled {cancelled} resting stop order(s) before exit')
     fill = client.place_equity_order(sym, 'sell', 'market', quantity=str(shares))
     oid = fill.get('id')
     state = (fill.get('state') or '').lower()
+    # Same defect as the ENTRY path: the creation response can carry NEITHER id
+    # NOR state. Without an id the poll below never refreshes, so a sell that
+    # actually FILLED raises "not confirmed" — and because the protective stop was
+    # just cancelled, the caller would keep a PHANTOM open position with no stop.
+    # Recover the id by matching the newest plain (non-stop) sell for this symbol.
+    if not oid:
+        for _ in range(4):
+            try:
+                recent = client.list_orders(symbol=sym) or []
+            except Exception:  # noqa: BLE001 - transient read, retry
+                recent = []
+            cands = [o for o in recent
+                     if o.get('side') == 'sell'
+                     and o.get('stop_price') in (None, '', '0', '0.000000')]
+            if cands:
+                cands.sort(key=lambda o: o.get('created_at') or '', reverse=True)
+                fill = cands[0]
+                oid = fill.get('id')
+                state = (fill.get('state') or '').lower()
+                if oid:
+                    break
+            time.sleep(0.5)
     for _ in range(20):  # up to ~10s
         if state == 'filled':
             return fill
@@ -477,8 +510,11 @@ def _live_exit_position(client, sym, shares):
             raise RHOrderError(f'LIVE exit {sym} {state}')
         time.sleep(0.5)
         orders = client.list_orders(order_id=oid) if oid else []
+        if orders:
+            fill = orders[0]
         state = ((orders[0].get('state') if orders else state) or '').lower()
-    raise RHOrderError(f'LIVE exit {sym} not confirmed filled (state={state})')
+    raise RHOrderError(f'LIVE exit {sym} not confirmed filled (state={state}, '
+                       f'order_id={oid or "n/a"})')
 
 
 def load_book(table, dry_run):
