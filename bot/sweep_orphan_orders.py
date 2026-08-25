@@ -57,6 +57,25 @@ def load_open_book(table) -> dict:
     return book
 
 
+def load_broker_positions(client) -> dict:
+    """{SYM: qty} for positions the BROKER actually reports (qty > 0).
+
+    This is the authoritative held-check. The bot's RHPOS# book is NOT: on
+    2026-08-25 nine entries filled at the broker while the confirm path failed, so
+    the book was EMPTY while nine real positions existed. Deciding "orphan" from the
+    book would have cancelled all nine protective stops and left the positions naked.
+    """
+    out = {}
+    for p in (client.get_positions() or []):
+        try:
+            q = float(p.get('quantity') or 0)
+        except (TypeError, ValueError):
+            q = 0.0
+        if q > 0 and p.get('symbol'):
+            out[str(p['symbol']).upper()] = q
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument('--dry-run', action='store_true')
@@ -74,6 +93,18 @@ def main() -> int:
 
     book = load_open_book(table)
     print(f'book: {len(book)} open/pending RH positions {sorted(book) if book else ""}')
+    try:
+        broker = load_broker_positions(client)
+    except Exception as e:  # noqa: BLE001
+        # FAIL-CLOSED: without the authoritative position list we cannot tell an
+        # orphan from a protective stop. Cancelling blind could strip every stop.
+        print(f'BROKER POSITION READ FAILED ({e!r}) — refusing to cancel anything')
+        return 1
+    print(f'broker: {len(broker)} real positions {sorted(broker) if broker else ""}')
+    only_broker = sorted(set(broker) - set(book))
+    if only_broker:
+        print(f'  NOTE: held at broker but MISSING from the bot book: {only_broker} '
+              f'— their stops are PROTECTIVE, not orphans')
 
     # Which symbols to inspect: the book, plus anything the account has a position
     # row for (Robinhood creates a 0-qty row for every symbol it has ever ordered).
@@ -100,14 +131,36 @@ def main() -> int:
             if state not in RESTING:
                 continue
             otype = str(o.get('type') or '')
-            held = sym in book
-            if held:
+            is_stop = (o.get('stop_price') not in (None, '', '0', '0.000000')
+                       or otype in STOP_TYPES)
+            # AUTHORITATIVE held-check = the broker. A resting stop on a symbol we
+            # really own is PROTECTION; cancelling it strips the never-naked
+            # guarantee. The bot book is advisory only (it can be empty while real
+            # positions exist — see load_broker_positions docstring).
+            held_broker = sym in broker
+            held_book = sym in book
+            if held_broker:
                 kept += 1
-                print(f'  KEEP   {sym:6} {otype:12} {state:12} (book position exists)')
+                tag = '' if held_book else ' [broker-only: book is stale]'
+                print(f'  KEEP   {sym:6} {otype:12} {state:12} '
+                      f'(REAL broker position{tag})')
+            elif held_book:
+                # book says we hold it, broker says we do not: do NOT cancel on a
+                # possibly-stale book, but make the divergence loud.
+                kept += 1
+                print(f'  KEEP   {sym:6} {otype:12} {state:12} — DIVERGENCE: in book '
+                      f'but NOT at broker; investigate before cancelling')
+            elif is_stop and o.get('side') == 'sell':
+                orphans.append((sym, o.get('id'), otype, o.get('side'),
+                                o.get('quantity'), state))
+                print(f'  ORPHAN {sym:6} {otype:12} {state:12} side=sell '
+                      f'stop={o.get("stop_price")} qty={o.get("quantity")} — no position '
+                      f'anywhere; a trigger here would SHORT the account')
             else:
-                orphans.append((sym, o.get('id'), otype, o.get('side'), o.get('quantity'), state))
+                orphans.append((sym, o.get('id'), otype, o.get('side'),
+                                o.get('quantity'), state))
                 print(f'  ORPHAN {sym:6} {otype:12} {state:12} side={o.get("side")} '
-                      f'qty={o.get("quantity")} — NO book position')
+                      f'qty={o.get("quantity")} — NO position at broker or in book')
 
     print(f'\nkept={kept} orphans={len(orphans)}')
     if not orphans:

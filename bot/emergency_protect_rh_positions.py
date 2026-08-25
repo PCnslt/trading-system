@@ -61,12 +61,21 @@ def main():
     positions = [p for p in positions if float(p.get('quantity') or 0) > 0]
     print(f'positions held: {len(positions)}')
 
-    open_orders = rh.list_orders(acct, state='open') or []
-    resting = {}
-    for o in open_orders:
-        sym = o.get('symbol') or (o.get('instrument') or {}).get('symbol')
-        if o.get('type') in ('stop_market', 'stop_limit') and o.get('side') == 'sell':
-            resting.setdefault(sym, []).append(o)
+    # Robinhood has NO 'open' order state — a resting order is 'confirmed'. Passing
+    # state='open' returns an EMPTY list, which made the first version of this script
+    # report "STILL NAKED" for nine positions whose stops were in fact resting.
+    RESTING_STATES = ('confirmed', 'queued', 'unconfirmed', 'partially_filled')
+
+    def _resting_sell_stops(all_orders):
+        out = {}
+        for o in all_orders:
+            if (o.get('side') == 'sell'
+                    and o.get('stop_price') not in (None, '', '0', '0.000000')
+                    and (o.get('state') or '').lower() in RESTING_STATES):
+                out.setdefault(o.get('symbol'), []).append(o)
+        return out
+
+    resting = _resting_sell_stops(rh.list_orders(acct) or [])
     print(f'existing resting sell-stops: { {k: len(v) for k, v in resting.items()} }')
 
     total = 0.0
@@ -110,9 +119,8 @@ def main():
     # verify
     if not DRY:
         time.sleep(3)
-        oo = rh.list_orders(acct, state='open') or []
-        got = sorted({(o.get('symbol') or '') for o in oo
-                      if o.get('type') in ('stop_market', 'stop_limit') and o.get('side') == 'sell'})
+        oo = rh.list_orders(acct) or []
+        got = sorted(_resting_sell_stops(oo))
         held = sorted({p['symbol'] for p in positions})
         print(f'VERIFY resting stops: {got}')
         print(f'VERIFY positions    : {held}')
