@@ -244,6 +244,32 @@ def indicators(df):
     return d
 
 
+def trim_unfinalized_bar(df):
+    """Drop TODAY's in-progress daily bar so signals use the last CLOSED session.
+
+    yfinance `interval='1d'` returns a row for the CURRENT session while it is
+    still trading, so a 09:32 ET run would compute RSI(2)/SMA200 on a two-minute-old
+    bar. The old defence was a blanket "refuse to run before 17:00 ET" guard, which
+    turned the 09:32 schedule into a permanent no-op (the 19:20 slot was abandoned
+    because Robinhood could not fill there). Correct fix: keep the run, drop the
+    unfinished bar. Signal is then computed on yesterday's close and entered at
+    today's open — the intended design for a daily mean-reversion lane.
+
+    A session is treated as final at/after 16:00 ET. Fail-open (return df
+    unchanged) on any clock/index error: never silently corrupt the series.
+    """
+    try:
+        from zoneinfo import ZoneInfo
+        if df is None or df.empty:
+            return df
+        now_et = dt.datetime.now(ZoneInfo('America/New_York'))
+        if df.index[-1].date() == now_et.date() and now_et.hour < 16:
+            return df.iloc[:-1]
+        return df
+    except Exception:
+        return df
+
+
 def fetch(syms, start=DATA_START):
     """yfinance daily OHLCV (split+dividend adjusted) -> {sym: df}."""
     out = {}
@@ -260,6 +286,7 @@ def fetch(syms, start=DATA_START):
             df.index = pd.to_datetime(df.index).tz_localize(None)
             df = df[~df.index.duplicated(keep='last')].sort_index()
             df = df[df['close'].notna() & (df['close'] > 0)]
+            df = trim_unfinalized_bar(df)
             if len(df) >= MIN_BARS:
                 out[sym] = df
         except Exception as e:
@@ -302,11 +329,84 @@ def fetch_batch(syms, start=DATA_START):
             df.index = pd.to_datetime(df.index).tz_localize(None)
             df = df[~df.index.duplicated(keep='last')].sort_index()
             df = df[df['close'].notna() & (df['close'] > 0)]
+            df = trim_unfinalized_bar(df)
             if len(df) >= MIN_BARS:
                 out[sym] = df
         except Exception as e:
             print(f'  [{sym}] fetch_batch error: {e!r}')
     return out
+
+
+DATA_SOURCE = os.getenv('RH_DATA_SOURCE', 'IBKR').upper()   # IBKR (broker) | YF (fallback)
+IBKR_DAILY_PREFIX = 'ibkr/equities/daily'
+IBKR_MAX_STALE_DAYS = int(os.getenv('RH_IBKR_MAX_STALE_DAYS', '4'))
+
+
+def _ibkr_one(sym, s3, bucket):
+    """One symbol's IBKR daily parquet -> yfinance-shaped OHLCV DataFrame."""
+    import io
+    o = s3.get_object(Bucket=bucket, Key=f'{IBKR_DAILY_PREFIX}/{sym}.parquet')
+    df = pd.read_parquet(io.BytesIO(o['Body'].read()))
+    if df.empty:
+        return None
+    df = df.copy()
+    df.index = pd.to_datetime(df['date'].astype(str))
+    df = df[['open', 'high', 'low', 'close', 'volume']].astype(float)
+    df = df[~df.index.duplicated(keep='last')].sort_index()
+    df = df[df['close'].notna() & (df['close'] > 0)]
+    return trim_unfinalized_bar(df)
+
+
+def fetch_ibkr(syms):
+    """BROKER daily bars from the IBKR archive (s3 ibkr/equities/daily/*.parquet).
+
+    This is the primary source: we PAY for IBKR, so a live-money lane must not
+    price off a free scraped feed. yfinance remains available via
+    RH_DATA_SOURCE=YF purely as a break-glass fallback.
+
+    IBKR live L1 quotes are NOT subscribed on U26949861 (Error 10089, delayed
+    only), so IBKR supplies HISTORY for the indicators and the real-time tick at
+    entry comes from Robinhood — the venue we actually execute on.
+    """
+    from concurrent.futures import ThreadPoolExecutor
+    bucket = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
+    s3 = boto3.client('s3', region_name=AWS_REGION)
+    out, missing = {}, []
+
+    def _get(sym):
+        try:
+            return sym, _ibkr_one(sym, s3, bucket)
+        except Exception:
+            return sym, None
+
+    with ThreadPoolExecutor(max_workers=16) as ex:
+        for sym, df in ex.map(_get, syms):
+            if df is not None and len(df) >= MIN_BARS:
+                out[sym] = df
+            else:
+                missing.append(sym)
+    if missing:
+        print(f'  [ibkr] no/short archive for {len(missing)} symbols '
+              f'(e.g. {missing[:6]}) — excluded')
+    return out
+
+
+def assert_bars_fresh(bars, live):
+    """Fail-closed staleness gate: never trade LIVE on a stale archive.
+
+    The IBKR archive is refreshed post-close by
+    data/ibkr_equity_daily_refresh.py. If that job stops, this is what stops the
+    bot from quietly trading nine-day-old prices (which is precisely how the lane
+    ended up on yfinance in the first place).
+    """
+    if not bars:
+        return False, 'no bars loaded'
+    newest = max(df.index[-1] for df in bars.values())
+    age = (dt.date.today() - newest.date()).days
+    msg = f'newest bar {newest.date()} ({age}d old), {len(bars)} symbols'
+    if live and age > IBKR_MAX_STALE_DAYS:
+        return False, f'STALE DATA — {msg}, limit {IBKR_MAX_STALE_DAYS}d'
+    return True, msg
 
 
 def position_size(capital, close, atr):
@@ -464,13 +564,22 @@ def main():
     table = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
     today = dt.date.today().isoformat()
 
-    # Data-freshness guard: daily signals need the FINALIZED close (>= 17:00 ET).
+    # Data-freshness: signals MUST be computed on the last CLOSED session.
+    # This used to be a blanket "refuse to run before 17:00 ET" guard, which made
+    # the 09:32 ET schedule a permanent no-op (every run logged
+    # "SKIP — before daily-close finalization" and entered nothing since 08-20;
+    # the 19:20 slot had already been abandoned because Robinhood could not fill
+    # there). The partial in-progress bar is now dropped in the fetch layer by
+    # trim_unfinalized_bar(), so an intraday run is SAFE: it trades yesterday's
+    # finalized close at today's open. Freshness is asserted per-symbol below
+    # (see STALE-BAR ASSERT) instead of blocking the whole run on a clock read.
+    _now_et = None
     try:
-        import datetime as _dt
         from zoneinfo import ZoneInfo
-        if _dt.datetime.now(ZoneInfo('America/New_York')).hour < 17 and not args.force:
-            print(f'[{today}] live_equities SKIP — before daily-close finalization (stale-data guard)')
-            return
+        _now_et = dt.datetime.now(ZoneInfo('America/New_York'))
+        print(f'[{today}] data mode: '
+              f'{"post-close (today’s bar is final)" if _now_et.hour >= 16 else "intraday (today’s partial bar dropped)"}'
+              f' — {_now_et.strftime("%H:%M")} ET')
     except Exception:
         pass
 
@@ -492,8 +601,21 @@ def main():
     if earnings_blacklist:
         print(f'  earnings guard: will not ENTER {len(earnings_blacklist)} symbols '
               f'reporting within {EARNINGS_GUARD_DAYS}d')
-    print(f'fetching {len(syms)} symbols (start={DATA_START})…')
-    bars = fetch_batch(syms)
+    if DATA_SOURCE == 'IBKR':
+        print(f'fetching {len(syms)} symbols from IBKR archive (BROKER data)…')
+        bars = fetch_ibkr(syms)
+        if not bars:
+            print('  [ibkr] archive EMPTY — refusing to silently fall back to '
+                  'yfinance for a live lane. Run data/ibkr_equity_daily_refresh.py')
+            return
+    else:
+        print(f'fetching {len(syms)} symbols from yfinance (FALLBACK, start={DATA_START})…')
+        bars = fetch_batch(syms)
+    fresh, why = assert_bars_fresh(bars, EXECUTION_MODE == 'LIVE')
+    print(f'  data[{DATA_SOURCE}]: {why}')
+    if not fresh:
+        print(f'  ABORT — {why}. Refresh the archive before trading LIVE.')
+        return
     print(f'  got {len(bars)}/{len(syms)} symbols')
 
     book = load_book(table, args.dry_run)
@@ -518,6 +640,7 @@ def main():
             live_client_error = f'RHClient init failed: {e!r}'
             print(f'[live] {live_client_error} — no LIVE entries this run')
 
+    _stale_skips = []
     for sym in syms:
         df = bars.get(sym)
         if df is None:
@@ -528,6 +651,14 @@ def main():
         r2 = _f(last['rsi2']); ma200 = _f(last['sma200'])
         ma5 = _f(last['sma5']); atr = _f(last['atr14'])
         today_dt = d.index[-1]
+
+        # STALE-BAR ASSERT: never act on an in-progress session. trim_unfinalized_bar()
+        # should already have dropped it, so reaching here with today's date before
+        # 16:00 ET means the trim failed (feed change / tz bug) — skip the name rather
+        # than trade a partial bar.
+        if _now_et is not None and _now_et.hour < 16 and today_dt.date() == _now_et.date():
+            _stale_skips.append(sym)
+            continue
 
         pos = book.get(sym)
         exited = False

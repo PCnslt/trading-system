@@ -750,6 +750,30 @@ class RHClient:
         TERMINAL = ("filled", "partially_filled", "rejected", "cancelled", "canceled",
                     "failed")
 
+        # The MCP creation response can come back with NEITHER an id NOR a state.
+        # Without an id the poll loop below is skipped entirely, the order is
+        # reported "not confirmed", and the cancel branch has nothing to cancel —
+        # while the order is LIVE at the broker and fills seconds later. That is
+        # exactly how 9 unprotected positions were opened on 2026-08-25.
+        # Recover the id by matching the newest order for this symbol.
+        if not order_id:
+            for _ in range(4):
+                try:
+                    recent = self.list_orders(account_number=acct, symbol=sym) or []
+                except Exception:  # noqa: BLE001 - transient read, retry
+                    recent = []
+                cands = [o for o in recent
+                         if (o.get("side") == side
+                             and o.get("stop_price") in (None, "", "0", "0.000000"))]
+                if cands:
+                    cands.sort(key=lambda o: o.get("created_at") or "", reverse=True)
+                    entry = cands[0]
+                    order_id = str(entry.get("id") or "")
+                    state = (entry.get("state") or "").lower()
+                    if order_id:
+                        break
+                time.sleep(RH_FILL_POLL_S)
+
         def _refresh() -> str:
             """Re-read the order; returns the latest lowercase state."""
             nonlocal entry
@@ -823,13 +847,25 @@ class RHClient:
 
     def _stop_is_resting(self, symbol: str, position_side: str,
                          account_number: str | None = None) -> bool:
-        """True if an open stop order for ``symbol`` rests at the broker."""
+        """True if a protective stop for ``symbol`` rests at the broker.
+
+        Robinhood identifies a stop order by the presence of ``stop_price`` —
+        it returns ``type='market'`` (with ``trigger='stop'``), NOT
+        ``type='stop_market'``. Matching on STOP_TYPES therefore NEVER matched,
+        so this returned False for a perfectly good resting stop and the caller
+        reversed the entry. Verified against live orders 2026-08-25:
+        ``{type: 'market', state: 'confirmed', stop_price: '25.520000'}``.
+        A resting order's state is 'confirmed' (there is no 'open' state).
+        """
         orders = self.list_orders(account_number=account_number, symbol=symbol)
         want_side = "sell" if position_side == "long" else "buy"
         for o in orders:
-            if (o.get("side") == want_side and o.get("type") in STOP_TYPES
-                    and (o.get("state") or "") in ("confirmed", "queued", "new",
-                                                    "partially_filled")):
+            has_stop = (o.get("stop_price") not in (None, "", "0", "0.000000")
+                        or o.get("type") in STOP_TYPES)
+            if (o.get("side") == want_side and has_stop
+                    and (o.get("state") or "").lower() in ("confirmed", "queued",
+                                                           "unconfirmed", "new",
+                                                           "partially_filled")):
                 return True
         return False
 
