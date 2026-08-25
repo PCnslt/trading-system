@@ -64,8 +64,56 @@ SCOPE = 'live_equities_ibkr'
 # funded + the Jts-live gateway is enabled; PAPER default keeps it safe) ----
 EXECUTION_MODE = os.getenv('IBEQ_EXECUTION_MODE', 'PAPER').strip().upper()  # PAPER | LIVE
 IBKR_LIVE_PORT = int(os.getenv('IBKR_LIVE_PORT', '4001'))  # Jts-live gateway
-LIVE_MAX_POSITIONS = int(os.getenv('IBEQ_LIVE_MAX_POSITIONS', '5'))
-DAY_LOSS_CAP = float(os.getenv('IBEQ_DAY_LOSS_CAP', '100'))  # $/day realized-loss cap (LIVE)
+LIVE_MAX_POSITIONS = int(os.getenv('IBEQ_LIVE_MAX_POSITIONS', '2'))
+DAY_LOSS_CAP = float(os.getenv('IBEQ_DAY_LOSS_CAP', '25'))  # $/day realized-loss cap (LIVE)
+
+# ---- LIVE sizing (a ~$500 account is NOT the $50k paper sleeve) --------------
+# The paper sleeve risks 1% and caps a name at 5% of capital. On $506 that cap is
+# $25, which is under ONE share for most names — the lane would never trade. LIVE
+# therefore concentrates: few positions, each a large % of a small account.
+# Commission reality (IBKR US equities, Fixed): $0.005/share, min $1.00/order,
+# max 1% of trade value. The $1 minimum is what matters at this size, so cost per
+# ROUND TRIP is ~2/notional dollars: a $100 position pays ~2.0%, a $230 position
+# ~0.87%. RSI2 holds 2-5 days for ~1-2%, so SMALL positions are negative-EV here.
+# Concentration is a cost decision, not a risk appetite decision.
+LIVE_MAX_POS_PCT = float(os.getenv('IBEQ_LIVE_MAX_POS_PCT', '0.45'))
+LIVE_RISK_PCT = float(os.getenv('IBEQ_LIVE_RISK_PCT', '0.05'))
+# Optional hard ceiling on the capital used for sizing (belt-and-braces vs a
+# mis-reported NetLiquidation). 0 = use the broker value as-is.
+LIVE_CAPITAL_CAP = float(os.getenv('IBEQ_LIVE_CAPITAL_CAP', '0') or 0)
+# LIVE trades only affordable whole shares -> the sub-$50 screened universe.
+LIVE_UNIVERSE_SUB50 = os.getenv('IBEQ_LIVE_SUB50', '1') not in ('0', 'false', 'no')
+# Minimum LIVE notional. IBKR's $1.00 order minimum means a $29 position pays
+# ~6.9% round trip and a $121 position ~1.7%; below this floor the trade is
+# structurally negative-EV for a 2-5 day RSI2 hold, so it is SKIPPED, not shrunk.
+LIVE_MIN_NOTIONAL = float(os.getenv('IBEQ_LIVE_MIN_NOTIONAL', '150'))
+
+
+def live_position_size(capital, close, atr):
+    """LIVE $ per name = min(LIVE_RISK_PCT/stop_pct, LIVE_MAX_POS_PCT) * capital."""
+    stop_dist = STOP_ATR * (atr or 0.0)
+    stop_pct = stop_dist / close if close > 0 else 1.0
+    size_risk = (LIVE_RISK_PCT * capital) / stop_pct if stop_pct > 0 else 0.0
+    return min(size_risk, LIVE_MAX_POS_PCT * capital), stop_pct
+
+
+def resolve_live_capital(ib):
+    """Real NetLiquidation for the LIVE account. FAIL-CLOSED: never size blind."""
+    net_liq = 0.0
+    for row in ib.accountSummary():
+        if row.tag == 'NetLiquidation':
+            try:
+                net_liq = float(row.value or 0)
+            except (TypeError, ValueError):
+                net_liq = 0.0
+            break
+    if net_liq <= 0:
+        raise SystemExit('ABORT: LIVE mode but NetLiquidation unavailable — '
+                         'refusing to size positions blind')
+    cap = min(net_liq, LIVE_CAPITAL_CAP) if LIVE_CAPITAL_CAP > 0 else net_liq
+    print(f'LIVE capital: NetLiquidation ${net_liq:,.2f}'
+          + (f' (capped to ${cap:,.2f})' if cap < net_liq else ''))
+    return cap
 
 
 def _tag(sym: str) -> str:
@@ -134,7 +182,14 @@ def main():
             print(f'[{today}] HALT — CONTROL state={ctrl.get("state")} (kill-switch); no orders')
             return
 
-    syms = UNIVERSE[:args.limit] if args.limit else UNIVERSE
+    if EXECUTION_MODE == 'LIVE' and LIVE_UNIVERSE_SUB50:
+        # $506 cannot buy one share of a $300 name; screen to sub-$50 liquid names.
+        from bot.live_equities import _load_smallcap_universe
+        full = _load_smallcap_universe()
+        print(f'LIVE universe: {len(full)} sub-$50 liquid names (blocklist-filtered)')
+    else:
+        full = UNIVERSE
+    syms = full[:args.limit] if args.limit else full
     earnings_blacklist = load_upcoming_earnings(table, days_ahead=EARNINGS_GUARD_DAYS)
     if earnings_blacklist:
         print(f'  earnings guard: will not ENTER {len(earnings_blacklist)} symbols '
@@ -142,6 +197,27 @@ def main():
     print(f'fetching {len(syms)} symbols (start={DATA_START})…')
     bars = fetch(syms)
     print(f'  got {len(bars)}/{len(syms)} symbols')
+
+    if EXECUTION_MODE == 'LIVE':
+        # With only LIVE_MAX_POSITIONS slots against many candidates, ORDER decides
+        # what we own. Rank most-oversold first (lower RSI(2) = stronger snap-back
+        # signal in the mean-reversion family) instead of taking whatever the
+        # universe file happened to list first.
+        def _rsi2_rank(s):
+            df = bars.get(s)
+            if df is None:
+                return 999.0
+            try:
+                dd = indicators(df)
+                cc = dd[dd.index.date < dt.date.today()]
+                if cc.empty:
+                    return 999.0
+                v = _f(cc.iloc[-1]['rsi2'])
+                return v if v is not None else 999.0
+            except Exception:
+                return 999.0
+        syms = sorted(syms, key=_rsi2_rank)
+        print(f'LIVE ranking: most-oversold first (top 5: {syms[:5]})')
 
     book = load_book(table) if not args.dry_run else {}
     committed = len(book)
@@ -157,7 +233,26 @@ def main():
         ib = IB()
         port = IBKR_LIVE_PORT if EXECUTION_MODE == 'LIVE' else int(os.getenv('IBKR_PORT', '4002'))
         ib.connect('127.0.0.1', port, clientId=CLIENT_ID, timeout=10)
+        # FAIL-CLOSED account/mode guard: refuse to trade a live account in PAPER
+        # mode or a paper account in LIVE mode (wrong-account protection).
+        from bot.control import account_mode_ok
+        ok_mode, why = account_mode_ok(EXECUTION_MODE, ib.managedAccounts())
+        if not ok_mode:
+            raise SystemExit(f'ABORT: {why}')
+        print(f'{EXECUTION_MODE} mode on account(s) {ib.managedAccounts()} — mode guard OK')
         exec_mgr = ExecutionManager(ib, table, scope=SCOPE)
+
+    # sizing capital: real broker equity in LIVE, the simulated sleeve in PAPER
+    capital = PAPER_CAPITAL
+    if EXECUTION_MODE == 'LIVE':
+        if ib is not None:
+            capital = resolve_live_capital(ib)
+        elif LIVE_CAPITAL_CAP > 0:
+            capital = LIVE_CAPITAL_CAP
+            print(f'DRY-RUN LIVE preview: sizing off IBEQ_LIVE_CAPITAL_CAP ${capital:,.2f}')
+        else:
+            print('WARNING: dry-run LIVE without IBEQ_LIVE_CAPITAL_CAP — '
+                  'preview sizes use the PAPER sleeve and are NOT representative')
 
     enters, exits = [], []
 
@@ -245,13 +340,22 @@ def main():
                 continue
             if r2 < RSI2_THR and c > ma200:
                 if committed < pos_cap and day_loss_used < DAY_LOSS_CAP:
-                    size_usd, stop_pct = position_size(PAPER_CAPITAL, c, atr or 0.0)
+                    if EXECUTION_MODE == 'LIVE':
+                        size_usd, stop_pct = live_position_size(capital, c, atr or 0.0)
+                    else:
+                        size_usd, stop_pct = position_size(capital, c, atr or 0.0)
                     stop_price = c - STOP_ATR * (atr or 0.0)
                     # WHOLE shares only: IBKR STP orders are whole-share, so a
                     # fractional-qty bracket stop is REJECTED and the parent market
                     # order never transmits (root cause of the 2026-08-24 NVDA/INTC
                     # ENTRY UNKNOWN timeout). Round down; skip if under 1 share.
                     shares = int(size_usd / c) if c > 0 else 0
+                    if EXECUTION_MODE == 'LIVE' and shares >= 1:
+                        notional = shares * c
+                        if notional < LIVE_MIN_NOTIONAL:
+                            print(f'  {sym} skip: ${notional:.0f} notional < '
+                                  f'${LIVE_MIN_NOTIONAL:.0f} floor (commission drag)')
+                            continue
                     if shares >= 1 and stop_price > 0:
                         reason = (f'RSI(2) {r2:.2f} < {RSI2_THR} AND close {c:.2f} > '
                                   f'SMA200 {ma200:.2f}')
