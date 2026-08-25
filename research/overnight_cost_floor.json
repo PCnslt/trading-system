@@ -1,0 +1,301 @@
+{
+ "extended_label": "premarket_0917",
+ "rth_label": "rth_0935",
+ "n": 36,
+ "rth_roundtrip_bp_median": 14.0,
+ "extended_roundtrip_bp_median": 44.9,
+ "extended_over_rth_ratio_median": 3.2,
+ "statutory_fees_bp": 0.37,
+ "min_roundtrip_bp_extended": 45.2,
+ "min_roundtrip_bp_rth": 14.4,
+ "per_symbol": [
+  {
+   "symbol": "AAL",
+   "mid": 13.805,
+   "rth_bp": 7.3,
+   "ext_bp": 7.2,
+   "ratio": 0.99,
+   "tick_floor_bp": 7.2
+  },
+  {
+   "symbol": "ACHR",
+   "mid": 6.08,
+   "rth_bp": 32.8,
+   "ext_bp": 16.2,
+   "ratio": 0.49,
+   "tick_floor_bp": 16.4
+  },
+  {
+   "symbol": "APLD",
+   "mid": 27.72,
+   "rth_bp": 14.4,
+   "ext_bp": 50.8,
+   "ratio": 3.53,
+   "tick_floor_bp": 3.6
+  },
+  {
+   "symbol": "BP",
+   "mid": 43.545,
+   "rth_bp": 2.3,
+   "ext_bp": 4.6,
+   "ratio": 2.0,
+   "tick_floor_bp": 2.3
+  },
+  {
+   "symbol": "CCL",
+   "mid": 26.09,
+   "rth_bp": 15.4,
+   "ext_bp": 101.5,
+   "ratio": 6.59,
+   "tick_floor_bp": 3.8
+  },
+  {
+   "symbol": "CDE",
+   "mid": 20.885,
+   "rth_bp": 4.8,
+   "ext_bp": 73.2,
+   "ratio": 15.25,
+   "tick_floor_bp": 4.8
+  },
+  {
+   "symbol": "CLSK",
+   "mid": 12.18,
+   "rth_bp": 16.4,
+   "ext_bp": 127.2,
+   "ratio": 7.76,
+   "tick_floor_bp": 8.2
+  },
+  {
+   "symbol": "CMCSA",
+   "mid": 26.805,
+   "rth_bp": 3.8,
+   "ext_bp": 80.9,
+   "ratio": 21.29,
+   "tick_floor_bp": 3.7
+  },
+  {
+   "symbol": "F",
+   "mid": 13.855,
+   "rth_bp": 7.2,
+   "ext_bp": 17.6,
+   "ratio": 2.44,
+   "tick_floor_bp": 7.2
+  },
+  {
+   "symbol": "GRAB",
+   "mid": 3.555,
+   "rth_bp": 28.2,
+   "ext_bp": 44.5,
+   "ratio": 1.58,
+   "tick_floor_bp": 28.1
+  },
+  {
+   "symbol": "HBAN",
+   "mid": 17.015,
+   "rth_bp": 5.8,
+   "ext_bp": 75.8,
+   "ratio": 13.07,
+   "tick_floor_bp": 5.9
+  },
+  {
+   "symbol": "HL",
+   "mid": 20.355,
+   "rth_bp": 14.8,
+   "ext_bp": 49.8,
+   "ratio": 3.36,
+   "tick_floor_bp": 4.9
+  },
+  {
+   "symbol": "IONQ",
+   "mid": 41.97,
+   "rth_bp": 14.2,
+   "ext_bp": 98.7,
+   "ratio": 6.95,
+   "tick_floor_bp": 2.4
+  },
+  {
+   "symbol": "JOBY",
+   "mid": 7.265,
+   "rth_bp": 13.8,
+   "ext_bp": 31.6,
+   "ratio": 2.29,
+   "tick_floor_bp": 13.8
+  },
+  {
+   "symbol": "KHC",
+   "mid": 25.33,
+   "rth_bp": 3.9,
+   "ext_bp": 23.4,
+   "ratio": 6.0,
+   "tick_floor_bp": 3.9
+  },
+  {
+   "symbol": "KVUE",
+   "mid": 19.215,
+   "rth_bp": 5.2,
+   "ext_bp": 144.6,
+   "ratio": 27.81,
+   "tick_floor_bp": 5.2
+  },
+  {
+   "symbol": "LCID",
+   "mid": 5.025,
+   "rth_bp": 20.0,
+   "ext_bp": 77.6,
+   "ratio": 3.88,
+   "tick_floor_bp": 19.9
+  },
+  {
+   "symbol": "LUV",
+   "mid": 41.13,
+   "rth_bp": 19.4,
+   "ext_bp": 51.5,
+   "ratio": 2.65,
+   "tick_floor_bp": 2.4
+  },
+  {
+   "symbol": "MARA",
+   "mid": 11.19,
+   "rth_bp": 8.9,
+   "ext_bp": 8.8,
+   "ratio": 0.99,
+   "tick_floor_bp": 8.9
+  },
+  {
+   "symbol": "NOK",
+   "mid": 10.345,
+   "rth_bp": 9.6,
+   "ext_bp": 9.8,
+   "ratio": 1.02,
+   "tick_floor_bp": 9.7
+  },
+  {
+   "symbol": "OPEN",
+   "mid": 3.485,
+   "rth_bp": 28.6,
+   "ext_bp": 28.8,
+   "ratio": 1.01,
+   "tick_floor_bp": 28.7
+  },
+  {
+   "symbol": "PFE",
+   "mid": 27.955,
+   "rth_bp": 3.6,
+   "ext_bp": 19.6,
+   "ratio": 5.44,
+   "tick_floor_bp": 3.6
+  },
+  {
+   "symbol": "PLUG",
+   "mid": 2.235,
+   "rth_bp": 44.8,
+   "ext_bp": 45.2,
+   "ratio": 1.01,
+   "tick_floor_bp": 44.7
+  },
+  {
+   "symbol": "QBTS",
+   "mid": 18.89,
+   "rth_bp": 10.6,
+   "ext_bp": 47.2,
+   "ratio": 4.45,
+   "tick_floor_bp": 5.3
+  },
+  {
+   "symbol": "RGTI",
+   "mid": 16.575,
+   "rth_bp": 12.0,
+   "ext_bp": 6.0,
+   "ratio": 0.5,
+   "tick_floor_bp": 6.0
+  },
+  {
+   "symbol": "RIOT",
+   "mid": 20.145,
+   "rth_bp": 24.8,
+   "ext_bp": 99.6,
+   "ratio": 4.02,
+   "tick_floor_bp": 5.0
+  },
+  {
+   "symbol": "RIVN",
+   "mid": 16.68,
+   "rth_bp": 17.6,
+   "ext_bp": 23.8,
+   "ratio": 1.35,
+   "tick_floor_bp": 6.0
+  },
+  {
+   "symbol": "SIRI",
+   "mid": 28.5,
+   "rth_bp": 21.0,
+   "ext_bp": 884.6,
+   "ratio": 42.12,
+   "tick_floor_bp": 3.5
+  },
+  {
+   "symbol": "SNAP",
+   "mid": 5.485,
+   "rth_bp": 18.2,
+   "ext_bp": 18.0,
+   "ratio": 0.99,
+   "tick_floor_bp": 18.2
+  },
+  {
+   "symbol": "SOFI",
+   "mid": 18.175,
+   "rth_bp": 11.1,
+   "ext_bp": 27.2,
+   "ratio": 2.45,
+   "tick_floor_bp": 5.5
+  },
+  {
+   "symbol": "SOUN",
+   "mid": 7.005,
+   "rth_bp": 14.2,
+   "ext_bp": 14.2,
+   "ratio": 1.0,
+   "tick_floor_bp": 14.3
+  },
+  {
+   "symbol": "T",
+   "mid": 25.64,
+   "rth_bp": 11.7,
+   "ext_bp": 94.9,
+   "ratio": 8.11,
+   "tick_floor_bp": 3.9
+  },
+  {
+   "symbol": "TEVA",
+   "mid": 37.3,
+   "rth_bp": 21.4,
+   "ext_bp": 53.6,
+   "ratio": 2.5,
+   "tick_floor_bp": 2.7
+  },
+  {
+   "symbol": "VALE",
+   "mid": 14.975,
+   "rth_bp": 6.6,
+   "ext_bp": 26.6,
+   "ratio": 4.03,
+   "tick_floor_bp": 6.7
+  },
+  {
+   "symbol": "WBD",
+   "mid": 28.82,
+   "rth_bp": 7.0,
+   "ext_bp": 41.8,
+   "ratio": 5.97,
+   "tick_floor_bp": 3.5
+  },
+  {
+   "symbol": "WULF",
+   "mid": 15.84,
+   "rth_bp": 18.5,
+   "ext_bp": 56.3,
+   "ratio": 3.04,
+   "tick_floor_bp": 6.3
+  }
+ ]
+}

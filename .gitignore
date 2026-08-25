@@ -31,3 +31,8 @@ infra/*.pem
 infra/terraform.tfstate*
 ibgateway-creds.env
 *.pkl
+
+# continuous quote-sampler output + raw session bar caches (regenerable, grows forever)
+research/rh_quote_snaps/
+research/rh_247_bars/
+research/overnight_bars/
