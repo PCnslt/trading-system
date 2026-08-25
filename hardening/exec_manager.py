@@ -346,9 +346,20 @@ class ExecutionManager:
 
     # ---- fill verification ----
     def _confirm(self, trade, intent: TradeIntent, fill_timeout=8.0) -> ExecutionResult:
-        """Broker-confirmed fill; partial-fill aware; timeout -> UNKNOWN."""
+        """Broker-confirmed fill; partial-fill aware; timeout -> UNKNOWN.
+
+        A broker REJECTION carries the reason on the Trade's log (IBKR Error 201 etc.).
+        Losing it is expensive: on 2026-08-24/25 nine IBKR entries were rejected with
+        "BEFORE WE CAN ACCEPT YOUR ORDER IN THIS SECURITY, PLEASE LOGIN TO CLIENT
+        PORTAL AND VERIFY USING THE TOKEN WE EMAILED TO YOU" — an account-verification
+        gate only the owner can clear — and every one was reported as
+        "ENTRY UNKNOWN (timeout) — reconcile will resolve". That hid a hard,
+        actionable blocker for two days and made a config problem look like flaky
+        infrastructure. Always surface the broker's own words.
+        """
         from execution import confirm_fill
         filled, avg_px, status = confirm_fill(self.ib, trade, timeout=fill_timeout)
+        broker_msg = self._trade_reject_reason(trade)
         if status == 'Filled':
             if filled <= 0:
                 return ExecutionResult('REJECTED', signal_id=intent.signal_id,
@@ -360,8 +371,26 @@ class ExecutionManager:
         if status in ('Cancelled', 'ApiCancelled', 'Inactive', 'Rejected'):
             return ExecutionResult('REJECTED', filled_qty=filled, avg_px=avg_px,
                                    signal_id=intent.signal_id, intent_id=intent.intent_id,
-                                   detail=f'order {status}')
-        # timeout / still open -> UNKNOWN (query broker before any retry)
+                                   detail=f'order {status}'
+                                          + (f' — BROKER SAYS: {broker_msg}' if broker_msg else ''))
+        # timeout / still open -> UNKNOWN (query broker before any retry). If the
+        # broker DID give us a reason, report it here too — a rejection that arrives
+        # after the poll window must not be laundered into a bare "timeout".
         return ExecutionResult('UNKNOWN', filled_qty=filled, avg_px=avg_px,
                                signal_id=intent.signal_id, intent_id=intent.intent_id,
-                               detail=f'timeout (status={status})')
+                               detail=f'timeout (status={status})'
+                                      + (f' — BROKER SAYS: {broker_msg}' if broker_msg else ''))
+
+    @staticmethod
+    def _trade_reject_reason(trade):
+        """Best-effort extraction of the broker's rejection text from a Trade."""
+        try:
+            msgs = []
+            for e in (getattr(trade, 'log', None) or []):
+                m = (getattr(e, 'message', '') or '').strip()
+                if m and ('reject' in m.lower() or 'error' in m.lower()
+                          or 'not accept' in m.lower() or 'verify' in m.lower()):
+                    msgs.append(m)
+            return msgs[-1][:300] if msgs else ''
+        except Exception:  # noqa: BLE001 - never let diagnostics break execution
+            return ''
