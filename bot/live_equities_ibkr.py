@@ -338,6 +338,12 @@ def main():
         if pos is None and not exited and r2 is not None and ma200 is not None:
             if sym.upper() in earnings_blacklist:
                 continue
+            if not args.dry_run:
+                from bot.cross_broker import blocked_by_other_broker
+                blocked, why = blocked_by_other_broker(table, sym, 'ibkr')
+                if blocked:
+                    print(f'  {why}')
+                    continue
             if r2 < RSI2_THR and c > ma200:
                 if committed < pos_cap and day_loss_used < DAY_LOSS_CAP:
                     if EXECUTION_MODE == 'LIVE':

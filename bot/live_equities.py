@@ -627,6 +627,12 @@ def main():
                     'mode': 'PAPER', 'execution': 'NONE', 'ts': int(time.time())},
                     args.dry_run)
                 continue
+            if not args.dry_run and EXECUTION_MODE == 'LIVE' and r2 < RSI2_THR and c > ma200:
+                from bot.cross_broker import blocked_by_other_broker
+                _blocked, _why = blocked_by_other_broker(table, sym, 'rh')
+                if _blocked:
+                    print(f'  {_why}')
+                    continue
             if r2 < RSI2_THR and c > ma200:
                 if committed < pos_cap and day_loss_used < DAY_LOSS_CAP:
                     size_usd, stop_pct = position_size(PAPER_CAPITAL, c, atr or 0.0)
