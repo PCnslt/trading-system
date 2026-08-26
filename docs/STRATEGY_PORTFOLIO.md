@@ -194,3 +194,32 @@ gross, Sharpe 0.89 — but the author states $0.02/share commission makes total 
 NEGATIVE, and $0.01/share destroys 57% of gross. **The overnight premium is not harvestable
 unconditionally.** The edge requires the weak-close / big-drop conditioning of Lanes 47/49-adjacent
 variants (NEARLOW +3.94 bp OOS t=5.30, DOWN3 +4.24 bp OOS t=3.06).
+
+## Lane 50 — Extended-session (24h/overnight) execution — NO-GO-WITH-REASON
+
+`research/overnight_24h_gonogo.py`: does ANY overnight-hold edge in this repo clear the
+**51.5 bp** measured extended-session round-trip (vs **14.4 bp** RTH, `overnight_cost_floor.json`,
+3.42×)? Sub-$50 universe, 383 symbols, 2006–2026, LONG-only, OOS from 2022, per-trade net PF.
+
+| candidate | IS PF @51.5bp | OOS PF @51.5bp | OOS avg bp |
+|---|---|---|---|
+| Gap-fade −7% | 1.641 | **1.193** | +61.2 |
+| Gap-fade −4% | 1.287 | 1.136 | +32.7 |
+| Broken Arrow −10% | 1.399 | 1.062 | +9.1 |
+| Gap-fade −3% | 1.125 | 1.039 | +8.7 |
+| Broken Arrow −8% | 1.210 | 0.921 | −10.9 |
+| ALL close-to-open variants (incl. RSI2) | 0.44–0.59 | 0.49–0.53 | −34 to −44 |
+
+**Nothing clears PF ≥ 1.3 OOS at the extended-session floor** (best OOS PF 1.193, gap-fade −7%).
+The same edges DO survive RTH cost: at 14.4 bp, Broken Arrow −10% OOS PF **1.362** and gap-fade
+−7% **1.328** — and even at 2× RTH (28.8 bp) −10% OOS 1.236 / −7% OOS 1.274. So the overnight-hold
+*edge* is real but must be traded **regular-hours close → regular-hours open**, which Lanes 47
+(Broken Arrow) and 48 (Mind the Gap) already do. There is no additional edge worth paying 3.42× to
+trade *inside* the 16:05–20:00 evening or pre-market sessions (evening = 0.73–0.88% of daily volume,
+RH stops RTH-ONLY ⇒ any such position is an unstopped gap; no sizing rule makes an unstopped −10 bp
+expectancy worth it).
+
+**Re-activate only if** a candidate shows median gross edge ≫ 51.5 bp OOS, or the measured
+evening/overnight cost falls below the edge (not expected — 51.5 bp is already a *floor*, sampled
+at peak extended-hours liquidity).
+
