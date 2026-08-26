@@ -1,0 +1,3654 @@
+{
+ "IREN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SMCI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PFE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SOFI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BSX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "T": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NKE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PATH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NU": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "IONQ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AAL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NOK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CDE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BMNR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CMG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CIFR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "F": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NVO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ONDS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CMCSA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RBLX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WULF": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WBD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FIG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "U": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "APLD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MNST": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MARA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DVN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "B": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CCL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RIOT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "STM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TTD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PCG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HIMS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HPQ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KVUE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OKLO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HBAN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KDP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TSCO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RKT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CELH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KHC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RIVN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VALE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CPRT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HAL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TOST": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RGTI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KMI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "QBTS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EXC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DKNG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GIS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NCLH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ASX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PBR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PPL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CPNG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CHYM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CORZ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "JD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SAN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "position_closing_only",
+  "short": "untradable"
+ },
+ "SMR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ONON": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AMKR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FIS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CLSK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VICI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PINS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MDLN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DOW": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "QXO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "UMC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CNP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "INFY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ZETA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ACHR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HST": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FPS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RIG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "JOBY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RF": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "APA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OWL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KGC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SW": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "USAR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SOUN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GFS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CLF": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LVS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "APTV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SNAP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VIAV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KEY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CSGP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TEVA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CVE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BAX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ELAN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RDW": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ROIV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LUV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DFNS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "position_closing_only",
+  "short": "tradable"
+ },
+ "ET": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "untradable"
+ },
+ "DOCS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "JHX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "IOT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ROL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AUR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AMCR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MOS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AGNC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LYFT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CNH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AMRZ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LUNR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EQX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OSCR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FCEL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "JBLU": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NVTS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ENPH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "IP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CAG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HDB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FSLY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VTRS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AGI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BTDR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GTLB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CRBG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VXX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OPEN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ITUB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NLY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GRAB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "IBN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VSH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CHWY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AMIX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "position_closing_only",
+  "short": "tradable"
+ },
+ "GFI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GLXY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "IVZ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GEN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BEN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EQH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "UPST": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DBX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "QGEN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FIGR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LTH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KEEL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PLUG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ARX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AVTR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "UMAC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ESI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GME": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "S": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MFC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "Z": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SNY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "position_closing_only",
+  "short": "untradable"
+ },
+ "HBM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WOLF": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "IOVA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SEDG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FBIN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "COMP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FRMI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "STLA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OUST": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CPB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EPD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "untradable"
+ },
+ "UDR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BTG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VFC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SIRI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BILL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NIO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MTCH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FHN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SONY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KVYO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AMLX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PURR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TAP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GLPI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HTZ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TCOM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "M": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CZR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "JMKE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DOC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AAP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BIRK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TTEK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ALLY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "APG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "INFQ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "INVH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KLAR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ALK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EQNR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "IAG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PSKY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CAI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BULL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NWSA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ALM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ABEV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "QS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EGO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "INIO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PRMB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "XE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MGM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CENX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BBWI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KIM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GAP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AES": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EOSE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FLNC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BSP": {
+  "tradeable": false,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "untradable",
+  "short": "untradable"
+ },
+ "ERIC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FIVN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TENB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "POET": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VISN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LNC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "UUUU": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DFTX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BCS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BSY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RRC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WETO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MGY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "INDV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SSRM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HLN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CNK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WHR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TREX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "G": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MAC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TME": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ABCL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ALGM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BBD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ONB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FRSH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SARO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EXLS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TU": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WU": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "YOU": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LKQ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PSN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CTRE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OHI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TDC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RUN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "UGI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RCAT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ACI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NVST": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "XPEV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "REXR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LBRT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GMAB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HRL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FOUR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GFL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "COLB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RYAN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MAIR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CUBE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RELX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "YETI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LUMN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BOX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MBGL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "JBS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "UEC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VLY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EXK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ALHC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "REPL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RHI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PTEN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ARCC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BCE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LYG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RELY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LASR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CNM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GXO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DNN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VVV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SLS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ALKS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GLOB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FRO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GOOGN": {
+  "error": "not_returned"
+ },
+ "WTRG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WEN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LCID": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FNF": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ING": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "STWD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SYM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FLY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ST": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PFSA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "position_closing_only",
+  "short": "tradable"
+ },
+ "YXT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "position_closing_only",
+  "short": "tradable"
+ },
+ "WSC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "QUBT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SKM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AMH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FRVO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VNOM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HTHT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KRG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NESR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RSI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WRBY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VRNS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "YUMC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BRX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AEO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CCC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "COGT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HIVE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "XP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BRZE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GTX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BBAI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BKD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CAPR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AMC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WAY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CRGY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AMX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "IPST": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "position_closing_only",
+  "short": "tradable"
+ },
+ "FCUV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "position_closing_only",
+  "short": "tradable"
+ },
+ "FNB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VERA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ACHC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ASST": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MUFG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NOV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AMPX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VSNT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KSS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MUR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LAZ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VCYT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BANC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CPRI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OGE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WYFI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GDS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RYN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BLZE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MGNI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "STEP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VOYG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MIR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SMMT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PGY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "YMM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PEGA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NWG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VOD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PAA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "untradable"
+ },
+ "TAL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WMG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BEPC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BTE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "REZI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BZ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "IBRX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NNN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VKTX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ATAI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ASO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OLN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GLBE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FGI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "position_closing_only",
+  "short": "tradable"
+ },
+ "KD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OPCH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MWH": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BTU": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TAK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OUT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AXTA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FSM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "STAG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GEO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AROC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TNGX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NAVN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "JAN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "KBR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ADPT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "QURE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ADT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DHT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EWTX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CLBK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ZIM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NWL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SBET": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FLG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PDI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HMY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SHC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VNO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PRM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NTSK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MIAX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GGB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "XRAY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GOOGM": {
+  "error": "not_returned"
+ },
+ "KMT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "VNT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NOG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "DBRG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NXE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RITM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "AMTM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HUBG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "FA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SLM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OPLN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HGV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "MAT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BFLY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CLMT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GPK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LIF": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RARE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "POR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "IRDM": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EBC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GTES": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SAIL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BEKE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ERAS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CDNA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PSNL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HOG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SBSW": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ARR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GENI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "GNTX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PAY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BNL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PTON": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "UAA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CLBT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CTRI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SLGN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TWO": {
+  "error": "not_returned"
+ },
+ "BBVA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "position_closing_only",
+  "short": "untradable"
+ },
+ "STUB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ERO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CNX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BAND": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CUZ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SBRA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "WT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LEGN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LIFE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "ZG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "COLD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "RXRX": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "TGB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "HP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "LBRDK": {
+  "error": "not_returned"
+ },
+ "ACAD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "NN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "SHOO": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "UTI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "BW": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "APLE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OBDC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "EQPT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "PPC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "CCXI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "APPS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ },
+ "OZK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "frac": "tradable",
+  "short": "tradable"
+ }
+}
