@@ -161,6 +161,27 @@ SMALL_CAP_STOCKS = [
     'WY', 'XRAY'
 ]
 
+def _overnight_tradable() -> set:
+    """{SYM} the RH 24-Hour Market actually accepts (all_day_tradability='tradable').
+
+    From research/rh_tradability_full.json (produced by research/rh_tradability_scan.py,
+    live RH get_equity_tradability). Only 256/524 of the sub-$50 universe qualify.
+    A name that is NOT overnight-tradable cannot be touched between 16:00 and 09:30 ET,
+    so it is a blind hold through the gap — the entry lane must prefer tradable names so
+    an overnight exit is at least *possible*. Fail-open on a missing/unreadable file
+    (return empty set -> no filtering) rather than break the bot.
+    """
+    try:
+        p = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                         'research', 'rh_tradability_full.json')
+        with open(p, encoding='utf-8') as f:
+            d = json.load(f)
+        return {s for s, v in d.items() if v.get('all_day') == 'tradable'}
+    except Exception as e:
+        print(f'  [universe] tradability load failed ({e!r}) — no overnight filter')
+        return set()
+
+
 def _load_smallcap_universe():
     """Load the expanded sub-$35 whole-share universe (full ~6,000-stock screen,
     ~363 names, blocklist-filtered) from smallcap_universe_full.json. Fallback to
@@ -631,6 +652,18 @@ def main():
     # LIVE whole-share lane uses the liquid sub-$35 sub-universe (the S&P100
     # universe is >$35, so $700 whole-share can't buy it). PAPER keeps full universe.
     _syms = _load_smallcap_universe() if EXECUTION_MODE == 'LIVE' else UNIVERSE
+    # OVERNIGHT-TRADABILITY FILTER: a name that cannot trade in the RH 24-Hour
+    # Market is a blind hold through the overnight gap (no exit, no stop, nothing
+    # until 09:30). Prefer names where an overnight exit is at least possible.
+    # Fail-open: an empty tradability set (file missing) skips the filter, never
+    # silently zeroes the universe.
+    if EXECUTION_MODE == 'LIVE':
+        tradable = _overnight_tradable()
+        if tradable:
+            n_before = len(_syms)
+            _syms = [s for s in _syms if s in tradable]
+            print(f'  [universe] overnight-tradable filter: {len(_syms)}/{n_before} '
+                  f'names kept ({len(tradable)} 24h-eligible total)')
     syms = _syms[:args.limit] if args.limit else _syms
     pos_cap = MAX_POSITIONS if EXECUTION_MODE == 'LIVE' else PAPER_MAX_POSITIONS
     earnings_blacklist = load_upcoming_earnings(table, days_ahead=EARNINGS_GUARD_DAYS)
