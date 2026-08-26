@@ -658,12 +658,6 @@ def main():
     open_count = sum(1 for p in book.values() if p.get('status') == 'OPEN')
     committed = len(book)  # PENDING + OPEN
 
-    day_loss_used = 0.0
-    cap_breached = False
-    enters, exits = [], []
-    payload = {'lane': 'robinhood-equities', 'date': today, 'paper_capital': PAPER_CAPITAL,
-               'signals': []}
-
     # LIVE client (lazy, only when EXECUTION_MODE == 'LIVE'). Fail-closed: a failed
     # init disables LIVE entries for the whole run (paper/other lanes unaffected).
     client = None
@@ -675,6 +669,31 @@ def main():
         except Exception as e:  # noqa: BLE001
             live_client_error = f'RHClient init failed: {e!r}'
             print(f'[live] {live_client_error} — no LIVE entries this run')
+
+    # AUTHORITATIVE POSITION COUNT. The book (RHPOS#) can be EMPTY while real
+    # positions exist — exactly what happened on 2026-08-25, when nine entries
+    # filled at the broker but the confirm path failed, so the book stayed empty,
+    # `committed` started at 0 and the MAX_POSITIONS cap never bit (logged
+    # "committed=9/5" the next day). In LIVE mode the cap must count what the
+    # BROKER actually holds, not what we managed to write down.
+    if EXECUTION_MODE == 'LIVE' and client is not None:
+        try:
+            held = [p for p in client.get_positions() or []
+                    if float(p.get('quantity') or 0) > 0]
+            committed = max(committed, len(held))
+            if len(held) != open_count:
+                print(f'  [live] broker holds {len(held)} positions vs book {open_count} '
+                      f'OPEN — cap counted from broker (committed={committed}/{pos_cap})')
+        except Exception as e:  # noqa: BLE001 - fail-closed: block entries, do not over-trade
+            committed = pos_cap
+            live_client_error = live_client_error or f'position count read failed: {e!r}'
+            print(f'  [live] could not read broker positions ({e!r}) — blocking new entries')
+
+    day_loss_used = 0.0
+    cap_breached = False
+    enters, exits = [], []
+    payload = {'lane': 'robinhood-equities', 'date': today, 'paper_capital': PAPER_CAPITAL,
+               'signals': []}
 
     _stale_skips = []
     for sym in syms:
