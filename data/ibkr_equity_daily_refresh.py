@@ -62,8 +62,20 @@ def log(m):
 
 
 def universe():
-    p = os.path.join(_ROOT, 'research', 'smallcap_universe_full.json')
-    syms = list(dict.fromkeys(json.load(open(p))['symbols']))
+    """Tradeable universe. The scanner and live lane now trade the BROAD
+    1,459-name universe (incl. blue chips), so the refresh must cover it — not
+    just the 524 small-caps. RH_IBKR_REFRESH_UNIVERSE=broad|smallcap|both."""
+    mode = os.getenv('RH_IBKR_REFRESH_UNIVERSE', 'broad')
+    def load(fn):
+        p = os.path.join(_ROOT, 'research', fn)
+        return list(dict.fromkeys(json.load(open(p))['symbols']))
+    if mode == 'smallcap':
+        syms = load('smallcap_universe_full.json')
+    elif mode == 'both':
+        syms = load('universe_1500.json') + load('smallcap_universe_full.json')
+    else:
+        syms = load('universe_1500.json')
+    syms = list(dict.fromkeys(syms))
     return syms[:LIMIT] if LIMIT else syms
 
 
