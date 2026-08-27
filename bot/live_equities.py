@@ -652,18 +652,25 @@ def main():
     # LIVE whole-share lane uses the liquid sub-$35 sub-universe (the S&P100
     # universe is >$35, so $700 whole-share can't buy it). PAPER keeps full universe.
     _syms = _load_smallcap_universe() if EXECUTION_MODE == 'LIVE' else UNIVERSE
-    # OVERNIGHT-TRADABILITY FILTER: a name that cannot trade in the RH 24-Hour
-    # Market is a blind hold through the overnight gap (no exit, no stop, nothing
-    # until 09:30). Prefer names where an overnight exit is at least possible.
-    # Fail-open: an empty tradability set (file missing) skips the filter, never
-    # silently zeroes the universe.
+    # OVERNIGHT-TRADABILITY FILTER (optional): a name that cannot trade in the RH
+    # 24-Hour Market is a blind hold through the overnight gap (no exit, no stop,
+    # nothing until 09:30). BUT the overnight gap is borne by SIZING on every name
+    # anyway — RH stops are RTH-only regardless of tradability, and a gap fills at
+    # the open, not the stop. So holding an untradable name is a legitimate choice
+    # when sized for the gap; this filter just makes it the DEFAULT.
+    #   RH_REQUIRE_OVERNIGHT_TRADABLE=1 (default) -> restrict to 24h-eligible names
+    #   RH_REQUIRE_OVERNIGHT_TRADABLE=0            -> keep the full universe
     if EXECUTION_MODE == 'LIVE':
-        tradable = _overnight_tradable()
-        if tradable:
-            n_before = len(_syms)
-            _syms = [s for s in _syms if s in tradable]
-            print(f'  [universe] overnight-tradable filter: {len(_syms)}/{n_before} '
-                  f'names kept ({len(tradable)} 24h-eligible total)')
+        if os.getenv('RH_REQUIRE_OVERNIGHT_TRADABLE', '1') == '1':
+            tradable = _overnight_tradable()
+            if tradable:
+                n_before = len(_syms)
+                _syms = [s for s in _syms if s in tradable]
+                print(f'  [universe] overnight-tradable filter ON: {len(_syms)}/{n_before} '
+                      f'names kept ({len(tradable)} 24h-eligible total)')
+        else:
+            print('  [universe] overnight-tradable filter OFF — holding full universe, '
+                  'overnight gap managed by position sizing')
     syms = _syms[:args.limit] if args.limit else _syms
     pos_cap = MAX_POSITIONS if EXECUTION_MODE == 'LIVE' else PAPER_MAX_POSITIONS
     earnings_blacklist = load_upcoming_earnings(table, days_ahead=EARNINGS_GUARD_DAYS)
