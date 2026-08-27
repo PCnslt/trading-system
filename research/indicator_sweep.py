@@ -31,7 +31,7 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env'))
 
 BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
-PRICE_LO, PRICE_HI = 2.0, 50.0
+PRICE_LO, PRICE_HI = 1.0, 99999.0   # no price cap: fractional shares make any price tradeable
 MIN_DV = 5e6
 STOP_ATR, MAX_HOLD, COST_BP = 2.0, 5, 5.0
 OOS_FROM = '2022-01-01'
@@ -180,7 +180,7 @@ def main():
     a = ap.parse_args()
     syms = list(dict.fromkeys(json.load(
         open(os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                          'research', 'smallcap_universe_full.json')))['symbols']))[:a.limit]
+                          'research', 'universe_1500.json')))['symbols']))[:a.limit]
     s3 = boto3.client('s3', region_name=os.getenv('AWS_REGION', 'us-east-1'))
     print(f'loading {len(syms)} symbols…', flush=True)
     data = {}

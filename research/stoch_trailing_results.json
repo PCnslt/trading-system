@@ -1,0 +1,152 @@
+{
+ "FIXED": {
+  "full": {
+   "n": 269083,
+   "PF": 1.941,
+   "win%": 61.3,
+   "avg_bp": 109.7,
+   "t": 1.05,
+   "hold": 1.18,
+   "reasons": {
+    "revert": 226997,
+    "stop": 27162,
+    "time": 11229,
+    "gap_stop": 3695
+   }
+  },
+  "oos": {
+   "n": 85897,
+   "PF": 1.111,
+   "win%": 61.8,
+   "avg_bp": 12.3,
+   "t": 9.98,
+   "hold": 1.22,
+   "reasons": {
+    "revert": 72728,
+    "stop": 7974,
+    "time": 4140,
+    "gap_stop": 1055
+   }
+  }
+ },
+ "TRAIL_1ATR": {
+  "full": {
+   "n": 326240,
+   "PF": 1.967,
+   "win%": 42.3,
+   "avg_bp": 109.0,
+   "t": 0.99,
+   "hold": 0.46,
+   "reasons": {
+    "trail": 182952,
+    "revert": 137181,
+    "stop": 5558,
+    "gap_stop": 302
+   }
+  },
+  "oos": {
+   "n": 104294,
+   "PF": 0.548,
+   "win%": 43.6,
+   "avg_bp": -50.7,
+   "t": -67.36,
+   "hold": 0.49,
+   "reasons": {
+    "trail": 57079,
+    "revert": 45418,
+    "stop": 1623,
+    "gap_stop": 93
+   }
+  }
+ },
+ "TRAIL_2ATR": {
+  "full": {
+   "n": 275950,
+   "PF": 2.411,
+   "win%": 59.2,
+   "avg_bp": 174.4,
+   "t": 1.38,
+   "hold": 1.08,
+   "reasons": {
+    "revert": 219776,
+    "trail": 25262,
+    "stop": 21264,
+    "time": 7204
+   }
+  },
+  "oos": {
+   "n": 87966,
+   "PF": 0.927,
+   "win%": 59.7,
+   "avg_bp": -8.7,
+   "t": -7.55,
+   "hold": 1.13,
+   "reasons": {
+    "revert": 70454,
+    "trail": 8018,
+    "stop": 6161,
+    "time": 2693
+   }
+  }
+ },
+ "TRAIL_TP_1ATR": {
+  "full": {
+   "n": 271508,
+   "PF": 2.494,
+   "win%": 60.8,
+   "avg_bp": 169.7,
+   "t": 1.29,
+   "hold": 1.12,
+   "reasons": {
+    "revert": 187596,
+    "trail_tp": 43321,
+    "stop": 26588,
+    "time": 10316
+   }
+  },
+  "oos": {
+   "n": 86552,
+   "PF": 0.826,
+   "win%": 61.3,
+   "avg_bp": -18.9,
+   "t": -17.29,
+   "hold": 1.17,
+   "reasons": {
+    "revert": 60582,
+    "trail_tp": 13262,
+    "stop": 7831,
+    "time": 3842
+   }
+  }
+ },
+ "TRAIL_TP_2ATR": {
+  "full": {
+   "n": 269271,
+   "PF": 2.655,
+   "win%": 61.3,
+   "avg_bp": 192.4,
+   "t": 1.48,
+   "hold": 1.17,
+   "reasons": {
+    "revert": 223277,
+    "stop": 27117,
+    "time": 11117,
+    "trail_tp": 4061
+   }
+  },
+  "oos": {
+   "n": 85939,
+   "PF": 1.057,
+   "win%": 61.8,
+   "avg_bp": 6.3,
+   "t": 5.34,
+   "hold": 1.22,
+   "reasons": {
+    "revert": 71583,
+    "stop": 7966,
+    "time": 4112,
+    "trail_tp": 1226
+   }
+  }
+ }
+}
