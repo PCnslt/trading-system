@@ -223,3 +223,45 @@ expectancy worth it).
 evening/overnight cost falls below the edge (not expected — 51.5 bp is already a *floor*, sampled
 at peak extended-hours liquidity).
 
+## Lane 51 — RH RSI2 position-sizing & concurrency validation (15%×5) — NO-GO-WITH-REASON
+
+`research/position_sizing_backtest.py`: validates the 2026-08-25 RH sizing change
+(`RH_MAX_POS_PCT` 0.05→0.15, `RH_MAX_POSITIONS`=5) on the DEPLOYED sub-$50 universe
+(488 usable symbols, 2006–2026, 13,869 RSI2<5 trades, next-open entry, 2×ATR stop,
+5d/revert exits, $700 whole-share + cash-constrained, IS/OOS split at 2022).
+
+**Per-trade edge (equal-weight, registry convention):** @5bps/side **PF 1.097 (IS 1.120 / OOS 1.068)**, win 63.1%; @10bps **1.034 (IS 1.048 / OOS 1.016)**. The sub-$50 RSI2
+edge is real but THIN — well below the large-cap walk-forward OOS 1.36 @5bps this lane was
+promoted on (Lane 1 / `stock_mr_validate.py`), i.e. the validated edge lives in large caps, not
+the sub-$50 names whole-share reality forces.
+
+**Portfolio grid @5bps/side — PF / IS / OOS / maxDD** (whole-share $700, cash-constrained):
+
+| config | PF | IS | OOS | maxDD |
+|---|---|---|---|---|
+| 3 × 15% | 0.984 | 1.02 | 0.91 | −20.5% |
+| **5 × 15% (LIVE)** | **0.968** | 0.99 | **0.91** | **−43.1%** |
+| 5 × 5% | 1.003 | 1.02 | 0.97 | −17.4% |
+| 10 × 5% | 1.034 | 1.04 | 1.02 | −28.5% |
+| **20 × 5% (best)** | **1.069** | 1.05 | **1.09** | **−30.9%** |
+
+- The deployed **15% × 5 is near the WORST cell**: PF 0.97, OOS 0.91, maxDD −43%, net −$200.
+  Best is **5% × 10–20 concurrent** (PF 1.03–1.07, OOS ~1.0–1.09, maxDD −17..−31%). Higher
+  pos_pct → monotonically worse PF and much deeper maxDD at every concurrency level.
+- @10bps stress the live cell falls to **PF 0.915 / OOS 0.83 / maxDD −62.8%**.
+- Clustering is structural: **67.8% of entries occur on days with ≥5 simultaneous signals**
+  (median 3/day, p90 10/day, max 63/day) — so 5 concurrent = one correlated long-beta dip bet,
+  and 15% sizing amplifies it.
+
+**Answers:** (a) NO — 15%/5 over-concentrates; use ~5%/name with ≥10 concurrent (or fractional
+shares). (b) The 9-vs-5 fill was a code bug, not a backtest question: the book (`RHPOS#`) stayed
+empty when the LIVE confirm path failed → `committed` started 0 → the cap never bit. FIXED
+2026-08-26 in `bot/live_equities.py` with a broker-authoritative count (`committed =
+max(committed, len(broker_positions))`, fail-closed to `pos_cap` on read error). (c) Optimal
+concurrency ≈ 10–20 at 5%, NOT 5 at 15%.
+
+**Re-activate trigger:** revert `RH_MAX_POS_PCT` ≤ 0.10 (ideally 0.05 with fractional shares or a
+sub-$35 whole-share universe) and raise `RH_MAX_POSITIONS` ≥ 10; re-validate the deployed sub-$50
+universe edge (OOS 1.068 @5bps is barely above breakeven) before adding any capital to the lane.
+
+
