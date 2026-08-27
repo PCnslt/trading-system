@@ -99,6 +99,7 @@ STOP_ATR = 2.0
 MAX_HOLD = 5
 MAX_POSITIONS = int(os.getenv('RH_MAX_POSITIONS', '20'))  # LIVE concurrent-position ceiling
 PAPER_MAX_POSITIONS = int(os.getenv('RH_PAPER_MAX_POSITIONS', '20'))  # PAPER ceiling (breadth testing)
+FRACTIONAL_ENTRIES = os.getenv('RH_FRACTIONAL_ENTRIES', '0') == '1'  # allow dollar-based (sub-share) buys
 MIN_BARS = 260                       # >= 1y so SMA200 is fully warmed
 DATA_START = '2022-01-01'            # fixed anchor -> stable index positions
 EARNINGS_GUARD_DAYS = int(os.getenv('EARNINGS_GUARD_DAYS', '5'))  # no entry into a name reporting within N days
@@ -649,9 +650,14 @@ def main():
         except Exception as e:
             print(f'[{today}] dedupe read failed (fail-open): {e!r}')
 
-    # LIVE whole-share lane uses the liquid sub-$35 sub-universe (the S&P100
-    # universe is >$35, so $700 whole-share can't buy it). PAPER keeps full universe.
-    _syms = _load_smallcap_universe() if EXECUTION_MODE == 'LIVE' else UNIVERSE
+    # LIVE universe: whole-share lane uses the liquid sub-$35 sub-universe (the S&P100
+    # universe is >$35, so $700 whole-share can't buy it). When FRACTIONAL_ENTRIES is
+    # enabled, the lane can trade any price, so it scans the FULL universe (incl. the
+    # blue chips the owner explicitly wants: NVDA/AAPL/MSFT/TSLA...). PAPER keeps full.
+    if EXECUTION_MODE == 'LIVE':
+        _syms = _load_broad_universe() if FRACTIONAL_ENTRIES else _load_smallcap_universe()
+    else:
+        _syms = UNIVERSE
     # OVERNIGHT-TRADABILITY FILTER (optional): a name that cannot trade in the RH
     # 24-Hour Market is a blind hold through the overnight gap (no exit, no stop,
     # nothing until 09:30). BUT the overnight gap is borne by SIZING on every name
@@ -887,10 +893,8 @@ def main():
                                     reason_l = f'LIVE gate: {greason}'
                                 else:
                                     shares = int(size_usd / c) if c > 0 else 0
-                                    if shares < 1:
-                                        reason_l = (f'LIVE skip: ${size_usd:.2f} < 1 whole '
-                                                    f'share of {sym} (@${c:.2f})')
-                                    else:
+                                    # WHOLE-SHARE path: protective broker stop possible.
+                                    if shares >= 1:
                                         try:
                                             fill = client.place_equity_entry(
                                                 sym, 'buy', stop_price,
@@ -926,6 +930,36 @@ def main():
                                             committed += 1
                                         except Exception as e:  # fail-closed: never naked
                                             reason_l = f'LIVE place failed (fail-closed): {e!r}'
+                                    # FRACTIONAL path: dollar-based buy, NO broker stop possible
+                                    # -> the sell-monitor (bot/rh_sell_monitor.py) is the synthetic
+                                    #    stop. Only when the owner explicitly enabled it.
+                                    elif FRACTIONAL_ENTRIES:
+                                        try:
+                                            fill = client.place_equity_order(
+                                                sym, 'buy', 'market',
+                                                account_number=client.account_number,
+                                                dollar_amount=str(round(size_usd, 2)),
+                                                client_order_ref=f'rh_{today}_{sym}')
+                                            ep = _f((fill.get('entry') or {}).get('average_price')
+                                                    or fill.get('average_price')) or c
+                                            put_item(table, f'RHPOS#{sym}', 'current', {
+                                                'status': 'OPEN', 'entry_date': str(today_dt.date()),
+                                                'entry_price': _s(ep), 'stop_price': _s(stop_price),
+                                                'size_usd': _s(size_usd), 'size_shares': _s(
+                                                    float(size_usd) / ep if ep else 0),
+                                                'atr': _s(atr or 0), 'fractional': '1',
+                                                'monitor_stop': '1', 'ts': int(time.time())},
+                                                args.dry_run)
+                                            enters.append({'sym': sym, 'size_usd': _s(size_usd),
+                                                           'stop_price': _s(stop_price),
+                                                           'fractional': '1'})
+                                            committed += 1
+                                        except Exception as e:  # fail-closed: never naked
+                                            reason_l = f'LIVE fractional place failed: {e!r}'
+                                    else:
+                                        reason_l = (f'LIVE skip: ${size_usd:.2f} < 1 whole '
+                                                    f'share of {sym} (@${c:.2f}) and fractional '
+                                                    f'entries disabled')
                             if reason_l is not None:
                                 put_item(table, f'RHSIG#{sym}', today, {
                                     'action': 'NONE', 'signal': 'NONE', 'strategy': 'RSI2',
