@@ -1,6 +1,6 @@
 # Trading Journal — Robinhood LIVE (account 515821577)
 
-Generated: 2026-08-27 14:30 EDT
+Generated: 2026-08-27 15:00 EDT
 
 ## Closed trades (realized P&L)
 
@@ -24,7 +24,6 @@ Generated: 2026-08-27 14:30 EDT
 | XOM | 0.0 | 0 | 151.01 | None |
 | FHN | 24.45 | 4.0 | 23.49 | 25.41 |
 | BLZE | 15.2 | 2.0 | 12.11 | 18.29 |
-| AMAT | 0.0 | 0 | 422.16 | None |
 | INDV | 36.49 | 2.0 | 33.64 | 39.34 |
 
 ## Notes
