@@ -658,16 +658,21 @@ def main():
     # anyway — RH stops are RTH-only regardless of tradability, and a gap fills at
     # the open, not the stop. So holding an untradable name is a legitimate choice
     # when sized for the gap; this filter just makes it the DEFAULT.
-    #   RH_REQUIRE_OVERNIGHT_TRADABLE=1 (default) -> restrict to 24h-eligible names
-    #   RH_REQUIRE_OVERNIGHT_TRADABLE=0            -> keep the full universe
+    #   RH_REQUIRE_OVERNIGHT_TRADABLE=0 (only this exact value) -> keep full universe
     if EXECUTION_MODE == 'LIVE':
-        if os.getenv('RH_REQUIRE_OVERNIGHT_TRADABLE', '1') == '1':
+        require = os.getenv('RH_REQUIRE_OVERNIGHT_TRADABLE', '1')
+        if require != '0':
             tradable = _overnight_tradable()
             if tradable:
                 n_before = len(_syms)
                 _syms = [s for s in _syms if s in tradable]
                 print(f'  [universe] overnight-tradable filter ON: {len(_syms)}/{n_before} '
                       f'names kept ({len(tradable)} 24h-eligible total)')
+            else:
+                # tradable set came back empty (file missing/unreadable) — do NOT
+                # silently zero the universe; keep everything rather than trade nothing
+                print('  [universe] tradable set EMPTY (file issue?) — filter skipped, '
+                      'keeping full universe (fail-open)')
         else:
             print('  [universe] overnight-tradable filter OFF — holding full universe, '
                   'overnight gap managed by position sizing')
