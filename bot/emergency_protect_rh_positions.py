@@ -81,9 +81,16 @@ def main():
     total = 0.0
     for p in positions:
         sym = p['symbol']
-        qty = int(float(p['quantity']))
+        qty = float(p['quantity'])
         entry = float(p.get('average_buy_price') or 0)
         total += qty * entry
+        if qty < 1 or qty != int(qty):
+            # FRACTIONAL position: Robinhood cannot rest a stop on a sub-share qty.
+            # These are monitor-managed (rh_sell_monitor). Placing a stop here would
+            # either fail or (via int truncation) target 0 shares. Skip, don't truncate.
+            print(f'  {sym:6} qty={qty} — FRACTIONAL, broker stop impossible (monitor-managed), skip')
+            continue
+        qty = int(qty)
         if sym in resting:
             print(f'  {sym:6} qty={qty} — stop ALREADY resting, skip')
             continue
