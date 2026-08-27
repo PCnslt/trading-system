@@ -73,8 +73,10 @@ def main():
     tot_pl = tot_cost = 0.0
     for s in sorted(held):
         p = held[s]
-        qty = int(float(p['quantity']))
-        entry = float(p.get('average_buy_price') or 0)
+        qty = float(p['quantity'])
+        entry = float(p.get('average_buy_price') or p.get('average_price') or 0)
+        if entry == 0:
+            entry = float((book.get(s) or {}).get('entry_price') or 0)
         last = _f(quotes.get(s, {}).get('last_trade_price')) or 0.0
         st = stops.get(s)
         sp = float(st['stop_price']) if st else 0.0
@@ -105,8 +107,13 @@ def main():
             else:
                 trig = f'hold ({MAX_HOLD - held_n} left)' if held_n is not None else 'hold'
 
-        if not st:
+        # fractional positions (monitor_stop=1) are protected by the sell-monitor,
+        # NOT a broker stop (Robinhood can't stop a sub-share qty) — not naked.
+        monitor_managed = (pos and (pos.get('monitor_stop') == '1' or pos.get('fractional') == '1'))
+        if not st and not monitor_managed:
             alerts.append(f'{s}: NO RESTING STOP (naked)')
+        elif not st and monitor_managed:
+            pass  # monitor-protected fractional — normal
         elif to_stop is not None and to_stop <= ALERT_STOP_PCT:
             alerts.append(f'{s}: {to_stop:.1f}% from stop {sp:.2f} (last {last:.2f})')
         if trig.endswith('READY'):

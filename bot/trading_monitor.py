@@ -30,16 +30,18 @@ def _in_rth(now: dt.datetime) -> bool:
 
 
 def _rh_protection_counts():
-    """(positions_held, positions_with_a_resting_stop) on the RH LIVE account.
+    """(positions_held, positions_protected) on the RH LIVE account.
 
-    Robinhood reports a stop as type='market' + trigger='stop' + stop_price, and a
-    resting order's state is 'confirmed' (there is no 'open' state) — matching on
-    type=='stop_market' finds nothing, which is how naked positions went unnoticed.
+    "Protected" = EITHER a resting broker stop OR a monitor-managed fractional
+    position (monitor_stop=1 / fractional=1 in the book). Robinhood cannot rest a
+    stop on a fractional share, so those are protected by rh_sell_monitor.py every
+    5 min — counting them as naked is a false alarm.
     Returns (None, None) if the broker cannot be read, so a token/API problem never
     masquerades as "no naked positions".
     """
     sys.path.insert(0, '/home/ubuntu/trading-system')
     from hardening.rh_client import RHClient
+    import boto3
     rh = RHClient()
     acct = rh._resolve_account()
     held = [p for p in rh.get_positions(acct) if float(p.get('quantity') or 0) > 0]
@@ -52,7 +54,26 @@ def _rh_protection_counts():
         and (o.get('state') or '').lower() in ('confirmed', 'queued', 'unconfirmed',
                                                'partially_filled')
     }
-    return len(held), sum(1 for p in held if p['symbol'] in resting)
+    # monitor-managed (fractional) symbols from the book
+    t = boto3.resource('dynamodb', region_name=os.getenv('AWS_REGION', 'us-east-1')) \
+        .Table(os.getenv('DYNAMODB_TABLE', 'trading-data'))
+    monitored = set()
+    lek = None
+    while True:
+        kw = dict(FilterExpression='begins_with(pk, :p)',
+                  ExpressionAttributeValues={':p': 'RHPOS#'})
+        if lek:
+            kw['ExclusiveStartKey'] = lek
+        resp = t.scan(**kw)
+        for it in resp.get('Items', []):
+            if it.get('sk') == 'current' and it.get('status') == 'OPEN' \
+                    and (it.get('monitor_stop') == '1' or it.get('fractional') == '1'):
+                monitored.add(it['pk'].split('#', 1)[1])
+        lek = resp.get('LastEvaluatedKey')
+        if not lek:
+            break
+    protected = sum(1 for p in held if p['symbol'] in resting or p['symbol'] in monitored)
+    return len(held), protected
 
 
 def main() -> None:
