@@ -264,4 +264,34 @@ concurrency ≈ 10–20 at 5%, NOT 5 at 15%.
 sub-$35 whole-share universe) and raise `RH_MAX_POSITIONS` ≥ 10; re-validate the deployed sub-$50
 universe edge (OOS 1.068 @5bps is barely above breakeven) before adding any capital to the lane.
 
+## Lane 52 — Pre-FOMC announcement drift (Lucca & Moench 2015) — NO-GO-WITH-REASON
+
+`research/pre_fomc_backtest.py` → `research/pre_fomc_results.json` + `research/fomc_calendar.json`
+(263 scheduled meetings 1994-2026 scraped from federalreserve.gov; unscheduled/cancelled/conference-call
+excluded). LONG SPY/QQQ at close of the trading day BEFORE the FOMC announcement day, EXIT at close of
+the announcement day (1-day hold). Round-trip bps deducted; PF on net returns.
+
+| universe | n | mean/trade @5bp | t | PF @5bp | IS / OOS (60/40) | ≥2016 PF @5bp | ≥2016 t | ≥2016 PF @10bp |
+|---|---|---|---|---|---|---|---|---|
+| SPY (1994-2026) | 259 | +19.3 bp | 2.67 | 1.580 | 1.91 / 1.15 | **0.997** | **-0.01** | 0.880 |
+| QQQ (1999-2026) | 218 | +29.6 bp | 2.58 | 1.658 | 1.78 / 1.47 | 1.399 | 1.12 | 1.276 |
+
+**The 24h pre-FOMC drift replicates in-sample (SPY t=2.67, QQQ t=2.58 full-sample) but is DEAD
+out-of-sample on SPY** — the canonical instrument. SPY ≥2016: PF 0.997 @5bp, t = −0.01 (pure noise);
+@10bp it is clearly negative (0.88). QQQ ≥2016 stays positive (PF 1.40) but statistically insignificant
+(t=1.12) and falls below the **1.3 OOS bar at 2× cost** (PF 1.276 @10bp). The ≥2019 QQQ read (PF 1.76,
+t=1.65) is beta-inflated: QQQ's *unconditional* 1-day drift is already +5.25 bp (vs SPY +4.07 bp), so the
+"premium" is partly the mega-cap bull, not the announcement.
+
+Presser/non-presser split confirms Kurov 2020 "the disappearing drift": the effect is IS-dominated (SPY
+presser IS PF 4.61 collapses to 1.10 post-2016; non-presser post-2016 PF 0.07–0.37). The drift only
+*ever* existed pre-2016, and it has not returned on the 8-presser/yr schedule.
+
+**Verdict:** NO-GO. The famous pre-FOMC drift is a real-but-decayed anomaly — it reproduces the
+Lucca-Moench headline on 1994-2015 data, then vanishes OOS (2022 bear = the "dip before the meeting"
+kept dipping). It is also a **long-beta timing overlay** (1-day hold, long-only, 8×/yr), redundant with
+the RSI2/REV2 dip-buying family, and would need a close-of-day entry on the primary venue that already
+lacks MOC (Lane 46). **Re-activate only if** OOS PF ≥1.3 at 2× cost is sustained on fresh data (≥2027)
+and it is shown non-redundant with the dip-buying sleeves.
+
 
