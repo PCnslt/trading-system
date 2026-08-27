@@ -155,9 +155,15 @@ class SellMonitor:
     def evaluate(self, pos):
         sym = pos['symbol']
         qty = float(pos['quantity'])
-        avg = float(pos.get('average_price') or 0) or None
-        st = get_state(self.table, sym)
-        status = st.get('status', 'OPEN')
+        # BROKER positions carry average_price=None on Robinhood, and no 'atr' field.
+        # The authoritative entry-price / ATR live in the BOOK (RHPOS#<sym>), written
+        # at entry time. Read them from there; the broker is only the source of
+        # truth for "what quantity do we actually hold right now".
+        row = get_state(self.table, sym)  # RHEXIT# state
+        book = self.table.get_item(Key={'pk': f'RHPOS#{sym}', 'sk': 'current'}).get('Item') or {}
+        avg = float(book.get('entry_price') or 0) or None
+        atr = float(book.get('atr') or 0) or None
+        status = row.get('status', 'OPEN')
         if status in ('SELLING', 'VERIFYING', 'CLOSED'):
             return None  # already in flight / done — never re-sell
 
@@ -169,13 +175,12 @@ class SellMonitor:
             _log(f'  {sym}: quote {px} vs last close {ref} — sanity bound, skipping')
             return None
 
-        # ATR from the entry row if present, else a fallback band (2%)
-        atr = float(pos.get('atr') or 0) or None
+        # ATR from the book; fall back to a 2% band only if the book lacks it.
         if atr is None:
             atr = 0.02 * (avg or px)
 
         # peak / trail tracking lives in the state row (durable, ratchet-only)
-        peak = float(st.get('peak') or 0) or max(avg or px, px)
+        peak = float(row.get('peak') or 0) or max(avg or px, px)
         peak = max(peak, px)
 
         action = None
