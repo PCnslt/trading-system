@@ -1,6 +1,6 @@
 # Trading Journal — Robinhood LIVE (account 515821577)
 
-Generated: 2026-08-27 16:31 EDT
+Generated: 2026-08-28 09:00 EDT
 
 ## Closed trades (realized P&L)
 
@@ -32,3 +32,4 @@ Generated: 2026-08-27 16:31 EDT
 - Stop = 2xATR (broker stop where whole-share; synthetic via sell-monitor for fractional).
 - Take-profit = trailing lock that arms at +2xATR, then trails at peak - 2xATR.
 - Source of truth = Robinhood broker, reconciled to this journal by rh_order_verifier.
+- Mistakes & lessons = see research/MISTAKES_LOG.md (dated root-cause record).
