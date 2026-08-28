@@ -68,7 +68,18 @@ def main():
     for p in sorted(positions, key=lambda x: x['symbol']):
         sym = p['symbol']
         qty = float(p['quantity'])
-        entry = float(p.get('average_buy_price') or 0)
+        entry = float(p.get('average_buy_price') or p.get('average_price') or 0)
+        if entry <= 0:
+            # RH cost-basis fields can be None — never write entry_price=0 (breaks the
+            # sell-monitor's stop calc). Resolve from the newest BUY fill order.
+            for o in rh.list_orders(acct) or []:
+                if (o.get('side') == 'buy' and (o.get('symbol') or '') == sym
+                        and o.get('average_price')):
+                    entry = float(o['average_price'])
+                    break
+        if entry <= 0:
+            print(f'{sym:7}{qty:>5.0f}{"??":>9}{"NONE":>9}{"":>9}  SKIP (cost-basis unknown)')
+            continue
         stop = stops.get(sym)
         if not stop:
             print(f'{sym:7}{qty:>5.0f}{entry:>9.2f}{"NONE":>9}{"":>9}  SKIP (no resting stop!)')

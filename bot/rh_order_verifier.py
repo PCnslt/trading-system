@@ -93,6 +93,19 @@ class Verifier:
                 out[o.get('symbol', '').upper()] = o
         return out
 
+    def _fill_price(self, sym):
+        """Real fill price from the newest BUY order for sym (RH position cost-basis
+        is often None; the order object carries average_price). Returns None if unknown."""
+        try:
+            for o in self.rh.list_orders(self.acct) or []:
+                if o.get('side') == 'buy' and (o.get('symbol') or '').upper() == sym.upper():
+                    px = o.get('average_price')
+                    if px not in (None, '', '0', '0.000000'):
+                        return float(px)
+        except Exception:
+            pass
+        return None
+
     def verify(self):
         broker = {p['symbol']: p for p in self.broker_positions()}
         book = self.book_open()
@@ -105,9 +118,15 @@ class Verifier:
                 self.mismatches.append(('NAKED', sym, p))
                 _log(f'  NAKED {sym}: broker {p.get("quantity")}sh, book has no OPEN row')
                 if not self.dry_run:
+                    # RH position objects carry average_price=None; the cost-basis field
+                    # is average_buy_price. Fall back to fill-order price; NEVER write an
+                    # empty entry_price (breaks the sell-monitor's stop/take-profit calc).
+                    ep = p.get('average_buy_price') or p.get('average_price') or None
+                    if ep in (None, '', '0', '0.000000'):
+                        ep = self._fill_price(sym)
                     self.table.put_item(Item={
                         'pk': f'RHPOS#{sym}', 'sk': 'current', 'status': 'OPEN',
-                        'entry_price': str(p.get('average_price') or ''),
+                        'entry_price': str(ep) if ep not in (None, '', '0') else 'UNKNOWN',
                         'size_shares': str(p.get('quantity') or ''),
                         'entry_date': today, 'source': 'reconcile-registered',
                         'ts': int(time.time())})

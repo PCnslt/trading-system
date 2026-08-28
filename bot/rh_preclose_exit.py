@@ -137,7 +137,7 @@ def main():
                 f'hold={hold}/{MAX_HOLD}')
             continue
 
-        shares = int(float(held[sym]['quantity']))
+        shares = float(held[sym]['quantity'])   # keep fractional; market sell supports it
         log(f'{sym:6} EXIT  {reason}  last={c:.2f} sma5={(ma5 or 0):.2f} '
             f'rsi2={(r2 or 0):.1f} hold={hold} shares={shares}')
         if a.dry_run:

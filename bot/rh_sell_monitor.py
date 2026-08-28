@@ -78,6 +78,16 @@ def _log(msg):
     print(f'[{_now().strftime("%H:%M:%S")}] {msg}', flush=True)
 
 
+def _fnum(v):
+    """Safe float parse; None for missing/non-numeric (incl 'UNKNOWN' sentinel)."""
+    if v in (None, '', '0', '0.000000', 'UNKNOWN', 'unknown'):
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
 def _state_key(sym):
     return f'{STATE_PREFIX}{sym}'
 
@@ -161,8 +171,13 @@ class SellMonitor:
         # truth for "what quantity do we actually hold right now".
         row = get_state(self.table, sym)  # RHEXIT# state
         book = self.table.get_item(Key={'pk': f'RHPOS#{sym}', 'sk': 'current'}).get('Item') or {}
-        avg = float(book.get('entry_price') or 0) or None
-        atr = float(book.get('atr') or 0) or None
+        avg = _fnum(book.get('entry_price'))
+        atr = _fnum(book.get('atr'))
+        if avg is None:
+            # Unknown cost-basis (RH returns None) — cannot compute a 2xATR stop from
+            # entry. Refuse to act rather than place a stop off a bad number.
+            _log(f'  {sym}: entry_price UNKNOWN — cannot size stop, skipping (needs manual)')
+            return None
         status = row.get('status', 'OPEN')
         if status in ('SELLING', 'VERIFYING', 'CLOSED'):
             return None  # already in flight / done — never re-sell
