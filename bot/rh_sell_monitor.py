@@ -216,39 +216,97 @@ class SellMonitor:
         return action
 
     # ---- one full scan ----
+    def _has_pending_sell(self, sym):
+        """True if there's an outstanding NON-STOP sell. A resting protective stop is
+        side='sell' + stop_price present + state 'confirmed' — that is NOT a pending
+        sell (it's the protection), so it must NOT gate the take-profit."""
+        for o in self.rh.list_orders(self.acct, symbol=sym) or []:
+            is_stop = o.get('stop_price') not in (None, '', '0', '0.000000')
+            if (o.get('side') == 'sell' and not is_stop
+                    and (o.get('state') or '').lower() in
+                    ('confirmed', 'queued', 'unconfirmed', 'new', 'partially_filled')):
+                return True
+        return False
+
+    def _resolve_inflight(self, sym, row):
+        """Resolve a SELLING/VERIFYING sell: filled->CLOSED, terminal->OPEN (re-arm),
+        still-working->leave. Polls by order_id, then ref_id. Never mints a new ref."""
+        orders = self.rh.list_orders(self.acct, symbol=sym) or []
+        oid = row.get('order_id') or ''
+        ref_id = row.get('ref_id') or ''
+        target = None
+        if oid:
+            target = next((o for o in orders if str(o.get('id')) == str(oid)), None)
+        if target is None and ref_id:
+            target = next((o for o in orders if o.get('ref_id') == ref_id), None)
+        peak = row.get('peak') or ''
+        if target is None:
+            age = int(time.time()) - int(row.get('ts') or 0)
+            if age > 180:
+                put_state(self.table, sym, 'OPEN', last_error='unresolved-inflight',
+                          peak=peak)
+                _log(f'  {sym}: in-flight sell unresolved >3min — back to OPEN (verify!)')
+            return
+        state = (target.get('state') or '').lower()
+        if state == 'filled':
+            pos = next((pp for pp in self.broker_positions() if pp['symbol'] == sym), None)
+            left = float(pos['quantity']) if pos else 0.0
+            if left <= 0:
+                put_state(self.table, sym, 'CLOSED', peak=peak)
+                _log(f'  {sym}: sell FILLED — CLOSED')
+            else:
+                put_state(self.table, sym, 'OPEN', peak=peak)
+                _log(f'  {sym}: partial fill, {left} left — re-armed OPEN')
+        elif state in ('rejected', 'cancelled', 'failed'):
+            put_state(self.table, sym, 'OPEN', last_error=state, peak=peak)
+            _log(f'  {sym}: sell {state} — re-armed OPEN')
+        # else: still queued/confirmed/working — leave in-flight
+
     def scan(self):
+        if not self.dry_run and not _in_rth():
+            _log('outside RTH — stand down (no market/limit sells)')
+            return 0
         positions = self.broker_positions()
         _log(f'scan: {len(positions)} position(s), dry_run={self.dry_run}, '
              f'RTH={_in_rth()}')
         acted = 0
         for p in positions:
             sym = p['symbol']
-            # RECONCILE-BEFORE-ACT: ignore any symbol with an outstanding sell
-            pending = self.pending_orders(sym)
-            if any(o.get('side') == 'sell' and (o.get('state') or '').lower()
-                   in ('confirmed', 'queued', 'unconfirmed', 'new', 'partially_filled')
-                   for o in pending):
-                put_state(self.table, sym, 'SELLING')
+            row = get_state(self.table, sym)
+            status = row.get('status', 'OPEN')
+            if status in ('SELLING', 'VERIFYING'):
+                self._resolve_inflight(sym, row)
+                continue
+            # RECONCILE-BEFORE-ACT: outstanding non-stop sell already in flight
+            if self._has_pending_sell(sym):
+                put_state(self.table, sym, 'SELLING', reason='pending')
                 continue
             action = self.evaluate(p)
             if action is None:
                 continue
             kind, fn, qty, *args = action
             ref_id = f'sellmon-{sym}-{int(time.time())}'
-            put_state(self.table, sym, 'SELLING', ref_id=ref_id, reason=kind)
+            peak = row.get('peak') or ''
+            put_state(self.table, sym, 'SELLING', ref_id=ref_id, reason=kind, peak=peak)
             try:
                 resp = fn(sym, qty, *args, ref_id=ref_id)
-                if resp.get('state') in ('rejected', 'cancelled', 'failed'):
-                    # permanent rejection -> not a retryable transient
-                    put_state(self.table, sym, 'OPEN', last_error=resp.get('state'))
-                    _log(f'  {sym}: {kind} REJECTED ({resp.get("state")}) — '
+                oid = str(resp.get('id') or resp.get('order_id') or '')
+                state = (resp.get('state') or '').lower()
+                if state in ('rejected', 'cancelled', 'failed'):
+                    put_state(self.table, sym, 'OPEN', last_error=state, peak=peak)
+                    _log(f'  {sym}: {kind} REJECTED ({state}) — '
                          f'flipped back to OPEN, human check advised')
                 else:
-                    put_state(self.table, sym, 'VERIFYING', ref_id=ref_id)
+                    put_state(self.table, sym, 'VERIFYING', ref_id=ref_id,
+                              order_id=oid, peak=peak, reason=kind)
                 acted += 1
             except Exception as e:
-                put_state(self.table, sym, 'OPEN', last_error=str(e))
-                _log(f'  {sym}: {kind} FAILED ({e!r}) — back to OPEN, will retry')
+                # KEEP the ref_id and stay SELLING: the order may have reached the
+                # broker before the response was lost. Next scan resolves by polling.
+                # NEVER mint a fresh ref_id here (that is a double-sell / short path).
+                put_state(self.table, sym, 'SELLING', ref_id=ref_id, last_error=str(e),
+                          peak=peak, reason=kind)
+                _log(f'  {sym}: {kind} submit error ({e!r}) — in-flight, will resolve')
         _log(f'scan complete: {acted} action(s) taken')
         return acted
 

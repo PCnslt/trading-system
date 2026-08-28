@@ -487,6 +487,7 @@ def _live_exit_position(client, sym, shares):
     # position and leave an ORPHAN sell-stop that can later trigger and SHORT the
     # account. Detect by stop_price presence (verified live 2026-08-25).
     cancelled = 0
+    stop_px = None
     for o in client.list_orders(symbol=sym):
         is_stop = (o.get('stop_price') not in (None, '', '0', '0.000000')
                    or o.get('type') in ('stop_market', 'stop_limit'))
@@ -494,12 +495,31 @@ def _live_exit_position(client, sym, shares):
                 and (o.get('state') or '').lower() in ('confirmed', 'queued',
                                                        'unconfirmed', 'new',
                                                        'partially_filled')):
+            if stop_px is None and o.get('stop_price'):
+                stop_px = float(o['stop_price'])
             try:
                 client.cancel_order(o['id'])
                 cancelled += 1
             except Exception as e:  # noqa: BLE001 - best-effort stop cancel
                 print(f'[live] cancel stop {o.get("id")} failed (non-fatal): {e!r}')
     print(f'[live] {sym}: cancelled {cancelled} resting stop order(s) before exit')
+    try:
+        return _place_and_confirm_sell(client, sym, shares)
+    except Exception:
+        # The stop was already cancelled; if the sell failed we must RE-ARM it or the
+        # position is left naked (2026-08-27 audit: the old path logged "left OPEN with
+        # stop intact" while the stop was gone). Re-place, best-effort, then re-raise.
+        if stop_px:
+            try:
+                client.place_stop(sym, 'long', int(shares), stop_px)
+                print(f'[live] {sym}: sell failed — RE-ARMED stop at {stop_px}')
+            except Exception as re_arm_err:
+                print(f'[live] {sym}: sell failed AND re-arm failed (NAKED!): {re_arm_err!r}')
+        raise
+
+
+def _place_and_confirm_sell(client, sym, shares):
+    from hardening.rh_client import RHOrderError
     fill = client.place_equity_order(sym, 'sell', 'market', quantity=str(shares))
     oid = fill.get('id')
     state = (fill.get('state') or '').lower()

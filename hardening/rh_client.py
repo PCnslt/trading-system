@@ -355,6 +355,28 @@ def make_ref_id(*parts) -> str:
     return str(uuid.uuid5(_REF_NS, canon))
 
 
+def _num(v):
+    """Safe positive-float parse. Treats '', None, '0', '0.000000' as missing (None).
+
+    Robinhood returns cumulative_quantity='0.000000' and average_price=0.0 on the
+    creation response until the fill settles; plain float('0.000000')==0.0 and is
+    truthy, so it must be treated as missing, not zero."""
+    try:
+        f = float(v)
+        return f if f > 0 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def _pos_qty(p):
+    """Position quantity as a positive float, or 0.0."""
+    try:
+        f = float(p.get("quantity") or 0)
+        return f if f > 0 else 0.0
+    except (TypeError, ValueError):
+        return 0.0
+
+
 # --------------------------------------------------------------------------
 # The client
 # --------------------------------------------------------------------------
@@ -797,22 +819,50 @@ class RHClient:
             time.sleep(RH_FILL_POLL_S)
             state = _refresh()
 
-        if state not in ("filled", "partially_filled"):
+        if state in ("filled", "partially_filled") and order_id:
+            # Re-read the settled order to get the real cumulative_quantity/average_price
+            # — but ONLY when the creation response's fill qty is suspect ("0.000000"/
+            # empty, the known gap). A healthy creation response already carries the real
+            # numbers; re-reading unconditionally can overwrite `entry` with the wrong
+            # order (list_orders(order_id=…) may not match).
+            if _num(entry.get("cumulative_quantity")) is None:
+                state = _refresh()
+        else:
             if order_id and state not in ("rejected", "cancelled", "canceled", "failed"):
                 try:
                     self.cancel_order(order_id, account_number=acct)
-                except Exception:  # noqa: BLE001 - cancel is best-effort; re-check decides
+                except Exception:  # noqa: BLE001 - cancel best-effort; re-check decides
                     pass
                 time.sleep(RH_FILL_POLL_S)
                 state = _refresh()
             if state not in ("filled", "partially_filled"):
-                raise RHOrderError(
-                    f"{sym}: entry not confirmed filled within {RH_FILL_TIMEOUT_S:.0f}s "
-                    f"(state={state!r}, order_id={order_id or 'n/a'}) — order cancelled, "
-                    f"nothing left resting")
+                if order_id:
+                    raise RHOrderError(
+                        f"{sym}: entry not confirmed filled within {RH_FILL_TIMEOUT_S:.0f}s "
+                        f"(state={state!r}, order_id={order_id}) — cancelled")
+                # No order_id: we could neither cancel nor verify — the order may be
+                # LIVE and fill seconds later. Check whether a position now exists and
+                # protect it; otherwise raise UNKNOWN (never claim "cancelled").
+                try:
+                    held = self.get_positions(account_number=acct) or []
+                except Exception:  # noqa: BLE001
+                    held = []
+                for hp in held:
+                    if ((hp.get("symbol") or "").upper() == sym.upper()
+                            and _pos_qty(hp) > 0):
+                        entry = {"symbol": sym, "state": "filled",
+                                 "cumulative_quantity": hp.get("quantity"),
+                                 "average_price": (hp.get("average_buy_price")
+                                                   or hp.get("average_price"))}
+                        state = "filled"
+                        break
+                if state not in ("filled", "partially_filled"):
+                    raise RHOrderError(
+                        f"{sym}: entry UNKNOWN — order_id unrecoverable and no position "
+                        f"visible; VERIFY positions manually (possible live exposure)")
 
-        filled_qty = float(entry.get("cumulative_quantity")
-                           or entry.get("quantity") or 0)
+        filled_qty = _num(entry.get("cumulative_quantity")) \
+            or _num(entry.get("quantity")) or 0.0
         position_side = "long" if side == "buy" else "short"
         stop_qty = int(filled_qty)
         # A sub-1-share OR non-whole-share fill cannot carry a whole-share stop

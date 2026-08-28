@@ -82,7 +82,18 @@ def main():
     for p in positions:
         sym = p['symbol']
         qty = float(p['quantity'])
-        entry = float(p.get('average_buy_price') or 0)
+        entry = float(p.get('average_buy_price') or p.get('average_price') or 0)
+        if entry <= 0:
+            # RH cost-basis is often None. A None cost basis must NOT produce a $0.01
+            # stop (which is silently naked). Resolve from newest BUY fill, else skip.
+            for o in rh.list_orders(acct) or []:
+                if (o.get('side') == 'buy' and (o.get('symbol') or '') == sym
+                        and o.get('average_price')):
+                    entry = float(o['average_price'])
+                    break
+        if entry <= 0:
+            print(f'  {sym:6} qty={qty} — cost-basis UNKNOWN, SKIP (manual attention)')
+            continue
         total += qty * entry
         if qty < 1 or qty != int(qty):
             # FRACTIONAL position: Robinhood cannot rest a stop on a sub-share qty.
@@ -110,7 +121,7 @@ def main():
             oid = str(res.get('id') or res.get('order_id') or '')
             print(f'  {sym:6} qty={qty} entry={entry:.2f} -> STOP {stop:.2f} (-{pct:.1f}%) id={oid or "?"}')
             table.put_item(Item={
-                'pk': f'POSITION#{SCOPE}:{sym}', 'sk': 'current',
+                'pk': f'RHPOS#{sym}', 'sk': 'current',
                 'status': 'OPEN', 'entry_date': str(dt.date.today()),
                 'entry_price': str(entry), 'stop_price': str(stop),
                 'size_shares': str(qty), 'pos': str(qty),
