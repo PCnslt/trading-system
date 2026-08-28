@@ -50,6 +50,15 @@ def _open_rows(tbl):
     return out
 
 
+def _triage_verdict(tbl, sym, today):
+    """Agentic verdict from GAPTRIAGE#<sym>, or None if the triage agent hasn't run."""
+    try:
+        it = tbl.get_item(Key={'pk': f'GAPTRIAGE#{sym}', 'sk': today}).get('Item')
+        return (it or {}).get('verdict')
+    except Exception:
+        return None
+
+
 def main():
     from hardening.rh_client import RHClient
     from bot.news_gate import check_symbol
@@ -112,9 +121,11 @@ def main():
         gap = (px / pc - 1.0) * 100 if pc > 0 else 0
         if gap < GAP_PCT or px < sma50 or dv < MIN_DV:
             continue
-        verdict = check_symbol(sym)
-        if verdict.startswith('NEGATIVE'):
-            print(f'  SKIP {sym} (+{gap:.1f}%) — news gate: {verdict}')
+        verdict, _why, _headlines = check_symbol(sym)
+        tri = _triage_verdict(tbl, sym, today)
+        if tri == 'CURRENT_NEGATIVE' or verdict.startswith('NEGATIVE'):
+            src = f'agent:{tri}' if tri else f'kw:{verdict}'
+            print(f'  SKIP {sym} (+{gap:.1f}%) — news gate ({src})')
             continue
         tbl.put_item(Item={'pk': f'GAP#{sym}', 'sk': 'current', 'status': 'OPEN',
                            'entry_date': today, 'entry_price': str(px),

@@ -27,10 +27,12 @@ bootstrap()
 
 import boto3
 import pandas as pd
+import time
 
 NY = ZoneInfo('America/New_York')
 REGION = os.getenv('AWS_REGION', 'us-east-1')
 BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
+DDB_TABLE = os.getenv('DDB_TABLE', 'trading-data')
 GAP_PCT = float(os.getenv('GAP_GO_GAP_PCT', '3.0'))
 MIN_DV = float(os.getenv('GAP_GO_MIN_DV', '2e7'))   # $20M avg daily dollar volume
 TOP_N = int(os.getenv('GAP_GO_TOP_N', '15'))
@@ -91,11 +93,23 @@ def main():
 
     cands.sort(key=lambda c: c['gap']*c['dv'], reverse=True)
     print(f'\n{"sym":6}{"gap%":>8}{"px":>9}{"prev":>9}{"$volM":>8}  news')
+    top = []
     for c in cands[:TOP_N]:
-        verdict = check_symbol(c['sym'])
+        verdict, why, headlines = check_symbol(c['sym'])
         print(f'{c["sym"]:6}{c["gap"]:>+8.1f}{c["px"]:>9.2f}{c["pc"]:>9.2f}{c["dv"]:>8.1f}  {verdict}')
+        top.append({'sym': c['sym'], 'gap_pct': round(c['gap'], 2),
+                    'px': round(c['px'], 2), 'dv_m': round(c['dv'], 1),
+                    'kw_verdict': verdict, 'headlines': headlines[:6]})
     if not cands:
         print('  no gap-and-go candidates this window')
+    # persist candidates + headlines for the catalyst-triage agent to classify
+    try:
+        tbl = boto3.resource('dynamodb', region_name=REGION).Table(DDB_TABLE)
+        tbl.put_item(Item={'pk': f'GAPSCAN#{dt.date.today().isoformat()}', 'sk': 'candidates',
+                           'ts': int(time.time()), 'top': json.dumps(top)})
+        print(f'  persisted {len(top)} candidate(s) for triage')
+    except Exception as e:  # noqa: BLE001 - persistence is best-effort, not fatal
+        print(f'  persist warn: {e!r}')
 
 
 if __name__ == '__main__':
