@@ -95,6 +95,7 @@ lines.append('')
 lines.append('- Stop = 2xATR (broker stop where whole-share; synthetic via sell-monitor for fractional).')
 lines.append('- Take-profit = trailing lock that arms at +2xATR, then trails at peak - 2xATR.')
 lines.append('- Source of truth = Robinhood broker, reconciled to this journal by rh_order_verifier.')
+lines.append('- Mistakes & lessons = see research/MISTAKES_LOG.md (dated root-cause record).')
 
 out = '\n'.join(lines) + '\n'
 path = os.path.join(_ROOT, 'research', 'TRADING_JOURNAL.md')
