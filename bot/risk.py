@@ -17,7 +17,9 @@ PERSISTENCE (execution-hardening Phase 1):
   an unpatchable ledger.
 """
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime
+from zoneinfo import ZoneInfo
+_ET = ZoneInfo('America/New_York')
 import time
 
 from hardening.risk_ledger import RiskStateUnavailable
@@ -93,7 +95,7 @@ class RiskEngine:
         self.daily_pnl = 0.0
         self.daily_trades = 0
         self.consecutive_losses = 0
-        self._day = datetime.now(timezone.utc).date()
+        self._day = datetime.now(_ET).date()
         self.halted = False
         self.halt_reason = None
         self.open_positions = 0
@@ -146,7 +148,7 @@ class RiskEngine:
 
     # ---- rollover ----
     def _rollover_if_new_day(self):
-        today = datetime.now(timezone.utc).date()
+        today = datetime.now(_ET).date()
         if today != self._day:
             self._day = today
             self.daily_pnl = 0.0

@@ -653,7 +653,7 @@ def main():
         EXECUTION_MODE = 'PAPER'
 
     table = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
-    today = dt.date.today().isoformat()
+    today = dt.datetime.now(ZoneInfo('America/New_York')).date().isoformat()
 
     # Data-freshness: signals MUST be computed on the last CLOSED session.
     # This used to be a blanket "refuse to run before 17:00 ET" guard, which made

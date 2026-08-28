@@ -7,6 +7,8 @@ reads those verdicts. This module is the only thing that touches the triage tabl
 """
 import json, os, sys, time
 import datetime as dt
+from zoneinfo import ZoneInfo
+_ET = ZoneInfo('America/New_York')
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
@@ -26,7 +28,7 @@ def _t():
 
 def read():
     tbl = _t()
-    today = dt.date.today().isoformat()
+    today = dt.datetime.now(_ET).date().isoformat()
     item = tbl.get_item(Key={'pk': f'GAPSCAN#{today}', 'sk': 'candidates'}).get('Item')
     if not item:
         print('NO_CANDIDATES')
@@ -41,7 +43,7 @@ def write(sym, verdict, reason):
     tbl = _t()
     tbl.put_item(Item={
         'pk': f'GAPTRIAGE#{sym.upper()}',
-        'sk': dt.date.today().isoformat(),
+        'sk': dt.datetime.now(_ET).date().isoformat(),
         'verdict': verdict, 'reason': reason, 'ts': int(time.time()),
     })
     print(f'wrote GAPTRIAGE#{sym.upper()} = {verdict}')

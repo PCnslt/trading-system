@@ -13,6 +13,10 @@ Also writes POSITION# rows so the bot/reconciler can manage the positions.
 """
 import os, sys, time, json
 import datetime as dt
+from zoneinfo import ZoneInfo
+_ET = ZoneInfo('America/New_York')
+def _today():
+    return dt.datetime.now(_ET).date()
 
 _ROOT = '/home/ubuntu/trading-system'
 sys.path.insert(0, _ROOT)
@@ -117,12 +121,12 @@ def main():
         try:
             res = rh.place_stop(sym, 'long', qty, stop, account_number=acct,
                                 time_in_force='gtc',
-                                client_order_ref=f'emergency-protect-{sym}-{dt.date.today()}')
+                                client_order_ref=f'emergency-protect-{sym}-{_today()}')
             oid = str(res.get('id') or res.get('order_id') or '')
             print(f'  {sym:6} qty={qty} entry={entry:.2f} -> STOP {stop:.2f} (-{pct:.1f}%) id={oid or "?"}')
             table.put_item(Item={
                 'pk': f'RHPOS#{sym}', 'sk': 'current',
-                'status': 'OPEN', 'entry_date': str(dt.date.today()),
+                'status': 'OPEN', 'entry_date': str(_today()),
                 'entry_price': str(entry), 'stop_price': str(stop),
                 'size_shares': str(qty), 'pos': str(qty),
                 'atr': str(round(atr, 4)), 'side': 'LONG',

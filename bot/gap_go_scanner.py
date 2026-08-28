@@ -105,7 +105,7 @@ def main():
     # persist candidates + headlines for the catalyst-triage agent to classify
     try:
         tbl = boto3.resource('dynamodb', region_name=REGION).Table(DDB_TABLE)
-        tbl.put_item(Item={'pk': f'GAPSCAN#{dt.date.today().isoformat()}', 'sk': 'candidates',
+        tbl.put_item(Item={'pk': f'GAPSCAN#{dt.datetime.now(NY).date().isoformat()}', 'sk': 'candidates',
                            'ts': int(time.time()), 'top': json.dumps(top)})
         print(f'  persisted {len(top)} candidate(s) for triage')
     except Exception as e:  # noqa: BLE001 - persistence is best-effort, not fatal
