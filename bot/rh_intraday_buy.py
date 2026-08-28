@@ -38,6 +38,8 @@ TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
 STOP_ATR = float(os.getenv('EXIT_STOP_ATR', '2.0'))
 TP_ATR = float(os.getenv('EXIT_TP_ATR', '2.0'))
+MAX_POS_PCT = float(os.getenv('RH_MAX_POS_PCT', '0.15'))
+LIVE_CAPITAL = float(os.getenv('RH_LIVE_CAPITAL', '0') or 0) or float(os.getenv('RH_PAPER_CAPITAL', '700'))
 
 
 def atr14(df, n=14):
@@ -98,7 +100,27 @@ def main():
     for i in range(0, len(a.pairs), 2):
         sym = a.pairs[i].upper()
         size_usd = float(a.pairs[i + 1])
-        print(f'\n=== {sym}  \${size_usd:.2f} ===')
+        print(f'\n=== {sym}  ${size_usd:.2f} ===')
+
+        # 0. size + dedup guards (2026-08-28 audit: this path had NO guard — a typo or
+        #    a double-run for an already-held symbol could silently double exposure).
+        if size_usd <= 0:
+            print(f'  SKIP {sym}: size_usd {size_usd} <= 0'); continue
+        cap = MAX_POS_PCT * LIVE_CAPITAL
+        if size_usd > cap:
+            print(f'  SKIP {sym}: ${size_usd:.0f} > {MAX_POS_PCT:.0%} cap (${cap:.0f})'); continue
+        if not a.live:
+            pass  # DRY: skip broker checks, still show the plan
+        else:
+            try:
+                held = {p.get('symbol', '').upper() for p in (rh.get_positions(acct) or [])}
+            except Exception:
+                held = set()
+            if sym.upper() in held:
+                print(f'  SKIP {sym}: already held at broker'); continue
+            cur = table.get_item(Key={'pk': f'RHPOS#{sym}', 'sk': 'current'}).get('Item') or {}
+            if cur.get('status') == 'OPEN':
+                print(f'  SKIP {sym}: already OPEN in book'); continue
 
         # 1. news gate
         verdict, why, _ = check_symbol(sym)
@@ -133,10 +155,14 @@ def main():
                         break
                 time.sleep(0.6)
         state, ep, oid = poll_fill(rh, acct, sym, 'buy', oid, state)
-        if state not in ('filled', 'partially_filled') or not ep:
+        try:
+            ep_num = float(ep) if ep else 0.0
+        except (TypeError, ValueError):
+            ep_num = 0.0
+        if state not in ('filled', 'partially_filled') or ep_num <= 0:
             print(f'  !!! {sym} NOT confirmed filled (state={state}, avg={ep}) — book NOT written')
             continue
-        ep = float(ep)
+        ep = ep_num
         qty = size_usd / ep
         stop = ep - STOP_ATR * atr
         tp = ep + TP_ATR * atr

@@ -52,6 +52,7 @@ import os
 import sys
 import time
 import datetime as dt
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -427,11 +428,19 @@ def assert_bars_fresh(bars, live):
     """
     if not bars:
         return False, 'no bars loaded'
+    # Per-symbol staleness: a single fresh symbol must NOT mask N stale ones (the
+    # 2026-08-25 "nine days stale" class). Any traded name whose last bar is older
+    # than the limit blocks LIVE. Also compute 'today' in ET so a 16:00 ET bar written
+    # during the next UTC day isn't misread as a day old.
+    today_et = dt.datetime.now(ZoneInfo('America/New_York')).date()
+    stale = [s for s, df in bars.items()
+             if (today_et - df.index[-1].date()).days > IBKR_MAX_STALE_DAYS]
     newest = max(df.index[-1] for df in bars.values())
-    age = (dt.date.today() - newest.date()).days
+    age = (today_et - newest.date()).days
     msg = f'newest bar {newest.date()} ({age}d old), {len(bars)} symbols'
-    if live and age > IBKR_MAX_STALE_DAYS:
-        return False, f'STALE DATA — {msg}, limit {IBKR_MAX_STALE_DAYS}d'
+    if live and stale:
+        return False, (f'STALE DATA — {len(stale)} symbol(s) > '
+                       f'{IBKR_MAX_STALE_DAYS}d old (e.g. {stale[:3]})')
     return True, msg
 
 
@@ -743,6 +752,7 @@ def main():
     committed = len(book)  # PENDING + OPEN
     held_syms = set()
     held_qty = {}
+    broker_read_ok = False   # True when get_positions() succeeded (even if 0 positions)
     live_capital = RH_LIVE_CAPITAL if RH_LIVE_CAPITAL > 0 else PAPER_CAPITAL
 
     # LIVE client (lazy, only when EXECUTION_MODE == 'LIVE'). Fail-closed: a failed
@@ -770,6 +780,7 @@ def main():
             committed = max(committed, len(held))
             held_syms = {p.get('symbol', '').upper() for p in held}
             held_qty = {p.get('symbol', '').upper(): float(p.get('quantity') or 0) for p in held}
+            broker_read_ok = True
             if len(held) != open_count:
                 print(f'  [live] broker holds {len(held)} positions vs book {open_count} '
                       f'OPEN — cap counted from broker (committed={committed}/{pos_cap})')
@@ -838,7 +849,7 @@ def main():
             # on a symbol the book still thinks is OPEN, the position was already closed
             # — record it instead of re-selling shares that no longer exist (which
             # previously raised "not confirmed" and left a phantom OPEN forever).
-            if EXECUTION_MODE == 'LIVE' and client is not None and held_syms:
+            if EXECUTION_MODE == 'LIVE' and client is not None and broker_read_ok:
                 bk_qty = held_qty.get(sym.upper(), 0.0)
                 book_shares = float(pos.get('size_shares') or 0)
                 flat = sym.upper() not in held_syms or (book_shares > 0 and bk_qty < book_shares * 0.99)

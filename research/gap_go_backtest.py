@@ -57,6 +57,7 @@ def simulate(sym, df, exit_mode, cost):
     days = df['day'].unique()
     # prior close + rolling avg opening volume per day
     day_close = df.groupby('day')['close'].last()
+    day_open = df.groupby('day')['open'].first()
     opvol = df.groupby('day')['volume'].apply(lambda s: s.head(OPEN_MIN).sum())
     opvol_avg = opvol.rolling(20, min_periods=10).mean().shift(1)
 
@@ -77,8 +78,8 @@ def simulate(sym, df, exit_mode, cost):
         if exit_mode == 'close':
             exit_px = ddf['close'].iloc[-1]
         elif exit_mode == 'nextopen':
-            nxt = day_close.iloc[i + 1] if i + 1 < len(days) else ddf['close'].iloc[-1]
-            exit_px = nxt
+            # exit at the NEXT session's OPEN (fix 2026-08-28: was next day's CLOSE)
+            exit_px = day_open.iloc[i + 1] if i + 1 < len(days) else ddf['close'].iloc[-1]
         elif exit_mode == 'trail':
             # trail 1 ATR(14, on 1-min) from entry peak
             atr = (ddf['high'] - ddf['low']).rolling(14).mean().iloc[-1]
