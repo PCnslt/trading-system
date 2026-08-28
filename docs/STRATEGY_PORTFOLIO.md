@@ -4,7 +4,7 @@
 > winner-takes-all: nothing is ever deleted, every NO-GO stays here with its
 > reason **and** the precise trigger that would re-activate it. If a lane exists
 > exists in a backtest, a bot file, a gate report, or a plan doc, it appears here.
-> Last updated: **2026-08-24**.
+> Last updated: **2026-08-28**.
 
 ---
 
@@ -328,6 +328,35 @@ construction clears **OOS PF ≥ 1.3**; at 2× cost (10 bp) *every* pooled/non-F
 family and the already-killed FOMC lane. **Re-activate only if** the CPI/PPI/NFP-only spread
 reaches significance (t≥2) on fresh post-2026 data net of 2× cost, shown non-redundant with
 Lane 52's FOMC drift.
+
+## Lane 54 — Pre-holiday drift (Ariel 1990 / Lakonishok-Smidt 1988) — NO-GO-WITH-REASON
+
+`research/preholiday_backtest.py` → `research/preholiday_results.json`. LONG SPY/QQQ/DIA at the
+CLOSE of the trading day BEFORE the pre-holiday session, EXIT at the CLOSE of the pre-holiday
+(last) trading day (1-day hold, ~10 RT/yr). NYSE scheduled market-holiday calendar (observed
+closure dates, Good Friday via Computus, Juneteenth since 2022, MLK since 1998; special closures
+like 9/11/funerals excluded as non-predictable). Round-trip bps deducted; PF on net returns.
+IS/OOS = repo 60/40 chronological AND pre-2000/2000+ split.
+
+| universe | n | gross/trade | PF @5bp | PF @10bp | OOS(60/40) @10bp | post-2000 PF @10bp | PF @15bp |
+|---|---|---|---|---|---|---|---|
+| SPY (1993–2026) | 140 | +16.7 bp | 1.46 (t=1.45) | 1.24 | 1.23 | 1.35 | 1.06 |
+| QQQ (1999–2026) | 116 | +26.3 bp | 1.59 (t=1.70) | 1.43 | 1.06 | 1.32 | 1.28 |
+| DIA (1998–2026) | 121 | +15.4 bp | 1.40 (t=1.27) | 1.19 | 0.91 | 1.17 | 1.01 |
+
+**Verdict: NO-GO.** The pre-holiday premium reproduces directionally — gross **+15–26 bp/trade**
+(~3–4× the +4–5 bp unconditional 1d drift), win 55–61% — and is concentrated in Good Friday
+(+34–62 bp), Thanksgiving (+8–40 bp) and Independence Day (+13–18 bp), while New Year is
+strongly NEGATIVE (SPY −16.7 bp, QQQ −40.3 bp gross). But it does **not clear OOS PF ≥ 1.3 at
+2× cost**: at 10 bp round-trip the 60/40 OOS PF is 1.23 / 1.06 / 0.91 (SPY/QQQ/DIA) and
+post-2000 is 1.35 / 1.32 / 1.17 (DIA fails); at 3× cost (15 bp) every construction is ≈1.0 and
+OOS < 1.0. It is a ~10-trade/yr **long-beta 1-day timing overlay** with weak statistical
+significance (t=1.3–1.7, none clears 2.0), and the post-holiday reopen day is ALSO positive
+(+13.6 / +29.2 / +19.4 bp) — the literature's "negative post-holiday" contra-leg does not hold
+in modern data either. Redundant with the dip-buying family / long-beta exposure. **Re-activate
+only if** a construction shows OOS PF ≥ 1.3 at 10 bp sustained on fresh data (≥2027) and is
+shown non-redundant with the beta/dip-buying sleeves (e.g. a Good-Friday-only or
+holiday-cluster variant carrying its own beta hedge).
 
 
 
