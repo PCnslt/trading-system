@@ -78,6 +78,10 @@ S3_BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
 
 # ---- strategy parameters (paper capital is a SIMULATION input, not real money) ----
 PAPER_CAPITAL = float(os.getenv('RH_PAPER_CAPITAL', '700'))
+# LIVE sizing MUST use real account equity, not the sim number. Set RH_LIVE_CAPITAL
+# to the account's actual equity (cash + holdings) and keep it current, else LIVE
+# sizing silently falls back to the $700 sim figure (wrong by the ratio of real/700).
+RH_LIVE_CAPITAL = float(os.getenv('RH_LIVE_CAPITAL', '0') or 0)
 RISK_PCT = float(os.getenv('RH_RISK_PCT', '0.01'))        # 1%/trade
 MAX_POS_PCT = float(os.getenv('RH_MAX_POS_PCT', '0.05'))  # 5% capital/name cap
 DAY_LOSS_CAP = float(os.getenv('RH_DAY_LOSS_CAP', '150')) # $/day realized-loss cap
@@ -669,6 +673,15 @@ def main():
                 return
         except Exception as e:
             print(f'[{today}] dedupe read failed (fail-open): {e!r}')
+        # Write the run marker NOW (durably, not deferred), so a mid-run crash cannot
+        # re-execute today and double-enter. The deferred flush at end-of-run was the
+        # 2026-08-27 audit finding: a crash after orders but before flush lost BOTH the
+        # book writes and this marker, and the next run re-bought everything.
+        try:
+            table.put_item(Item={'pk': 'RUN#live_equities', 'sk': today,
+                                 'ts': int(time.time()), 'started': True})
+        except Exception as e:
+            print(f'[{today}] run-marker write failed (fail-open): {e!r}')
 
     # LIVE universe: whole-share lane uses the liquid sub-$35 sub-universe (the S&P100
     # universe is >$35, so $700 whole-share can't buy it). When FRACTIONAL_ENTRIES is
@@ -728,6 +741,9 @@ def main():
     book = load_book(table, args.dry_run)
     open_count = sum(1 for p in book.values() if p.get('status') == 'OPEN')
     committed = len(book)  # PENDING + OPEN
+    held_syms = set()
+    held_qty = {}
+    live_capital = RH_LIVE_CAPITAL if RH_LIVE_CAPITAL > 0 else PAPER_CAPITAL
 
     # LIVE client (lazy, only when EXECUTION_MODE == 'LIVE'). Fail-closed: a failed
     # init disables LIVE entries for the whole run (paper/other lanes unaffected).
@@ -752,6 +768,8 @@ def main():
             held = [p for p in client.get_positions() or []
                     if float(p.get('quantity') or 0) > 0]
             committed = max(committed, len(held))
+            held_syms = {p.get('symbol', '').upper() for p in held}
+            held_qty = {p.get('symbol', '').upper(): float(p.get('quantity') or 0) for p in held}
             if len(held) != open_count:
                 print(f'  [live] broker holds {len(held)} positions vs book {open_count} '
                       f'OPEN — cap counted from broker (committed={committed}/{pos_cap})')
@@ -815,6 +833,51 @@ def main():
 
         # --- 2. manage OPEN: stop -> time -> revert (backtest priority order) ---
         if pos and pos.get('status') == 'OPEN':
+            # BROKER-STOP-FILL RECONCILIATION (2026-08-27 audit): the gtc broker stop
+            # fires intraday independently of this daily run. If the broker is now flat
+            # on a symbol the book still thinks is OPEN, the position was already closed
+            # — record it instead of re-selling shares that no longer exist (which
+            # previously raised "not confirmed" and left a phantom OPEN forever).
+            if EXECUTION_MODE == 'LIVE' and client is not None and held_syms:
+                bk_qty = held_qty.get(sym.upper(), 0.0)
+                book_shares = float(pos.get('size_shares') or 0)
+                flat = sym.upper() not in held_syms or (book_shares > 0 and bk_qty < book_shares * 0.99)
+                if flat:
+                    entry_price = _f(pos.get('entry_price')) or 0.0
+                    fill_px = None
+                    try:
+                        for o in client.list_orders(symbol=sym) or []:
+                            if o.get('side') == 'sell' and (o.get('state') or '').lower() == 'filled':
+                                fill_px = _f(o.get('average_price')) or fill_px
+                    except Exception:
+                        pass
+                    exit_px = fill_px or entry_price
+                    pnl = (exit_px - entry_price) * (book_shares if book_shares else bk_qty)
+                    pnl_pct = (exit_px / entry_price - 1.0) if entry_price > 0 else 0.0
+                    if pnl < 0:
+                        day_loss_used += -pnl
+                    put_item(table, f'RHTRADE#{sym}', pos['entry_date'], {
+                        'entry_date': pos['entry_date'], 'entry_price': _s(entry_price),
+                        'exit_date': str(today_dt.date()), 'exit_price': _s(exit_px),
+                        'exit_reason': 'broker-stop-fill (reconciled)',
+                        'hold_days': 0,
+                        'size_usd': pos.get('size_usd', ''), 'pnl_usd': _s(pnl),
+                        'pnl_pct': _s(pnl_pct), 'ts': int(time.time())}, args.dry_run)
+                    put_item(table, f'RHPOS#{sym}', 'current', {
+                        'status': 'CLOSED', 'entry_date': pos['entry_date'],
+                        'entry_price': _s(entry_price), 'exit_date': str(today_dt.date()),
+                        'exit_price': _s(exit_px), 'exit_reason': 'broker-stop-fill (reconciled)',
+                        'pnl_usd': _s(pnl), 'pnl_pct': _s(pnl_pct), 'ts': int(time.time())},
+                        args.dry_run)
+                    print(f'  [live] {sym}: broker flat (stop filled) — reconciled CLOSED '
+                          f'pnl=${pnl:.2f}')
+                    exits.append({'symbol': sym, 'exit_reason': 'broker-stop-fill',
+                                  'exit_price': _s(exit_px), 'entry_price': _s(entry_price),
+                                  'pnl_usd': _s(pnl), 'pnl_pct': _s(pnl_pct),
+                                  'hold_days': 0})
+                    pos = None
+                    exited = True
+                    continue
             stop = _f(pos.get('stop_price')) or 0.0
             entry_price = _f(pos.get('entry_price')) or 0.0
             hold = 0
@@ -891,8 +954,18 @@ def main():
                     print(f'  {_why}')
                     continue
             if r2 < RSI2_THR and c > ma200:
+                # PER-SYMBOL broker dedup: never place a second buy on a name the
+                # broker already holds (the book can be empty while positions exist).
+                if EXECUTION_MODE == 'LIVE' and sym.upper() in held_syms:
+                    put_item(table, f'RHSIG#{sym}', today, {
+                        'action': 'NONE', 'signal': 'NONE', 'strategy': 'RSI2',
+                        'rsi2': _s(r2), 'close': _s(c),
+                        'reason': f'broker already holds {sym} ({held_qty.get(sym.upper())}sh)',
+                        'mode': 'PAPER', 'execution': 'NONE', 'ts': int(time.time())},
+                        args.dry_run)
+                    continue
                 if committed < pos_cap and day_loss_used < DAY_LOSS_CAP:
-                    size_usd, stop_pct = position_size(PAPER_CAPITAL, c, atr or 0.0)
+                    size_usd, stop_pct = position_size(live_capital, c, atr or 0.0)
                     if size_usd > 0:
                         stop_price = c - STOP_ATR * (atr or 0.0)
                         # informational regime flag (NOT a gate — validated & rejected)
