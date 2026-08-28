@@ -21,7 +21,7 @@ gate can never deadlock a buy; the caller decides whether UNKNOWN is a block.
 Use: from bot.news_gate import check_symbol
 """
 from __future__ import annotations
-import json, os, sys, urllib.request
+import json, os, re, sys, urllib.request
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
@@ -68,22 +68,39 @@ def _search(query: str, num: int = 6) -> list[dict]:
         return []
 
 
+def _relevant(blob: str, sym: str, name: str) -> bool:
+    """Is this headline actually ABOUT the company? Ticker or known company name must
+    appear as a whole word. Fixes 2026-08-28: the gate flagged 'China Tightens Export
+    Controls on Japan' as a SEVERE catalyst for PTEN/BTU, and 'Polypropylene Corrugated
+    Boxes' for BOX. Word-boundary matching stops the ticker 'box' from matching the
+    common word 'boxes'."""
+    s = sym.lower()
+    if re.search(rf'\b{re.escape(s)}\b', blob):
+        return True
+    if name and name.lower() != s:
+        return re.search(rf'\b{re.escape(name.lower())}\b', blob) is not None
+    return False
+
+
 def check_symbol(sym: str) -> tuple[str, str, list[str]]:
     sym = sym.upper()
     name = COMPANY.get(sym, sym)
     headlines = []
+    milds = []
     for q in (f'{name} {sym} stock news why down', f'{name} {sym} downgrade guidance china'):
         for r in _search(q):
             title = r.get('title') or ''
             snip = r.get('snippet') or ''
             headlines.append(title)
             blob = f'{title} {snip}'.lower()
+            if not _relevant(blob, sym, name):
+                continue                       # not about this company — ignore
             if any(w in blob for w in SEVERE_WORDS):
                 return 'NEGATIVE', f'SEVERE catalyst: {title}', headlines
-    # mild flags: warn but do not hard-block
-    mild = [h for h in headlines if any(w in h.lower() for w in MILD_WORDS)]
-    if mild:
-        return 'WARN', f'{len(mild)} mild flag(s) (downgrade/etc): {mild[0]}', headlines
+            if any(w in blob for w in MILD_WORDS):
+                milds.append(title)
+    if milds:
+        return 'WARN', f'{len(milds)} mild flag(s) (downgrade/etc): {milds[0]}', headlines
     if not headlines:
         return 'UNKNOWN', 'no news results (search unavailable)', []
     return 'CLEAN', 'no negative catalyst in top headlines', headlines

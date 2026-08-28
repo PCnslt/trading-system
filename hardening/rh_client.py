@@ -569,8 +569,16 @@ class RHClient:
         return q
 
     def get_quotes(self, symbols: list[str]) -> list[dict]:
-        raw = self._tool("get_equity_quotes", symbols=[s.upper() for s in symbols])
-        return ((raw.get("data") or {}).get("results") or [])
+        """Live quotes for `symbols`. Chunks internally: the Robinhood MCP
+        `get_equity_quotes` endpoint returns HTTP 414 "Request-URI Too Large" above
+        ~50-60 symbols (hit 2026-08-28 passing a 1,452-name universe). Batch at 50 so
+        every caller — including future full-universe scanners — is safe by default."""
+        out = []
+        syms = list(dict.fromkeys(s.upper() for s in symbols if s))
+        for i in range(0, len(syms), 50):
+            raw = self._tool("get_equity_quotes", symbols=syms[i:i + 50])
+            out.extend((raw.get("data") or {}).get("results") or [])
+        return out
 
     # ---- research (Robinhood MCP research surface — Cortex-adjacent) ----
     def get_earnings_calendar(self, start_date: str | None = None, days: int = 7,
