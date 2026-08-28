@@ -294,4 +294,40 @@ the RSI2/REV2 dip-buying family, and would need a close-of-day entry on the prim
 lacks MOC (Lane 46). **Re-activate only if** OOS PF ≥1.3 at 2× cost is sustained on fresh data (≥2027)
 and it is shown non-redundant with the dip-buying sleeves.
 
+## Lane 53 — Macroeconomic announcement-day premium (Savor & Wilson 2013) — NO-GO-WITH-REASON
+
+`research/macro_announcement_premium.py` → `research/macro_announcement_results.json` +
+`research/macro_release_dates.json` (ALFRED keyless release dates: CPI rid=10, PPI rid=46,
+Employment Situation rid=50, downloaded 2026-08-27) + `research/fomc_calendar.json`. LONG
+SPY/QQQ at the CLOSE of the trading day BEFORE a scheduled macro release (CPI/PPI/NFP/FOMC),
+EXIT at the CLOSE of the announcement day (1-day hold, close-to-close). Round-trip bps
+deducted; PF on net returns.
+
+| universe | subset | n | mean/trade @5bp | t | PF @5bp | IS / OOS (60/40) | ≥2016 PF @5bp | ≥2016 PF @10bp |
+|---|---|---|---|---|---|---|---|---|
+| SPY (1993–2026) | ALL (CPI+PPI+EMP+FOMC) | 1457 | +3.3 bp | 1.03 | 1.082 | 1.13 / 1.01 | 0.962 | 0.849 |
+| SPY | non-FOMC only (CPI+PPI+EMP) | 1233 | +1.7 bp | 0.47 | 1.040 | 1.06 / 1.00 | 0.956 | 0.843 |
+| SPY | FOMC only | 259 | +19.3 bp | 2.67 | 1.580 | 1.91 / 1.15 | 0.997 | 0.880 |
+| QQQ (1999–2026) | ALL | 1206 | +5.0 bp | 0.99 | 1.088 | 1.08 / 1.10 | 1.080 | 0.983 |
+| QQQ | non-FOMC only | 1016 | +2.0 bp | 0.36 | 1.034 | 1.03 / 1.04 | 1.037 | 0.942 |
+| QQQ | FOMC only | 218 | +29.6 bp | 2.58 | 1.658 | 1.78 / 1.47 | 1.399 | 1.276 |
+
+**Raw announcement-day premium (gross):** SPY announcement-day 1d return **+8.32 bp** vs
+non-announcement **+3.19 bp** → spread **+5.12 bp, t=1.46** (ns); QQQ **+10.01 bp** vs
+**+4.27 bp** → spread **+5.74 bp, t=1.04** (ns). The Savor-Wilson headline (11.4 bp excess)
+shows up directionally but the *spread* does not clear significance on 1993–2026 data.
+
+**Verdict: NO-GO.** The macro announcement premium is real-but-tiny and **not harvestable**:
+(a) the on-day spread (+5–6 bp) is statistically insignificant (t≈1.0–1.5) and the tradeable
+close-to-close construction nets only **+1.7–5.0 bp/trade @5bp**; (b) **the entire premium is
+FOMC-driven** — strip out FOMC and the CPI/PPI/NFP portion is ~zero edge (SPY non-FOMC PF 1.040
+/ OOS 1.000, +1.7 bp; QQQ 1.034 / 1.040, +2.0 bp) and turns negative at 2× cost (PF 0.92–0.95);
+(c) the FOMC leg is exactly the pre-FOMC drift already killed in Lane 52 (dead ≥2016). No
+construction clears **OOS PF ≥ 1.3**; at 2× cost (10 bp) *every* pooled/non-FOMC cell is ≤ 1.0
+(SPY ALL OOS 0.885, QQQ ALL OOS 0.998, non-FOMC OOS 0.84–0.94). Redundant with the dip-buying
+family and the already-killed FOMC lane. **Re-activate only if** the CPI/PPI/NFP-only spread
+reaches significance (t≥2) on fresh post-2026 data net of 2× cost, shown non-redundant with
+Lane 52's FOMC drift.
+
+
 
