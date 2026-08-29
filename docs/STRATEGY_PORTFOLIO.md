@@ -387,5 +387,46 @@ not harvestable unconditionally — it requires the weak-close/big-drop conditio
 **Re-activate only if** a conditioning filter pushes OOS PF ≥ 1.3 at 10 bp (not expected — the
 raw premium is ~3 bp, an order of magnitude below the cost floor).
 
+## Lane 56 — Crypto weekend→Monday "Monday Asia Open Effect" (Concretum Group 2026; crypto day-of-week literature) — NO-GO-WITH-REASON
+
+`research/crypto_weekend_backtest.py` → `research/crypto_weekend_results.json`. Claim under test: BTC has a
+CONCENTRATED positive window Sunday ~19:00 ET (Asia Monday open) through Monday, exit Monday (1-day hold);
+plus the passive "Monday effect" (positive Mon / negative weekend). Tradeable lane = LONG at the Monday
+00:00 UTC open (= Sunday 19:00 ET within 1h, crypto trades 24/7 so no gap) → EXIT Monday close, 2×ATR14
+gap-aware stop, 10 bps/side fee (Binance.US taker) + 0/10/20 bps/side slippage stress; 40/20/40
+walk-forward + post-2020 split. BTC/ETH = yf daily 2014/2017→2026-08-28 + ~2y UTC hourly; SOL = Binance.US daily 2020-09→2026-08-15.
+
+**Monday candle-body return (open→close = "Sun-19:00-ET→Mon-close" proxy), bp:**
+
+| sym | Mon n | Mon avg / median | Mon win | Mon t | 2nd-best weekday | Fri→Sun (weekend) |
+|---|---|---|---|---|---|---|
+| BTC | 623 | **+48.2 / +25.0** | 55% | **3.23** | Wed +23.9 | +22.8 |
+| ETH | 459 | +27.7 / +22.5 | 52% | 1.21 (ns) | Sat +40.0 | +55.1 |
+| SOL | 308 | +20.9 / **−16.7** | 47% | 0.59 (ns) | Fri +52.1 | +106.3 |
+
+**Tradeable lane (PF, fee 10 bps/side):**
+
+| sym | @slip0 full (IS/OOS) | @slip20 full (IS/OOS) | avg @slip0 → @slip20 | post-2020 OOS |
+|---|---|---|---|---|
+| BTC | 1.23 (1.31 / **1.09**, n=250) | **0.91** (0.99 / 0.77) | +26.8 → −12.7 bp | 1.14 |
+| ETH | 1.01 (1.03 / 0.97) | 0.81 (0.84 / 0.73) | +1.4 → −37.7 bp | 1.08 |
+| SOL | 0.99 (1.07 / 0.82) | 0.83 (0.92 / 0.65) | −2.9 → −42.4 bp | — |
+
+**Hourly (2y, UTC):** the "Sunday 19:00 ET → Monday" window is NOT concentrated-positive. EST anchor
+(Mon 00:00 UTC→24h) BTC +25.4 bp t=0.99 / ETH +14.4 bp t=0.37 (ns); EDT anchor (Sun 23:00 UTC→24h)
+BTC **−10.7** / ETH **−23.5** bp; Tue window negative (−1.3 / −19.6 bp).
+
+**Verdict: NO-GO.** BTC's Monday drift is real and the largest weekday (gross +48.2 bp, t=3.23 over 2014–2026)
+but it is a drift-inflated seasonal on top of crypto's ~+17 bp/day unconditional drift, and it dies at cost:
+net of the 10 bps/side fee the lane is PF 1.23 with **OOS 1.09** (below the 1.3 bar); at 2× cost (20 bps/side
+slip) every construction is negative (BTC PF 0.91 / OOS 0.77, ETH 0.81, SOL 0.83). The paper's "post-2020
+stronger" claim **reverses** — BTC post-2020 OOS PF 1.14 is *weaker* than the pre-2020 IS 1.35. It does not
+generalize: ETH (t=1.21, PF ~1.0) and SOL (median Monday return **negative** −16.7 bp, win 47%) show no Monday
+effect. The "negative weekend" sub-hypothesis also fails — Fri→Sun is positive on all three (+23/+55/+106 bp,
+just crypto drift). The specific intraday "Sun-19:00-ET" window is unsupported by the 2y hourly data
+(ambiguous-to-negative, all ns). Redundant with the already-shelved crypto momentum (Lane 13) — no incremental
+edge. **Re-activate only if** the BTC Monday drift sustains OOS PF ≥ 1.3 at 2× cost on fresh data **and** the
+Sun-19:00-ET intraday window is confirmed with proper intraday bars (not a UTC-daily proxy).
+
 
 
