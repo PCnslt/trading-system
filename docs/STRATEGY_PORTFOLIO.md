@@ -358,5 +358,34 @@ only if** a construction shows OOS PF ≥ 1.3 at 10 bp sustained on fresh data (
 shown non-redundant with the beta/dip-buying sleeves (e.g. a Good-Friday-only or
 holiday-cluster variant carrying its own beta hedge).
 
+## Lane 55 — Day-of-week overnight seasonality (Lin 2025 AEF; Kallinterakis et al. 2023) — NO-GO-WITH-REASON
+
+`research/dow_overnight_backtest.py` → `research/dow_overnight_results.json`. LONG SPY/QQQ/DIA
+at the CLOSE of a given weekday, EXIT at the NEXT trading day's OPEN (close→next-open overnight).
+Tests Mon→Tue (the paper's positive night), Fri→Mon weekend (the paper's negative night), a
+3-night Mon/Tue/Thu model, and an every-night benchmark. Cost swept 5/10/15/20 bp round-trip
+(5.9 bp = the measured RTH floor, `overnight_cost_floor.json`); IS/OOS = 60/40 chronological +
+pre-2000/2000+ split; PF on net returns.
+
+| sym | night | gross bp | PF @5bp | PF @10bp | OOS(60/40) @5bp | post-2000 @5bp |
+|---|---|---|---|---|---|---|
+| SPY | MON→TUE | +6.5 | 1.076 | 0.838 | 1.151 | 1.045 |
+| QQQ | MON→TUE | +8.0 | 1.119 | 0.930 | 1.230 | 1.101 |
+| DIA | MON→TUE | +6.3 | 1.067 | 0.837 | 1.195 | 1.052 |
+| pooled 3-sym | 3-night (M/T/Th) | +4.0 | 0.956 (t=−1.68) | 0.769 | 1.022 | 0.917 |
+| SPY | every-night | +3.3 | 0.923 | 0.726 | 0.914 | 0.884 |
+
+**Verdict: NO-GO.** The Monday overnight premium reproduces directionally — Mon overnight gross
+**+6.3–8.0 bp** vs unconditional overnight **+3.3 bp**, so the "strong Monday effect" is only
+**~+3 bp** over baseline (and gross t=0.76–1.32, none significant). It cannot clear ANY realistic
+cost: at 5 bp the Mon-only PF is 1.07–1.12 (IS), OOS post-2000 1.05–1.10, all well below the
+**1.3 OOS bar**; at 2× cost (10 bp) **every** construction is negative (PF 0.71–0.93) and the
+3-night model is PF 0.77 pooled. The Friday→Monday weekend is **not** negative as the paper
+claims — it is flat-to-slightly-positive gross (+2.4–4.0 bp), merely *lower* than Monday, not a
+harvestable short leg. Confirms Lane 49's structural finding: the overnight premium is real but
+not harvestable unconditionally — it requires the weak-close/big-drop conditioning of Lanes 47/48.
+**Re-activate only if** a conditioning filter pushes OOS PF ≥ 1.3 at 10 bp (not expected — the
+raw premium is ~3 bp, an order of magnitude below the cost floor).
+
 
 
