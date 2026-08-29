@@ -131,7 +131,11 @@ def main():
     ib.connect(IBKR_HOST, IBKR_PORT, clientId=CLIENT_ID, timeout=20, readonly=True)
     log(f'connected accounts={ib.managedAccounts()} (READ-ONLY, no orders)')
 
-    latest_rows = []
+    table = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
+    # Incremental batch_writer (auto-flushes every ~25 items) so a mid-run kill still
+    # leaves most BAR# rows written — the 2026-08-28 timeout lost the whole final batch.
+    bw = table.batch_writer(overwrite_by_pkeys=['pk', 'sk'])
+    bw.__enter__()
     ok = gapped = failed = 0
     for i, sym in enumerate(syms):
         try:
@@ -149,7 +153,7 @@ def main():
             out = merge(read_existing(sym), new)
             put_parquet(f'ibkr/equities/daily/{sym}.parquet', out)
             last = out.iloc[-1]
-            latest_rows.append({
+            bw.put_item(Item={
                 'pk': f'BAR#{sym}', 'sk': 'latest', 'symbol': sym,
                 'date': str(last['date']), 'open': str(last['open']),
                 'high': str(last['high']), 'low': str(last['low']),
@@ -165,14 +169,7 @@ def main():
             log(f'  [{i+1}/{len(syms)}] {sym}: FAILED {e!r}')
         time.sleep(PACING_S)
     ib.disconnect()
-
-    # ONE batched flush for every latest bar (cheapest write path)
-    if latest_rows:
-        table = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
-        with table.batch_writer(overwrite_by_pkeys=['pk', 'sk']) as bw:
-            for r in latest_rows:
-                bw.put_item(Item=r)
-        log(f'[batch] wrote {len(latest_rows)} BAR# items to DynamoDB in one pass')
+    bw.__exit__(None, None, None)  # final flush
 
     log(f'DONE ok={ok} gapped={gapped} failed={failed}')
     return 0 if ok else 1
