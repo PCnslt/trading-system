@@ -503,5 +503,37 @@ FOMC Lanes 52/53 (all the same long-beta announcement-cycle exposure). **Re-acti
 bad-news-conditioned H=5 construction sustains OOS PF ≥ 1.3 at 2× cost on fresh post-2026 data AND is
 shown non-redundant with beta (e.g. hedged).
 
+## Lane 59 — Options-expiration (OPEX) week drift (Stoll-Whaley 1997; Ni-Pearson-Poteshman 2005) — NO-GO-WITH-REASON
+
+`research/opex_week_backtest.py` → `research/opex_week_results.json`. LONG SPY/QQQ at the close of the
+last trading day before the monthly-expiration (3rd-Friday) week, EXIT at expiration-day close (5d) or
+the day-before (4d); post-OPEX week tested as the "dealer-gamma unwind" contra-leg. ~12 RT/yr; 3rd-Friday
+calendar 1993–2026 (Good-Friday expirations shifted to Thursday). Round-trip bps deducted, PF on net
+returns, IS/OOS 60/40 + pre/post-2000 + ≥2016/≥2020. Unconditional 5d drift benchmark: SPY +19.7 bp,
+QQQ +25.2 bp (win ~58%).
+
+| leg | sym | PF @5bp (IS/OOS) | post-2000 | ≥2020 | PF @10bp |
+|---|---|---|---|---|---|
+| pre-OPEX 5d (through exp) | SPY | 1.02 (1.03 / 1.01) | 0.91 | 0.70 | 0.96 |
+| pre-OPEX 5d (through exp) | QQQ | 1.07 (1.02 / 1.17) | 1.05 | 0.96 | 1.03 |
+| pre-OPEX 4d (exit Thu) | SPY | 1.34 (1.33 / 1.35) | 1.18 | **0.89** | 1.25 |
+| pre-OPEX 4d (exit Thu) | QQQ | 1.31 (1.23 / 1.48) | 1.29 | 1.13 | 1.25 |
+| post-OPEX 5d | SPY | 1.16 (0.98 / 1.50) | 1.17 | 1.64 | 1.09 |
+| post-OPEX 5d | QQQ | 1.21 (1.07 / 1.47) | 1.19 | 1.49 | 1.16 |
+
+**Verdict: NO-GO.** There is no OPEX-specific premium that beats beta. (a) Holding **through** the
+expiration Friday is a *drag*, not a drift: pre-OPEX 5d nets only **+1.6/+8.3 bp @5bp** vs the
+unconditional +19.7/+25.2 bp 5-day drift (SPY PF 1.02, post-2000 0.91, ≥2020 0.70) — the expiration
+day itself eats the week's return, consistent with gamma pinning/expiration-day clustering. (b) The
+exit-Thursday (4d) variant looks better only because it captures ~+21.9/+28.7 bp ≈ the *unconditional*
+drift, i.e. beta: it is pre-2000-dominated (SPY pre-2000 PF 2.45 vs post-2000 1.18) and **decayed to
+PF 0.89 (SPY) / 1.13 (QQQ) ≥2020**, failing the 1.3 bar at 2× cost in the modern era. (c) The post-OPEX
+week is **positive, not negative** (SPY +11.5 bp / QQQ +21.3 bp; ≥2020 PF 1.64/1.49) — the "dealer-gamma
+unwind → post-OPEX selloff" contra-leg does not exist, and it is again ≤ unconditional beta (SPY post-OPEX
++11.5 bp < +19.7 bp unconditional). Same family as the killed calendar/timing overlays (Lanes 52–55):
+long-beta 5-day hold, ~12 RT/yr, no incremental edge. **Re-activate only if** an OPEX-week construction
+shows OOS PF ≥ 1.3 at 2× cost sustained on fresh post-2026 data AND is shown non-redundant with beta
+(e.g. an expiration-day-only short/avoid overlay, or an L/S construction vs the non-OPEX weeks).
+
 
 
