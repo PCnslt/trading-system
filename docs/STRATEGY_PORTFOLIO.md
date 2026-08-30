@@ -459,5 +459,49 @@ Redundant with Lane 13 (per-coin Donchian, already marginal) — no incremental 
 if** the cross-sectional spread sustains OOS PF ≥ 1.3 at base cost on fresh data, or a
 lower-fee venue (not Binance.US spot) emerges.
 
+## Lane 58 — Post-FOMC announcement drift + CMVJ even-week overlay — NO-GO-WITH-REASON
+
+`research/fomc_post_drift_backtest.py` → `research/fomc_post_drift_results.json`. Distinct from the
+retired pre-FOMC Lane 52 (entered the day BEFORE, exited on announcement day): this enters at the
+CLOSE of the FOMC announcement day and exits 2–5 days later, plus the Cieslak–Morse–Vissing-Jorgensen
+(2019) "even-week" overlay (long FOMC-cycle weeks 0/2/4/6, flat odd). Same 263-meeting calendar
+(1994–2026). Round-trip bps deducted, PF on net returns, IS/OOS 60/40 + ≥2016 + ≥2020.
+
+**Post-FOMC drift (LONG at announcement-day close, exit H days later):**
+
+| sym | H | PF @5bp (IS/OOS) | avg/t @5bp | ≥2016 | ≥2020 |
+|---|---|---|---|---|---|
+| SPY | 2 | 0.76 (0.91 / **0.56**) | −17.2 bp / t=−1.65 | 0.57 | 0.62 |
+| SPY | 3 | 0.87 (1.00 / 0.72) | −9.8 bp / t=−0.80 | 0.73 | 0.86 |
+| SPY | 5 | 0.88 (0.90 / 0.86) | −10.7 bp / t=−0.74 | 0.93 | 1.12 |
+| QQQ | 2 | 0.92 (1.14 / 0.66) | −7.1 bp / t=−0.44 | 0.70 | 0.78 |
+| QQQ | 3 | 1.02 (1.15 / 0.85) | +2.2 bp / t=0.11 | 0.90 | 1.01 |
+| QQQ | 5 | 1.05 (1.03 / 1.09) | +5.9 bp / t=0.23 | 1.12 | 1.29 |
+
+**Bad-news conditioned (announcement-day return < 0), the "buy-after-bad-news" drift:** only H=5 is
+positive — QQQ H=5 @10bp **PF 1.33 (IS 1.26 / OOS 1.48, n=85)**, SPY H=5 PF 1.19 (OOS 1.26). H=2/H=3
+are negative-to-breakeven on both, and n ≈ 85–112 over 27 years (~3–4/yr).
+
+**Post-FOMC next-day reversal** (the literature's "post-FOMC day negative"): **absent** — ann+1 day is
+flat (SPY −3.0 bp t=−0.36, QQQ +1.1 bp t=0.08).
+
+**CMVJ even-week overlay:** daily gross even-week vs odd-week spread is **+1.30 bp (SPY, t=0.50)** and
+**+2.98 bp (QQQ, t=0.73)** — not significant, and odd weeks are NOT flat (+3.4/+3.8 bp). The weekly
+long-even/flat-odd overlay @5bp is PF **1.22/1.23 (OOS 1.01/1.14)**, @10bp **1.15/1.18 (OOS 0.94/1.09)**,
+≥2020 0.98/1.16 — every construction below the 1.3 OOS bar.
+
+**Verdict: NO-GO.** (a) The classic post-announcement drift does **not** replicate: SPY (canonical
+instrument) is PF 0.76–0.88 with negative expectancy at every horizon, and QQQ only clears breakeven
+at H=5 (+5.9 bp, t=0.23). The drift (if it ever existed) has fully decayed — consistent with the
+pre-FOMC Lane 52 finding. (b) The only positive cells are the bad-news-conditioned H=5 (QQQ PF 1.33
+OOS 1.48, SPY 1.19), but that is ~3–4 trades/yr over 27 years, fails at H=2/H=3, fails on SPY, and is
+long-beta (bad-news FOMC days in the 2020–26 bull bounce — the ≥2020 PFs are beta, not signal).
+(c) The "post-FOMC reversal" next-day leg is zero. (d) CMVJ's even-week premium does **not** replicate
+(spread ≈ +1–3 bp, ns) — the 2019 paper's 8-week-cycle framing does not hold on 1994–2026 daily data
+once you account for the actual ~6.5-week meeting cadence and post-2019 pressers. Redundant with the
+FOMC Lanes 52/53 (all the same long-beta announcement-cycle exposure). **Re-activate only if** a
+bad-news-conditioned H=5 construction sustains OOS PF ≥ 1.3 at 2× cost on fresh post-2026 data AND is
+shown non-redundant with beta (e.g. hedged).
+
 
 
