@@ -460,6 +460,19 @@ def _get_rh_client():
     return RHClient(account_number=RH_LIVE_ACCOUNT)
 
 
+def _market_light(table):
+    """(light, sizing) from the daily MARKETLIGHT# snapshot. Defaults GREEN/full if
+    the snapshot is missing (never silently shrink on a read error — log instead)."""
+    try:
+        today = dt.datetime.now(ZoneInfo('America/New_York')).date().isoformat()
+        it = table.get_item(Key={'pk': f'MARKETLIGHT#{today}', 'sk': 'latest'}).get('Item')
+        if it:
+            return it.get('light', 'green'), float(it.get('sizing', '1.0'))
+    except Exception as e:
+        print(f'  [market-light] read failed ({e!r}) — defaulting GREEN (full size)')
+    return 'green', 1.0
+
+
 def live_gate_ok(client, day_loss_used):
     """(ok, reason): gate LIVE entries. FAIL-CLOSED — every check must pass.
 
@@ -654,6 +667,8 @@ def main():
 
     table = boto3.resource('dynamodb', region_name=AWS_REGION).Table(DYNAMO_TABLE)
     today = dt.datetime.now(ZoneInfo('America/New_York')).date().isoformat()
+    ml_light, ml_size = _market_light(table)
+    print(f'  [market-light] {ml_light.upper()} — position size x{ml_size:.1f}')
 
     # Data-freshness: signals MUST be computed on the last CLOSED session.
     # This used to be a blanket "refuse to run before 17:00 ET" guard, which made
@@ -975,8 +990,9 @@ def main():
                         'mode': 'PAPER', 'execution': 'NONE', 'ts': int(time.time())},
                         args.dry_run)
                     continue
-                if committed < pos_cap and day_loss_used < DAY_LOSS_CAP:
+                if committed < pos_cap and day_loss_used < DAY_LOSS_CAP and ml_size > 0:
                     size_usd, stop_pct = position_size(live_capital, c, atr or 0.0)
+                    size_usd *= ml_size   # regime scaling: green 1.0x / yellow 0.5x / red 0.0x
                     if size_usd > 0:
                         stop_price = c - STOP_ATR * (atr or 0.0)
                         # informational regime flag (NOT a gate — validated & rejected)
