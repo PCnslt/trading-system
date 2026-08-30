@@ -428,5 +428,36 @@ just crypto drift). The specific intraday "Sun-19:00-ET" window is unsupported b
 edge. **Re-activate only if** the BTC Monday drift sustains OOS PF ≥ 1.3 at 2× cost on fresh data **and** the
 Sun-19:00-ET intraday window is confirmed with proper intraday bars (not a UTC-daily proxy).
 
+## Lane 57 — Cross-sectional crypto momentum (relative strength; Zarattini-Pagani-Barbon SSRN 5209907) — NO-GO-WITH-REASON
+
+`research/crypto_crossmom_backtest.py` → `research/crypto_crossmom_results.json`. Rank
+BTC/ETH/SOL/XRP/LTC/ADA by trailing 3d/5d return, LONG top-2 (and/or SHORT bottom-2), 1–7 day
+hold, daily/3d/weekly rebalance. Binance.US daily 2019-09→2026-08-15; SOL starts 2020-09 and XRP
+was delisted 2021-01..2023-07, so the cross-section ranks only coins *present* each signal date.
+Honest fills: 10 bps/side fee (Binance.US taker) + 0/10/20 bps/side slip stress, 2×ATR14 gap-aware
+stop, 40/20/40 walk-forward + post-2020 split, PF on net per-position returns.
+
+| config | gross top2−bot2 spread | PF @slip0 (IS/OOS) | PF @slip20 (IS/OOS) |
+|---|---|---|---|
+| N3 H1 (daily) | +17.9 bp (t=2.85) | 1.00 (1.06 / **0.90**) | 0.78 (0.85 / 0.68) |
+| N5 H1 (daily) | +15.0 bp (t=2.43) | 0.99 (1.05 / **0.88**) | 0.78 (0.84 / 0.66) |
+| N3 H3 (3d) | +26.0 bp (t=2.31) | 1.08 (1.20 / **0.90**) | 0.94 (1.05 / 0.76) |
+| N5 H7 (weekly) | +77.9 bp (t=4.40) | 1.21 (1.47 / **0.85**) | 1.11 (1.35 / 0.77) |
+| L/S N3 H1 | — | 0.98 (1.02 / 0.92) | — |
+| L/S N5 H7 | — | 1.16 (1.28 / 0.97) | — |
+
+**Verdict: NO-GO.** The cross-sectional spread is REAL gross — top-2 beat bottom-2 by **+15 to +78 bp**
+(t=2.3–4.4, strongest at 5d→7d), so crypto momentum is partly a relative effect, not just per-coin
+Donchian. But the tradeable LONG-only top-2 lane does not clear cost: the marginal edge over crypto's
+unconditional **+17.7 bp/day** drift is only ~**+6.6 bp/day** at H=1 (top-2 +24.3 bp vs all +17.7 bp),
+i.e. thinner than the **20 bp round-trip fee**, so the daily lane is breakeven at base cost (PF 1.00)
+and clearly negative at 2× cost (PF 0.78 @slip20). The weekly lane's +86.7 bp/trade is drift-inflated
+and its OOS PF is **0.85**. Critically, the 40/20/40 walk-forward **OOS PF is 0.66–0.90 in every
+construction** — the momentum spread decayed in the recent out-of-sample window (≈2023-08→2026-08) —
+and shorting the bottom-2 does not rescue it (L/S OOS 0.92/0.97). Fails the 1.3 OOS bar massively.
+Redundant with Lane 13 (per-coin Donchian, already marginal) — no incremental edge. **Re-activate only
+if** the cross-sectional spread sustains OOS PF ≥ 1.3 at base cost on fresh data, or a
+lower-fee venue (not Binance.US spot) emerges.
+
 
 
