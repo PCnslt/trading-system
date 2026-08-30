@@ -55,17 +55,9 @@ COMPANY = {
 
 
 def _search(query: str, num: int = 6) -> list[dict]:
-    if not SERPER_KEY:
-        return []
-    body = json.dumps({'q': query, 'num': num}).encode()
-    req = urllib.request.Request(ENDPOINT, data=body, headers={
-        'X-API-KEY': SERPER_KEY, 'Content-Type': 'application/json'})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as r:
-            d = json.loads(r.read().decode())
-        return d.get('organic', [])
-    except Exception:
-        return []
+    # Free RSS search (no API key) — replaces paid Serper (out of credits 2026-08-30).
+    from bot.news_sources import search_news
+    return search_news(query, num)
 
 
 def _relevant(blob: str, sym: str, name: str) -> bool:

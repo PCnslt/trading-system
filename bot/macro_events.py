@@ -23,17 +23,9 @@ SERPER = os.getenv('SERPER_API_KEY', '')
 
 
 def _search(q):
-    if not SERPER:
-        return []
-    req = urllib.request.Request(
-        'https://google.serper.dev/search',
-        data=json.dumps({'q': q, 'num': 5}).encode(),
-        headers={'X-API-KEY': SERPER, 'Content-Type': 'application/json'})
-    try:
-        with urllib.request.urlopen(req, timeout=20) as r:
-            return json.load(r).get('organic', [])
-    except Exception:
-        return []
+    # Free RSS search (no API key) — replaces paid Serper (out of credits 2026-08-30).
+    from bot.news_sources import search_news
+    return search_news(q, 5)
 
 
 def main():
@@ -65,7 +57,7 @@ def main():
         print()
 
     if not seen:
-        print('(no results — Serper key missing or search failed)')
+        print('(no results — news search failed)')
 
 
 if __name__ == '__main__':
