@@ -76,6 +76,8 @@ from bot.earnings_guard import load_upcoming_earnings  # noqa: E402
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
 S3_BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
+import io as _io  # noqa: E402  (used by _one_bet_blocked)
+S3 = boto3.client('s3', region_name=os.getenv('AWS_REGION', 'us-east-1'))
 
 # ---- strategy parameters (paper capital is a SIMULATION input, not real money) ----
 PAPER_CAPITAL = float(os.getenv('RH_PAPER_CAPITAL', '700'))
@@ -473,6 +475,25 @@ def _market_light(table):
     return 'green', 1.0
 
 
+def _one_bet_blocked(cand_close, open_syms, thr=0.7, lookback=60):
+    """True if the candidate's 60-day return is >=thr correlated with any holding."""
+    try:
+        c = cand_close.pct_change().tail(lookback).dropna()
+        if len(c) < 30:
+            return False
+        for s in open_syms:
+            o = S3.get_object(Bucket=S3_BUCKET, Key=f'ibkr/equities/daily/{s}.parquet')
+            h = pd.read_parquet(_io.BytesIO(o['Body'].read()))
+            h['date'] = pd.to_datetime(h['date'])
+            hs = h.set_index('date')['close'].pct_change()
+            j = pd.concat([c, hs], axis=1, join='inner').dropna()
+            if len(j) >= 30 and j.iloc[:, 0].corr(j.iloc[:, 1]) >= thr:
+                return True
+    except Exception:
+        pass
+    return False
+
+
 def live_gate_ok(client, day_loss_used):
     """(ok, reason): gate LIVE entries. FAIL-CLOSED — every check must pass.
 
@@ -669,6 +690,14 @@ def main():
     today = dt.datetime.now(ZoneInfo('America/New_York')).date().isoformat()
     ml_light, ml_size = _market_light(table)
     print(f'  [market-light] {ml_light.upper()} — position size x{ml_size:.1f}')
+
+    # KILL SWITCH: halt the lane entirely if the operator has tripped it.
+    from bot.kill_switch import is_killed, state as _ks_state
+    if is_killed():
+        _kst, _ksit = _ks_state()
+        print(f'  [kill-switch] HALTED — no entries/exits. reason={_ksit.get("reason")!r}')
+        return
+
 
     # Data-freshness: signals MUST be computed on the last CLOSED session.
     # This used to be a blanket "refuse to run before 17:00 ET" guard, which made
@@ -991,6 +1020,13 @@ def main():
                         args.dry_run)
                     continue
                 if committed < pos_cap and day_loss_used < DAY_LOSS_CAP and ml_size > 0:
+                    # CROSS-POSITION correlation: refuse a buy that is secretly the same
+                    # bet as an existing holding (>=0.7 on 60-day daily returns).
+                    _open = [s for s, p in book.items()
+                             if p.get('status') == 'OPEN' and s != sym]
+                    if _open and _one_bet_blocked(d['close'], _open):
+                        print(f'  SKIP {sym}: >=0.7 corr with a holding (one-bet test)')
+                        continue
                     size_usd, stop_pct = position_size(live_capital, c, atr or 0.0)
                     size_usd *= ml_size   # regime scaling: green 1.0x / yellow 0.5x / red 0.0x
                     if size_usd > 0:

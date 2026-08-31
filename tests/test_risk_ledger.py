@@ -85,9 +85,10 @@ def test_engine_load_fresh_day(fake_table):
 def test_engine_load_restores_state(fake_table):
     from datetime import datetime, timezone
     ledger = RiskLedger(fake_table, scope='live')
-    # Save under the SAME date the engine loads (UTC), NOT dt.date.today()
-    # (local ET) — the two diverge after 20:00 ET and the test silently fails.
-    day = datetime.now(timezone.utc).date().isoformat()
+    # Save under the SAME date the engine loads (ET, per 2026-08-30 fix — all live
+    # logic is America/New_York, never UTC).
+    from zoneinfo import ZoneInfo
+    day = datetime.now(ZoneInfo('America/New_York')).date().isoformat()
     ledger.save(day, {'daily_pnl': -1500.0, 'daily_trades': 3,
                       'consecutive_losses': 2, 'halted': True,
                       'halt_reason': 'daily loss halt',
