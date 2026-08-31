@@ -18,7 +18,7 @@ BUCKET = 'trading-datalake-920641308584'
 DDB = boto3.resource('dynamodb', region_name='us-east-1').Table('trading-data')
 
 TOP_N = 25
-HOLD_DAYS = 28      # ~20 trading days
+HOLD_DAYS = 14      # ~10 trading days (fastest statistically-significant horizon, t+3.08)
 SKIP = 5            # skip most-recent week (avoid short-term reversal)
 LOOKBACK = 25       # prior-month window end
 
