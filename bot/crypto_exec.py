@@ -129,7 +129,7 @@ def record_trade(table, tag, side, qty, px, reason, pnl, ts):
     table.put_item(Item={
         'pk': f'TRADE#{tag}', 'sk': str(ts),
         'side': side, 'qty': _s(qty), 'px': _s(px), 'pnl': _s(pnl),
-        'reason': reason, 'strategy': FAMILY, 'venue': 'Binance.US (paper)',
+        'reason': reason, 'strategy': FAMILY, 'venue': 'Binance data-api (paper)',
         'mode': 'PAPER-EXEC', 'ts': ts,
     })
 

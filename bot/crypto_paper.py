@@ -48,7 +48,9 @@ from data.s3_archive import archive_scan_results  # noqa: E402
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
 S3_BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
 DYNAMO_TABLE = os.getenv('DYNAMODB_TABLE', 'trading-data')
-BINANCE_URL = 'https://api.binance.us/api/v3/ticker/price'
+# Binance.US public API decommissioned 2026-08-31 (api.binance.us -> NXDOMAIN).
+# api.binance.com is geo-blocked from this VPS (US IP). Use the public market-data endpoint.
+BINANCE_URL = 'https://data-api.binance.vision/api/v3/ticker/price'
 
 UNIVERSE = [
     {'yf': 'BTC-USD', 'binance': 'BTCUSDT'},
@@ -145,7 +147,7 @@ def emit(table, sym, signal, close, reason, extra, today, dry_run):
     sig = {
         'signal': signal, 'strategy': FAMILY, 'close': _s(close), 'reason': reason,
         'ts': int(time.time()), 'promoted': True, 'candidate': False,
-        'mode': 'PAPER-SIGNAL', 'execution': 'NONE', 'venue': 'Binance.US (manual/paper)',
+        'mode': 'PAPER-SIGNAL', 'execution': 'NONE', 'venue': 'Binance data-api (paper)',
         'flag': FLAG,
     }
     sig.update(extra)
