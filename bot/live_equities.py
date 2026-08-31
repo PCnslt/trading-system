@@ -710,7 +710,6 @@ def main():
     # (see STALE-BAR ASSERT) instead of blocking the whole run on a clock read.
     _now_et = None
     try:
-        from zoneinfo import ZoneInfo
         _now_et = dt.datetime.now(ZoneInfo('America/New_York'))
         print(f'[{today}] data mode: '
               f'{"post-close (today’s bar is final)" if _now_et.hour >= 16 else "intraday (today’s partial bar dropped)"}'
