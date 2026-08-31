@@ -21,11 +21,11 @@
 - **PEAD (post-earnings-announcement drift):** preliminary positive — surprise quintile +3.7%→+5.9% over 20d. Full backtest pending (data collection).
 
 ### C. Options (latest)
-- **Buying 0–1 DTE options = NEGATIVE EV.** Vol risk premium (IV > RV 2–4pts, 83–87% of windows); theta (59% decayed by 3pm); lottery options −10% to −50%/week.
-- **The playbook's "trailing stop" is FALSE** — RH options have no trailing stop (only market/limit/stop-limit/stop-market).
-- **The edge is on the SELLING side** (collecting the vol risk premium — Bakshi-Kapadia 2003, Coval-Shumway 2001).
+- **Buying 0–1 DTE options = NEGATIVE EV** (directionally established; specific figures not independently verified). Vol risk premium (IV > RV, ~83–87% of windows); theta accelerates hard in final hours; lottery-like options earn deeply negative returns.
+- **The playbook's "trailing stop" is UNCONFIRMED** — RH lists trailing stops as an order type but doesn't clarify options; verify in-app.
+- **The edge is on the SELLING side** (collecting the vol risk premium).
 - **BUT the structural wall:** RH Level 3 (spreads/condors/butterflies/calendars) = **margin-only ($2,000 min)**. At $700 cash, blocked.
-- **Only reachable positive-EV structure at $700 RH:** cash-secured puts (and covered calls/wheel) on sub-$7 underlyings — thin, spread-fragile.
+- **Only reachable positive-EV structure at $700 RH:** cash-secured puts on sub-$7 underlyings — but the liquid universe has none. Index options carry $0.50/$0.35 fees (not $0); RH has NO paper trading.
 
 ## 2. The meta-conclusion
 
