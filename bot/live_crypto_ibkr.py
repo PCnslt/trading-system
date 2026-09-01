@@ -106,6 +106,14 @@ def _ibkr_contract(sym: str):
 
 def _place(ib: IB, contract, side: str, qty: float):
     """Place a market order and wait up to ~20s for a fill. Returns avg fill px."""
+    # ---- pre-trade risk firewall (enforcement boundary) ----
+    from hardening.order_gate import gate_order
+    gate_order(
+        strategy="live_crypto_ibkr", broker="ibkr_crypto", account="unknown",
+        symbol=getattr(contract, "symbol", ""), side=side.lower(),
+        quantity=qty, price=None, order_type="market",
+        signal_id="", operation="OPEN_NEW",
+    )
     order = MarketOrder(side.upper(), max(qty, 1e-8), tif="GTC")
     trade = ib.placeOrder(contract, order)
     for _ in range(40):

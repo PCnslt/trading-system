@@ -43,12 +43,19 @@ def main():
     ib.cancelMktData(mes)
 
     # BUY 1 @ market (paper)
+    from hardening.order_gate import gate_order
+    gate_order(strategy="execution_test", broker="ibkr", account="unknown",
+               symbol=mes.localSymbol, side="buy", quantity=1, price=None,
+               order_type="market", signal_id="smoke_buy", operation="OPEN_NEW")
     t1 = ib.placeOrder(mes, MarketOrder('BUY', 1))
     ib.sleep(3)
     s1 = t1.orderStatus
     print(f'BUY -> status={s1.status} filled={s1.filled} avg={s1.avgFillPrice}')
 
     # SELL 1 @ market (close)
+    gate_order(strategy="execution_test", broker="ibkr", account="unknown",
+               symbol=mes.localSymbol, side="sell", quantity=1, price=None,
+               order_type="market", signal_id="smoke_sell", operation="CLOSE_POSITION")
     t2 = ib.placeOrder(mes, MarketOrder('SELL', 1))
     ib.sleep(3)
     s2 = t2.orderStatus

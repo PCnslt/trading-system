@@ -178,6 +178,12 @@ class PreTradeRiskFirewall:
     def _g_notional(self, i, c):
         if i.operation == "CANCEL_ORDER":
             return GateResult("notional", Decision.PASS, "cancel has no notional")
+        if i.operation in RISK_REDUCING:
+            # Risk-reducing ops (close/flatten/reduce) are bounded by the
+            # EXISTING position — they cannot create oversized new exposure,
+            # and a market close has no limit price, so notional is unknown.
+            return GateResult("notional", Decision.PASS,
+                              f"{i.operation} notional bounded by existing position")
         notional = i.notional
         if notional is None and i.price is not None and _is_finite(i.price):
             notional = _num(i.quantity) * _num(i.price)
@@ -200,6 +206,8 @@ class PreTradeRiskFirewall:
         return GateResult("position", Decision.PASS)
 
     def _g_daily_loss(self, i, c):
+        if i.operation in RISK_REDUCING:
+            return GateResult("daily_loss", Decision.PASS, "loss halt blocks new risk, not reduction")
         if c.realized_daily_pnl is None:
             return GateResult("daily_loss", Decision.UNKNOWN, "daily P&L unknown")
         if c.daily_loss_limit > 0 and c.realized_daily_pnl <= -c.daily_loss_limit:
@@ -208,6 +216,8 @@ class PreTradeRiskFirewall:
         return GateResult("daily_loss", Decision.PASS)
 
     def _g_daily_count(self, i, c):
+        if i.operation in RISK_REDUCING:
+            return GateResult("daily_count", Decision.PASS, "count cap blocks new risk, not reduction")
         if c.max_daily_trades > 0 and c.daily_trade_count >= c.max_daily_trades:
             return GateResult("daily_count", Decision.FAIL,
                               f"daily trades {c.daily_trade_count} >= max {c.max_daily_trades}")

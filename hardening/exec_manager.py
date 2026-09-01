@@ -298,6 +298,12 @@ class ExecutionManager:
                     legacy UNTAGGED stop (empty orderRef) so a pre-tagging
                     position still gets its stop cancelled on exit.
         """
+        # ---- pre-trade risk firewall (CANCEL_ORDER: own policy, not a bypass) ----
+        gate_order(strategy=os.getenv("IBKR_STRATEGY", "stop_mgmt"), broker="ibkr",
+                   account=getattr(self, "account_id", "unknown"), symbol=symbol,
+                   side="sell", quantity=0, price=None, order_type="cancel",
+                   signal_id=f"cancel_stop_{symbol}_{ref or 'all'}",
+                   operation="CANCEL_ORDER")
         for t in list(self.ib.openTrades()):
             if t.contract.symbol != symbol or t.order.orderType != 'STP':
                 continue
@@ -354,6 +360,12 @@ class ExecutionManager:
         (orderRef == ref, or a legacy untagged stop), so trailing one strategy
         never touches a co-held strategy's stop on the same symbol.
         """
+        # ---- pre-trade risk firewall (REDUCE_POSITION: tightening protection) ----
+        gate_order(strategy=os.getenv("IBKR_STRATEGY", "stop_mgmt"), broker="ibkr",
+                   account=getattr(self, "account_id", "unknown"), symbol=symbol,
+                   side="sell" if side == "LONG" else "buy", quantity=qty,
+                   price=new_stop, order_type="stop_market",
+                   signal_id=f"trail_{symbol}_{ref or ''}", operation="REDUCE_POSITION")
         cur = self.current_stop_price(symbol, side, ref=ref)
         if cur is None:
             return ExecutionResult('NOOP', detail=(

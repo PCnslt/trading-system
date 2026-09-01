@@ -161,6 +161,20 @@ class RHCryptoClient:
             raise RHCryptoError(f"invalid side {side!r}")
         if order_type not in ("market", "limit", "stop_loss", "stop_limit"):
             raise RHCryptoError(f"invalid order type {order_type!r}")
+        # ---- pre-trade risk firewall (enforcement boundary: credentials may be
+        # present, but the order is STILL blocked unless the firewall authorizes) ----
+        from hardening.order_gate import gate_order
+        qty_raw = config.get("asset_quantity") or config.get("quote_amount") or 0
+        try:
+            qty_f = float(qty_raw)
+        except (TypeError, ValueError):
+            qty_f = 0.0
+        gate_order(
+            strategy=os.getenv("RH_STRATEGY", "rh_crypto"), broker="robinhood_crypto",
+            account=account_number or "unknown", symbol=symbol.upper(), side=side,
+            quantity=qty_f, price=None, order_type="market",
+            signal_id=client_order_id or "", operation="OPEN_NEW",
+        )
         key = {"market": "market_order_config", "limit": "limit_order_config",
                "stop_loss": "stop_loss_order_config",
                "stop_limit": "stop_limit_order_config"}[order_type]
