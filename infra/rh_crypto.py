@@ -28,6 +28,7 @@ from __future__ import annotations
 import base64
 import datetime as dt
 import json
+import time
 import os
 import urllib.error
 import urllib.parse
@@ -187,7 +188,26 @@ class RHCryptoClient:
         stop_side = "sell" if side == "buy" else "buy"
         st_cfg = stop_config or {"asset_quantity": entry_config.get("asset_quantity", "0"),
                                  "stop_price": stop_price}
-        st = self.place_order(account_number, symbol, stop_side, "stop_loss", st_cfg)
+        st = None
+        last_err: Exception | None = None
+        for _ in range(3):  # retry transient 5xx before destructive recovery
+            try:
+                st = self.place_order(account_number, symbol, stop_side, "stop_loss", st_cfg)
+                break
+            except Exception as e:  # noqa: BLE001
+                last_err = e
+                if "HTTP 5" not in str(e) and "timed out" not in str(e).lower():
+                    break
+                time.sleep(2.0)
+        if st is None:
+            # Never leave a naked position: flatten the just-placed entry.
+            flat_side = "sell" if side == "buy" else "buy"
+            try:
+                self.place_order(account_number, symbol, flat_side, "market",
+                                 {"asset_quantity": entry_config.get("asset_quantity", "0")})
+            except Exception:  # noqa: BLE001 - surfaced by the raise below
+                pass
+            raise RHCryptoError(f"protective stop failed — entry reversed: {last_err!r}") from last_err
         return {"entry": entry, "stop": st}
 
     def cancel_order(self, account_number: str, order_id: str) -> dict:
