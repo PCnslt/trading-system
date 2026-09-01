@@ -1,0 +1,55 @@
+{
+  "meta": {
+    "version": 1,
+    "created": "2026-09-01",
+    "purpose": "Durable machine-readable strategy registry + taxonomy. Ingests the 1,000-strategy library when delivered (NOT yet received).",
+    "numbering": "Original 1-1000 preserved as strategy_id when the library is ingested; existing tested strategies use T### ids."
+  },
+  "taxonomy": {
+    "level1": ["trend", "momentum", "mean_reversion", "breakout", "volatility", "liquidity", "time_of_day", "gap", "cross_sectional", "order_flow", "market_structure", "event_driven", "seasonality", "carry", "relative_value", "information_diffusion"],
+    "level2": {
+      "trend": ["EMA", "SMA", "MACD", "ADX", "Donchian", "SAR", "Ichimoku"],
+      "momentum": ["RSI", "stochastic", "CCI", "Williams_R", "rate_of_change", "time_series_momentum"],
+      "mean_reversion": ["RSI_extreme", "Bollinger", "Keltner", "VWAP_deviation", "zscore_extreme", "shock_reversal"],
+      "breakout": ["opening_range", "support_resistance", "Donchian_breakout", "volume_breakout"],
+      "volatility": ["ATR", "Bollinger_width", "vol_expansion", "vol_contraction", "vol_regime"],
+      "time_of_day": ["open", "first_5m", "first_15m", "first_30m", "midday", "final_60m", "final_30m", "close"],
+      "gap": ["gap_continuation", "gap_reversal", "gap_and_go"],
+      "cross_sectional": ["rank_return", "rank_volume", "rank_volatility", "dispersion", "breadth", "relative_strength"],
+      "order_flow": ["volume_surprise", "price_volume_disagreement", "order_imbalance"],
+      "event_driven": ["earnings", "8K", "news", "analyst", "corporate_action"],
+      "carry": ["term_structure", "roll_yield", "backwardation_contango"]
+    },
+    "level3": "parameterization (NOT a distinct mechanism)"
+  },
+  "tested_strategies": [
+    {"id": "T001", "family": "information_diffusion", "mechanism": "information-diffusion stocks (full-day volume)", "asset": "US equities", "timeframe": "daily", "status": "INVALIDATED", "reason": "look-ahead (82% full-day volume used at decision time)"},
+    {"id": "T002", "family": "mean_reversion", "mechanism": "RSI(2) mean reversion", "asset": "US equities", "timeframe": "daily", "status": "UNVALIDATED", "reason": "clustered t=1.66 + overnight spread artifact"},
+    {"id": "T003", "family": "cross_sectional", "mechanism": "equity cross-sectional reversal", "asset": "US equities", "timeframe": "daily", "status": "UNVALIDATED", "reason": "liquidity premium (tradeable t=1.95, not alpha)"},
+    {"id": "T004", "family": "momentum", "mechanism": "sector/STMOM momentum", "asset": "US equities", "timeframe": "daily", "status": "INVALIDATED", "reason": "beta (placebo +160bp ~ real +163bp)"},
+    {"id": "T005", "family": "momentum", "mechanism": "crypto cross-sectional momentum", "asset": "crypto", "timeframe": "daily", "status": "INVALIDATED", "reason": "beta"},
+    {"id": "T006", "family": "momentum", "mechanism": "crypto time-series momentum (long-only)", "asset": "crypto", "timeframe": "daily", "status": "INVALIDATED", "reason": "negative alpha (all 12 L/H combos)"},
+    {"id": "T007", "family": "momentum", "mechanism": "crypto residual momentum", "asset": "crypto", "timeframe": "daily", "status": "INVALIDATED", "reason": "negative alpha t=-9.88"},
+    {"id": "T008", "family": "momentum", "mechanism": "crypto intraday TSMOM", "asset": "crypto", "timeframe": "1h", "status": "INVALIDATED", "reason": "negative alpha"},
+    {"id": "T009", "family": "event_driven", "mechanism": "crypto liquidation cascade (long)", "asset": "crypto", "timeframe": "1h", "status": "UNVALIDATED", "reason": "short-only continuation n=45, not long-only executable"},
+    {"id": "T010", "family": "cross_sectional", "mechanism": "ETF cross-sectional momentum/reversal", "asset": "ETF", "timeframe": "daily", "status": "INVALIDATED", "reason": "insignificant (t<1)"},
+    {"id": "T011", "family": "volatility", "mechanism": "options (synthetic Black-Scholes)", "asset": "options", "timeframe": "daily", "status": "DATA-BLOCKED", "reason": "spread floor + no historical bid/ask"},
+    {"id": "T012", "family": "gap", "mechanism": "gap-and-go / gap continuation", "asset": "US equities", "timeframe": "intraday", "status": "INVALIDATED", "reason": "coin flip P=0.502"},
+    {"id": "T013", "family": "momentum", "mechanism": "intraday 30m momentum", "asset": "US equities", "timeframe": "30m", "status": "INVALIDATED", "reason": "coin flip P=0.487"},
+    {"id": "T014", "family": "time_of_day", "mechanism": "first-5m -> rest-of-day", "asset": "US equities", "timeframe": "intraday", "status": "INVALIDATED", "reason": "tiny +5.5bp"},
+    {"id": "T015", "family": "mean_reversion", "mechanism": "idiosyncratic shock reversal", "asset": "US equities", "timeframe": "30m", "status": "INVALIDATED", "reason": "coin flip P=0.481, 0.5bp reversal"},
+    {"id": "T016", "family": "cross_sectional", "mechanism": "intraday cross-sectional dispersion", "asset": "US equities", "timeframe": "30m", "status": "INVALIDATED", "reason": "sub-cost +1.1bp reversal"},
+    {"id": "T017", "family": "time_of_day", "mechanism": "overnight premium", "asset": "US equities", "timeframe": "daily", "status": "REAL_BUT_MARGINAL", "reason": "+5.3bp overnight (t=2.5), net-negative after costs"},
+    {"id": "T018", "family": "event_driven", "mechanism": "PEAD (post-earnings drift)", "asset": "US equities", "timeframe": "20-60d", "status": "INVALIDATED", "reason": "mega-cap survivorship beta (bottom quintile also drifts up)"},
+    {"id": "T019", "family": "volatility", "mechanism": "low-volatility anomaly", "asset": "US equities", "timeframe": "monthly", "status": "INVALIDATED", "reason": "inverted (high-vol beats low-vol t=-3.2, growth-bull beta)"},
+    {"id": "T020", "family": "carry", "mechanism": "futures carry/TSMOM/seasonality", "asset": "futures", "timeframe": "daily", "status": "DATA-BLOCKED+CAPITAL-BLOCKED", "reason": "IBKR ~1-3yr depth + micro margin >= $700"},
+    {"id": "T021", "family": "volatility", "mechanism": "volatility-managed equity", "asset": "US equities", "timeframe": "monthly", "status": "REAL_BUT_MARGINAL", "reason": "risk overlay not alpha; maxDD -57.6%->-36.3%, Sharpe unchanged"},
+    {"id": "T022", "family": "breakout", "mechanism": "opening-range breakout", "asset": "US equities", "timeframe": "30m", "status": "INVALIDATED", "reason": "+9.8bp day-clustered t=1.14 insignificant"},
+    {"id": "T023", "family": "information_diffusion", "mechanism": "cross-security lead/lag (leader->laggard)", "asset": "US equities", "timeframe": "5m", "status": "INVALIDATED", "reason": "noise (1/11 significant, mixed signs)"},
+    {"id": "T024", "family": "mean_reversion", "mechanism": "conditional extreme setups (z>2.5 + vol + mkt-neutral)", "asset": "US equities", "timeframe": "30m", "status": "INVALIDATED", "reason": "volatility clustering not directional alpha (+3.6bp sub-cost)"}
+  ],
+  "pending_library": {
+    "status": "NOT_RECEIVED",
+    "note": "The 1,000-strategy definitions list has not been delivered in any message. Registry schema is ready; ingest on receipt with original 1-1000 numbering preserved."
+  }
+}
