@@ -78,6 +78,17 @@ RH_TOKEN_ENDPOINT_DEFAULT = "https://api.robinhood.com/oauth2/token/"
 # fills arrive later, so a protected entry must POLL before resting its stop.
 RH_FILL_TIMEOUT_S = float(os.getenv("RH_FILL_TIMEOUT_S", "45"))
 RH_FILL_POLL_S = float(os.getenv("RH_FILL_POLL_S", "2"))
+RH_STOP_RETRY_N = int(os.getenv("RH_STOP_RETRY_N", "3"))
+RH_STOP_RETRY_BASE_S = float(os.getenv("RH_STOP_RETRY_BASE_S", "2.0"))
+
+
+def _is_transient(e: Exception) -> bool:
+    """True if the error is a transient transport/5xx (safe to retry the same
+    call — a 502/503/timeout should NOT trigger the never-naked flatten)."""
+    msg = str(e)
+    return ("HTTP 5" in msg or "Bad Gateway" in msg or "Service Unavailable" in msg
+            or "Gateway Timeout" in msg or "timed out" in msg.lower()
+            or "timeout" in msg.lower() or "connection" in msg.lower())
 
 # Dynamic token fields (rotate on refresh) — must all be written back together.
 TOKEN_FIELDS = ("access_token", "refresh_token", "token_type", "scope",
@@ -883,17 +894,28 @@ class RHClient:
                 f"{sym}: fractional fill {filled_qty} cannot carry a whole-share protective "
                 f"stop — entry reversed (fail-closed, never naked)")
 
-        try:
-            stop = self.place_stop(sym, position_side, stop_qty, sp,
-                                   stop_limit_price=stop_limit_price,
-                                   account_number=acct,
-                                   time_in_force=stop_time_in_force,
-                                   client_order_ref=client_order_ref)
-        except Exception as e:  # noqa: BLE001
+        stop = None
+        last_err: Exception | None = None
+        for attempt in range(RH_STOP_RETRY_N):
+            try:
+                stop = self.place_stop(sym, position_side, stop_qty, sp,
+                                       stop_limit_price=stop_limit_price,
+                                       account_number=acct,
+                                       time_in_force=stop_time_in_force,
+                                       client_order_ref=client_order_ref)
+                break
+            except Exception as e:  # noqa: BLE001
+                last_err = e
+                # Retry transient 5xx/timeout before flattening; a permanent
+                # rejection (e.g. bad stop price) flattens immediately.
+                if not _is_transient(e) or attempt == RH_STOP_RETRY_N - 1:
+                    break
+                time.sleep(RH_STOP_RETRY_BASE_S * (attempt + 1))
+        if stop is None:
             self._flatten(sym, side, account_number=acct, client_order_ref=client_order_ref,
                           qty=filled_qty)
             raise RHStopPlacementFailed(
-                f"{sym}: protective stop placement failed — entry reversed: {e!r}") from e
+                f"{sym}: protective stop placement failed — entry reversed: {last_err!r}") from last_err
 
         if not self._stop_is_resting(sym, position_side, account_number=acct):
             self._flatten(sym, side, account_number=acct, client_order_ref=client_order_ref,
