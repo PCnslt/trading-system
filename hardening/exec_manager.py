@@ -24,8 +24,11 @@ module is safe to import from the dashboard (no asyncio event loop required),
 matching control.py's flatten_ibkr pattern.
 """
 import hashlib
+import os
 import time
 from dataclasses import dataclass, field
+
+from .order_gate import gate_order
 
 
 class ConditionalWriteConflict(Exception):
@@ -161,6 +164,15 @@ class ExecutionManager:
            the position); on a PARTIAL fill re-rest a stop sized to the FILLED qty.
         A fill timeout -> UNKNOWN (never assume rejected).
         """
+        # ---- pre-trade risk firewall (enforcement boundary) ----
+        gate_order(
+            strategy=os.getenv("IBKR_STRATEGY", intent.scope), broker="ibkr",
+            account=getattr(self, "account_id", "unknown"),
+            symbol=intent.symbol, side="buy" if intent.action == "BUY" else "sell",
+            quantity=intent.qty, price=None, order_type="market",
+            signal_id=intent.signal_id,
+        )
+
         # NEVER-LOSE-MONEY: validate the protective stop BEFORE consuming the
         # idempotency key. A rejected no-stop entry must not burn the signal_id
         # (a corrected retry with a stop would otherwise be blocked as DUPLICATE).
@@ -247,6 +259,16 @@ class ExecutionManager:
         Cancels the resting protective stop FIRST (so stop-fill and exit-fill
         can't race), then places a market close and verifies the fill.
         """
+        # ---- pre-trade risk firewall (enforcement boundary; exit = reduce risk) ----
+        gate_order(
+            strategy=os.getenv("IBKR_STRATEGY", intent.scope), broker="ibkr",
+            account=getattr(self, "account_id", "unknown"),
+            symbol=symbol or intent.symbol,
+            side="sell" if intent.action == "BUY" else "buy",
+            quantity=intent.qty, price=None, order_type="market",
+            signal_id=intent.signal_id,
+        )
+
         if not self.intents.accept(intent):
             return ExecutionResult('DUPLICATE', signal_id=intent.signal_id,
                                    intent_id=intent.intent_id,

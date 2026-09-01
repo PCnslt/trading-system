@@ -69,6 +69,8 @@ import urllib.parse
 import urllib.request
 import uuid
 
+from .order_gate import gate_order
+
 # ---- constants (verified against SSM + live MCP 2026-08-16) ----
 RH_MCP_URL = "https://agent.robinhood.com/mcp/trading"
 RH_MCP_PROTOCOL = "2025-06-18"
@@ -685,6 +687,23 @@ class RHClient:
         if order_type in ("stop_market", "stop_limit") and not stop_price:
             raise RHStopRequired("stop order requires stop_price > 0")
 
+        # ---- pre-trade risk firewall (enforcement boundary) ----
+        try:
+            qty_f = float(quantity) if quantity else 0.0
+        except (TypeError, ValueError):
+            qty_f = 0.0
+        try:
+            px = float(limit_price or stop_price) if (limit_price or stop_price) else None
+        except (TypeError, ValueError):
+            px = None
+        gate_order(
+            strategy=os.getenv("RH_STRATEGY", "rh_equity"), broker="robinhood",
+            account=account_number or "unknown", symbol=symbol.upper(), side=side,
+            quantity=qty_f, price=px, order_type=order_type,
+            signal_id=ref_id or client_order_ref or "",
+            notional=None if not px else qty_f * px,
+        )
+
         acct = self._resolve_account(account_number)
         args = {"account_number": acct, "symbol": symbol.upper(), "side": side,
                 "type": order_type}
@@ -724,6 +743,16 @@ class RHClient:
             raise RHOrderError(f"invalid position_side {position_side!r}")
         order_side = "sell" if position_side == "long" else "buy"
         order_type = "stop_limit" if stop_limit_price is not None else "stop_market"
+
+        # ---- pre-trade risk firewall (enforcement boundary) ----
+        gate_order(
+            strategy=os.getenv("RH_STRATEGY", "rh_equity"), broker="robinhood",
+            account=account_number or "unknown", symbol=symbol.upper(),
+            side=order_side, quantity=float(quantity), price=sp,
+            order_type="stop_market", signal_id=ref_id or client_order_ref or "",
+            notional=float(quantity) * sp,
+        )
+
         acct = self._resolve_account(account_number)
         args = {"account_number": acct, "symbol": symbol.upper(), "side": order_side,
                 "type": order_type, "quantity": str(quantity),

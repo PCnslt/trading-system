@@ -23,8 +23,13 @@ TARGETS = ('SPY', 'QQQ')
 
 def main() -> int:
     from hardening.rh_client import RHClient
-    dry = '--dry-run' in sys.argv
-    c = RHClient(account_number=os.getenv('RH_LIVE_ACCOUNT', '515821577'))
+    dry = '--execute' not in sys.argv   # fail-closed: dry-run unless explicitly armed
+    account = os.getenv('RH_ACCOUNT')
+    if not account:
+        print('ERROR: RH_ACCOUNT not set — refusing to default to a live account.')
+        print('Set RH_ACCOUNT explicitly (and pass --execute to place real orders).')
+        return 2
+    c = RHClient(account_number=account)
 
     held = {}
     for p in c.get_positions() or []:
