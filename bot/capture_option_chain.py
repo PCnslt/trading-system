@@ -39,18 +39,18 @@ def main():
                 continue
             cd = cds[0]
             expiries = [e for e in cd.expirations if (dt.datetime.strptime(e, '%Y%m%d').date() - now.date()).days <= dte_cap]
-            expiries = sorted(expiries)[:6]  # nearest 6 expirations
+            expiries = sorted(expiries)[:9]  # nearest 9 expirations
             strikes = [s for s in cd.strikes if float(s).is_integer()]  # drop stale fractional strikes
             und = stk.conId
-            # build contracts: ATM +/- 5 strikes, nearest expiries
+            # build contracts: BROAD surface (ATM +/- 15 strikes, 9 nearest expiries) — no ATM-only selection bias
             px = float(ib.reqMktData(stk, '', False, False).last or 0)
             if px <= 0:
                 continue
             atm = min(strikes, key=lambda s: abs(s - px))
             atm_i = strikes.index(atm)
-            strike_win = strikes[max(0, atm_i-5): atm_i+6]
+            strike_win = strikes[max(0, atm_i-15): atm_i+16]
             contracts = []
-            for exp in expiries:
+            for exp in expiries[:9]:
                 for k in strike_win:
                     for right in ('C', 'P'):
                         contracts.append(Option(sym, exp, k, right, 'SMART', tradingClass=sym))
