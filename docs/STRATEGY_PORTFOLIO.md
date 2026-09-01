@@ -4,7 +4,7 @@
 > winner-takes-all: nothing is ever deleted, every NO-GO stays here with its
 > reason **and** the precise trigger that would re-activate it. If a lane exists
 > exists in a backtest, a bot file, a gate report, or a plan doc, it appears here.
-> Last updated: **2026-08-28**.
+> Last updated: **2026-08-31**.
 
 ---
 
@@ -534,6 +534,82 @@ unwind → post-OPEX selloff" contra-leg does not exist, and it is again ≤ unc
 long-beta 5-day hold, ~12 RT/yr, no incremental edge. **Re-activate only if** an OPEX-week construction
 shows OOS PF ≥ 1.3 at 2× cost sustained on fresh post-2026 data AND is shown non-redundant with beta
 (e.g. an expiration-day-only short/avoid overlay, or an L/S construction vs the non-OPEX weeks).
+
+## Lane 60 — Volume-gated dip-buy (Campbell–Grossman–Wang 1993) — NO-GO-WITH-REASON
+
+`research/volume_gate_backtest.py` → `research/volume_gate_results.json`. Test of the unbanked filter
+#10 in `NEW_SHORT_HORIZON_EDGES.md`: does a volume gate (RVOL = vol / prior-20d mean) add >5 bp/trade
+net to the surviving dip-buy family? Two baselines on the deployed sub-$50 universe (488 usable syms,
+2006–2026, OOS from 2022), RVOL gate 1.5 / 2.0, 5/10 bps-per-side.
+
+**Broken Arrow (close→next-open, no stop):**
+
+| drop | construction | PF @5bp (IS/OOS) | avg/trade | Δ vs unconditional |
+|---|---|---|---|---|
+| −8% | unconditional | 1.368 (1.542 / 1.235) | +42.5 bp | — |
+| −8% | RVOL ≥ 1.5 | 1.258 (1.269 / 1.249) | +26.5 bp | **−16.0 bp** |
+| −8% | RVOL ≥ 2.0 | 1.355 (1.232 / 1.466) | +31.9 bp | −10.6 bp |
+| −10% | unconditional | 1.517 (1.712 / 1.362) | +67.0 bp | — |
+| −10% | RVOL ≥ 1.5 | 1.338 (1.416 / 1.278) | +38.0 bp | **−29.0 bp** |
+| −10% | RVOL ≥ 2.0 | 1.368 (1.247 / 1.474) | +36.4 bp | −30.6 bp |
+
+**RSI2<5 (next-open, 2×ATR stop):**
+
+| construction | PF @5bp (IS/OOS) | avg/trade | Δ vs unconditional |
+|---|---|---|---|
+| unconditional | 1.096 (1.120 / 1.067) | +15.6 bp | — |
+| RVOL ≥ 1.5 | 1.149 (1.145 / 1.155) | +24.5 bp | +8.9 bp |
+| RVOL ≥ 2.0 | 0.995 (0.984 / 1.012) | −1.0 bp | −16.6 bp |
+
+**Verdict: NO-GO.** The volume gate does **not** add a robust edge — it *falsifies* the
+Campbell–Grossman–Wang thesis. On the strong Broken Arrow lane, high-volume down days bounce
+**LESS, not more**: gating at RVOL ≥ 1.5 costs −16 bp (−8% drop) to −29 bp (−10% drop) per trade, and
+−31 bp at 2.0. On RSI2<5 the response is **non-monotonic** (+8.9 bp at RVOL 1.5, but −16.6 bp at RVOL 2.0
+→ PF 0.995) — the +8.9 bp is threshold-noise, not a monotone "more volume ⇒ more bounce" mechanism, and
+the underlying sub-$50 RSI2 edge is already thin (unconditional OOS PF 1.067). No construction improves
+the unconditional lane by >5 bp *robustly* (both gates and both lanes at 2× cost). The volume signal here is
+a *liquidity/crisis* marker (the highest-volume down days are the falling knives, 2022-style), not a
+mean-reversion amplifier. **Re-activate only if** a monotone volume-conditioning is shown to add ≥5 bp/trade
+across all thresholds on fresh data (not expected — direction is currently negative on the stronger lane).
+
+## Lane 61 — Volume-return interaction classifier (Llorente–Michaely–Saar–Wang 2002) — NO-GO-WITH-REASON
+
+`research/llorente_interaction_backtest.py` → `research/llorente_interaction_results.json`. Per-stock
+rolling regression R_t = C0 + C1·R_{t−1} + C2·(V_{t−1}·R_{t−1}), V = detrended log volume; C2 > 0 ⇒
+informed ⇒ continuation, C2 < 0 ⇒ hedging ⇒ reversal. 185 liquid large-caps (bot.live_equities.STOCKS),
+2y rolling window re-estimated monthly, signal = |R_{t−1}| ≥ 2% on RVOL ≥ 1.5, LONG next-open, 1/3/5d hold,
+5/10 bps-per-side, OOS from 2022.
+
+**Directional sanity check (gross fwd H-day return, bp — does C2 sort correctly?):**
+
+| H | UP high-C2 | UP low-C2 | DOWN high-C2 | DOWN low-C2 |
+|---|---|---|---|---|
+| 1 | **−5.2** | +14.0 | +10.6 | +15.2 |
+| 3 | **−1.6** | +24.8 | +36.1 | +59.2 |
+| 5 | **−0.4** | +42.4 | +52.7 | +76.9 |
+
+**Tradeable long-only legs @5bps (PF, IS/OOS):**
+
+| leg | H | PF | avg/trade | OOS PF |
+|---|---|---|---|---|
+| momentum (hi-C2 up) | 1 | 0.894 | −15.2 bp | 1.047 |
+| momentum (hi-C2 up) | 5 | 0.956 | −10.4 bp | 1.141 |
+| fade (lo-C2 down) | 3 | 1.278 | +49.2 bp | 1.395 |
+| fade (lo-C2 down) | 5 | 1.322 | +66.8 bp | 1.402 |
+| unconditional down | 5 | 1.243 | +53.8 bp | 1.388 |
+
+**Verdict: NO-GO.** The C2 sign does **not** replicate the paper's direction. On UP moves the classifier is
+*inverted*: high-C2 (informed) names show −5.2/−1.6/−0.4 bp forward (H1/3/5) while low-C2 names show
++14.0/+24.8/+42.4 bp — the "informed-trading ⇒ continuation" leg does not exist, and the momentum trade
+(hi-C2 up) is PF 0.89–0.96 @5bp and clearly negative @10bp. On DOWN moves both buckets bounce (short-term
+reversal is universal in large caps) and low-C2 bounces only marginally more (+76.9 vs +52.7 bp at H5). The
+one positive tradeable leg (fade lo-C2 down, H5 PF 1.322 / OOS 1.402) is statistically indistinguishable from
+the *unconditional* high-volume down-move bounce (H5 PF 1.243 / OOS 1.388) — the C2 sort adds ~+13 bp/trade
+of no incremental, non-redundant value over the dip-buy already deployed in Lanes 1/47. C2 is also noisy: only
+79/185 names are majority-positive and the cross-sectional median C2 ≈ −0.007 ≈ 0. **Re-activate only if** a
+re-estimated C2 (or an insider-trading/size/short-constraint proxy for informed trading, per the paper's own
+cross-sectional correlate) is shown to cleanly separate continuation from reversal on fresh data — the sign
+alone does not.
 
 
 
