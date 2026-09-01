@@ -43,7 +43,15 @@ def features(snap):
             cp_ratio=cv/(pv+1e-9),
             iv_shock=atm_c['iv']-atm_p['iv'],
             skew=atm_p['iv']-atm_c['iv'],
-            dte_conc=grp.groupby('dte')['vol'].sum().max()/(grp['vol'].sum()+1e-9)))
+            dte_conc=grp.groupby('dte')['vol'].sum().max()/(grp['vol'].sum()+1e-9),
+            # Option Information Map: moneyness x call/put concentration (DITM/ATM/DOTM)
+            ditm_put=(p[p['delta']<=-0.7]['vol'].sum()),
+            atm_put=(p[(p['delta']>-0.7)&(p['delta']<-0.3)]['vol'].sum()),
+            dotm_put=(p[p['delta']>=-0.3]['vol'].sum()),
+            ditm_call=(c[c['delta']>=0.7]['vol'].sum()),
+            atm_call=(c[(c['delta']>0.3)&(c['delta']<0.7)]['vol'].sum()),
+            dotm_call=(c[c['delta']<=0.3]['vol'].sum()),
+            iv_dir=(atm_c['iv']-atm_c.get('iv_prev',atm_c['iv']))-(atm_p['iv']-atm_p.get('iv_prev',atm_p['iv']))))
     return pd.DataFrame(rows).sort_values('ts')
 
 if __name__=='__main__':
