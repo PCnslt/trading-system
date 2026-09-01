@@ -38,13 +38,14 @@ _sb()
 
 S3_BUCKET = os.getenv('S3_BUCKET', 'trading-datalake-920641308584')
 AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
-BASE = 'https://api.binance.us/api/v3'
+BASE = 'https://data-api.binance.vision/api/v3'
 INTERVAL = '1d'
 MAX_PER_REQ = 1000
-MAX_YEARS = 6   # cap depth (~2019 Binance.US launch)
+MAX_YEARS = 6   # cap depth
 
-# BTC + ETH + 4 liquid alts. The 4 in the live ticker (crypto_tick.py) first.
-SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'XRPUSDT', 'LTCUSDT', 'ADAUSDT']
+# Liquid Robinhood-tradable universe (global Binance USDT pairs).
+SYMBOLS = ['BTCUSDT','ETHUSDT','SOLUSDT','XRPUSDT','DOGEUSDT','AVAXUSDT',
+           'LINKUSDT','LTCUSDT','BCHUSDT','ADAUSDT','DOTUSDT','UNIUSDT','AAVEUSDT']
 
 
 def _cutoff_ms():
