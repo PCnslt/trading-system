@@ -35,16 +35,16 @@ def check(name, i, c, expect_decision, expect_gate=None):
 check("happy path", intent(), ctx(), Decision.PASS)
 
 # 2. system KILLED -> FAIL
-check("system KILLED", intent(), ctx(system_state="KILLED"), Decision.FAIL, "control")
+check("system KILLED", intent(), ctx(system_state="KILLED"), Decision.FAIL, "authorization")
 
 # 3. system state UNKNOWN -> UNKNOWN (blocks)
-check("system UNKNOWN", intent(), ctx(system_state="WEIRD"), Decision.UNKNOWN, "control")
+check("system UNKNOWN", intent(), ctx(system_state="WEIRD"), Decision.UNKNOWN, "authorization")
 
 # 4. live auth OFF -> FAIL
-check("live OFF", intent(), ctx(live_authorization="OFF"), Decision.FAIL, "live_auth")
+check("live OFF", intent(), ctx(live_authorization="OFF"), Decision.FAIL, "authorization")
 
 # 5. risk denied -> FAIL
-check("risk denied", intent(), ctx(risk_permission="DENIED"), Decision.FAIL, "risk_permission")
+check("risk denied", intent(), ctx(risk_permission="DENIED"), Decision.FAIL, "authorization")
 
 # 6. bad symbol -> FAIL
 check("bad symbol", intent(symbol="PENNY"), ctx(), Decision.FAIL, "instrument")
@@ -94,6 +94,18 @@ check("market order unknown notional", intent(order_type="market", price=None), 
 
 # 21. position limit -> FAIL (notional $600 < $700 order cap, but > $500 position cap)
 check("position limit", intent(quantity=6, price=100.0), ctx(max_position_notional=500.0), Decision.FAIL, "position")
+
+# ---- operation classification (risk-reducing vs risk-increasing) ----
+# 22. OPEN_NEW under KILLED -> FAIL
+check("OPEN_NEW KILLED", intent(operation="OPEN_NEW"), ctx(system_state="KILLED"), Decision.FAIL, "authorization")
+# 23. EMERGENCY_FLATTEN under KILLED + emergency GRANTED -> PASS
+check("FLATTEN KILLED+granted", intent(operation="EMERGENCY_FLATTEN", side="sell"), ctx(system_state="KILLED", emergency_authorization="GRANTED"), Decision.PASS)
+# 24. EMERGENCY_FLATTEN under KILLED + no grant -> FAIL
+check("FLATTEN KILLED no-grant", intent(operation="EMERGENCY_FLATTEN", side="sell"), ctx(system_state="KILLED"), Decision.FAIL, "authorization")
+# 25. CANCEL_ORDER under PAUSED + grant -> PASS
+check("CANCEL PAUSED+granted", intent(operation="CANCEL_ORDER", side="sell"), ctx(system_state="PAUSED", emergency_authorization="GRANTED"), Decision.PASS)
+# 26. OPEN_NEW under KILLED + grant -> STILL FAIL (emergency NEVER authorizes new risk)
+check("OPEN_NEW KILLED+granted", intent(operation="OPEN_NEW"), ctx(system_state="KILLED", emergency_authorization="GRANTED"), Decision.FAIL, "authorization")
 
 # summary
 passed = sum(1 for _, ok, *_ in tests if ok)

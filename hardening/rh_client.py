@@ -768,6 +768,13 @@ class RHClient:
         return raw.get("data") or raw
 
     def cancel_order(self, order_id: str, account_number: str | None = None) -> dict:
+        # ---- pre-trade risk firewall (CANCEL_ORDER: own policy, not a bypass) ----
+        gate_order(
+            strategy=os.getenv("RH_STRATEGY", "rh_equity"), broker="robinhood",
+            account=account_number or "unknown", symbol="", side="sell",
+            quantity=0, price=None, order_type="cancel",
+            signal_id=f"cancel_{order_id}", operation="CANCEL_ORDER",
+        )
         acct = self._resolve_account(account_number)
         return self._tool("cancel_equity_order", account_number=acct, order_id=order_id)
 

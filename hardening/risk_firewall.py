@@ -20,6 +20,13 @@ class Decision(Enum):
     UNKNOWN = "UNKNOWN"
 
 
+# Operation classification: the authoritative distinction between opening new
+# risk and reducing/removing existing risk.
+RISK_INCREASING = {"OPEN_NEW", "INCREASE_POSITION"}
+RISK_REDUCING = {"REDUCE_POSITION", "CLOSE_POSITION", "EMERGENCY_FLATTEN", "CANCEL_ORDER"}
+VALID_OPERATIONS = RISK_INCREASING | RISK_REDUCING
+
+
 @dataclass
 class GateResult:
     gate: str
@@ -40,6 +47,7 @@ class OrderIntent:
     signal_id: str       # deterministic idempotency key component
     session: str = ""    # e.g. date-based session id
     notional: float | None = None   # optional; derived if None
+    operation: str = "OPEN_NEW"     # OPEN_NEW | INCREASE | REDUCE | CLOSE | EMERGENCY_FLATTEN | CANCEL
 
     def idempotency_key(self) -> str:
         raw = f"{self.strategy}|{self.symbol}|{self.signal_id}|{self.session}"
@@ -52,6 +60,7 @@ class FirewallContext:
     system_state: str = "KILLED"      # KILLED | PAUSED | RUNNING
     live_authorization: str = "OFF"   # OFF | ARMED
     risk_permission: str = "DENIED"   # DENIED | APPROVED
+    emergency_authorization: str = "NONE"   # NONE | GRANTED (risk-reduction only)
     broker_healthy: bool = False
     data_fresh: bool = False
     market_open: bool = False
@@ -91,9 +100,7 @@ class PreTradeRiskFirewall:
 
     def __init__(self):
         self._gates = [
-            ("control", self._g_control),
-            ("live_auth", self._g_live_auth),
-            ("risk_permission", self._g_risk_permission),
+            ("authorization", self._g_authorization),
             ("instrument", self._g_instrument),
             ("quantity", self._g_quantity),
             ("price", self._g_price),
@@ -115,28 +122,31 @@ class PreTradeRiskFirewall:
         return GateResult("firewall", Decision.PASS, "all gates passed")
 
     # ---- gates -----------------------------------------------------------
-    def _g_control(self, i, c):
-        if c.system_state == "RUNNING":
-            return GateResult("control", Decision.PASS)
-        if c.system_state in ("KILLED", "PAUSED"):
-            return GateResult("control", Decision.FAIL, f"system_state={c.system_state}")
-        return GateResult("control", Decision.UNKNOWN, f"unknown system_state={c.system_state}")
-
-    def _g_live_auth(self, i, c):
-        if c.live_authorization == "ARMED":
-            return GateResult("live_auth", Decision.PASS)
-        if c.live_authorization == "OFF":
-            return GateResult("live_auth", Decision.FAIL, "live authorization OFF")
-        return GateResult("live_auth", Decision.UNKNOWN, f"unknown live_auth={c.live_authorization}")
-
-    def _g_risk_permission(self, i, c):
-        if c.risk_permission == "APPROVED":
-            return GateResult("risk_permission", Decision.PASS)
-        if c.risk_permission == "DENIED":
-            return GateResult("risk_permission", Decision.FAIL, "risk denied")
-        return GateResult("risk_permission", Decision.UNKNOWN, "risk permission unknown")
+    def _g_authorization(self, i, c):
+        op = i.operation if i.operation in VALID_OPERATIONS else "OPEN_NEW"
+        # Emergency risk reduction: allowed even under KILLED/PAUSED/DISARMED,
+        # but ONLY with explicit emergency authorization (never a bypass).
+        if op in RISK_REDUCING and c.emergency_authorization == "GRANTED":
+            return GateResult("authorization", Decision.PASS, f"emergency {op}")
+        # Normal path (risk-increasing, and risk-reducing without emergency auth)
+        # requires the full RUNNING + ARMED + APPROVED chain.
+        if c.system_state != "RUNNING":
+            if c.system_state in ("KILLED", "PAUSED"):
+                return GateResult("authorization", Decision.FAIL, f"system_state={c.system_state}")
+            return GateResult("authorization", Decision.UNKNOWN, f"unknown system_state={c.system_state}")
+        if c.live_authorization != "ARMED":
+            if c.live_authorization == "OFF":
+                return GateResult("authorization", Decision.FAIL, "live authorization OFF")
+            return GateResult("authorization", Decision.UNKNOWN, f"unknown live_auth={c.live_authorization}")
+        if c.risk_permission != "APPROVED":
+            if c.risk_permission == "DENIED":
+                return GateResult("authorization", Decision.FAIL, "risk denied")
+            return GateResult("authorization", Decision.UNKNOWN, "risk permission unknown")
+        return GateResult("authorization", Decision.PASS)
 
     def _g_instrument(self, i, c):
+        if i.operation == "CANCEL_ORDER":
+            return GateResult("instrument", Decision.PASS, "cancel has no symbol")
         if not i.symbol:
             return GateResult("instrument", Decision.FAIL, "empty symbol")
         if c.allowed_symbols and i.symbol not in c.allowed_symbols:
@@ -144,6 +154,8 @@ class PreTradeRiskFirewall:
         return GateResult("instrument", Decision.PASS)
 
     def _g_quantity(self, i, c):
+        if i.operation == "CANCEL_ORDER":
+            return GateResult("quantity", Decision.PASS, "cancel has no quantity")
         if not _is_finite(i.quantity):
             return GateResult("quantity", Decision.FAIL, f"non-finite quantity={i.quantity!r}")
         q = _num(i.quantity)
@@ -164,6 +176,8 @@ class PreTradeRiskFirewall:
         return GateResult("price", Decision.PASS)
 
     def _g_notional(self, i, c):
+        if i.operation == "CANCEL_ORDER":
+            return GateResult("notional", Decision.PASS, "cancel has no notional")
         notional = i.notional
         if notional is None and i.price is not None and _is_finite(i.price):
             notional = _num(i.quantity) * _num(i.price)

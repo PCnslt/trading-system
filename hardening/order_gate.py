@@ -46,6 +46,7 @@ def build_context(broker: str, account: str, symbol: str) -> FirewallContext:
         system_state=system_state,
         live_authorization=live_auth,
         risk_permission=risk,
+        emergency_authorization=os.getenv("EMERGENCY_AUTHORIZATION", "NONE").strip().upper(),
         broker_healthy=os.getenv("BROKER_HEALTHY", "false").strip().lower() == "true",
         data_fresh=os.getenv("DATA_FRESH", "false").strip().lower() == "true",
         market_open=os.getenv("MARKET_OPEN", "false").strip().lower() == "true",
@@ -74,12 +75,14 @@ def _allowed_symbols() -> set:
 
 def gate_order(strategy: str, broker: str, account: str, symbol: str, side: str,
                quantity, price, order_type: str, signal_id: str = "",
-               session: str = "", notional: float | None = None) -> None:
+               session: str = "", notional: float | None = None,
+               operation: str = "OPEN_NEW") -> None:
     """Enforce the firewall. Raises OrderBlockedError unless PASS."""
     intent = OrderIntent(
         strategy=strategy, broker=broker, account=account, symbol=symbol,
         side=side, quantity=quantity, price=price, order_type=order_type,
         signal_id=signal_id, session=session, notional=notional,
+        operation=operation,
     )
     ctx = build_context(broker, account, symbol)
     r = _fw.authorize(intent, ctx)

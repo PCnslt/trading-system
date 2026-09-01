@@ -200,6 +200,16 @@ def flatten_ibkr(ib, symbols, table, tags, today, mode='PAPER'):
         if p.contract.symbol in symbols and int(p.position) != 0:
             qty = abs(int(p.position))
             action = 'SELL' if p.position > 0 else 'BUY'
+            # ---- pre-trade risk firewall (EMERGENCY_FLATTEN: broker-derived qty) ----
+            from hardening.order_gate import gate_order
+            gate_order(
+                strategy="control", broker="ibkr", account="unknown",
+                symbol=p.contract.symbol,
+                side="sell" if p.position > 0 else "buy",
+                quantity=qty, price=None, order_type="market",
+                signal_id=f"flatten_{p.contract.symbol}_{today}",
+                operation="EMERGENCY_FLATTEN",
+            )
             try:
                 ib.placeOrder(p.contract, MarketOrder(action, qty, tif='DAY'))
             except Exception as e:
