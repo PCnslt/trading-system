@@ -912,6 +912,14 @@ class RHClient:
                     break
                 time.sleep(RH_STOP_RETRY_BASE_S * (attempt + 1))
         if stop is None:
+            # UNKNOWN != FAILED: place_stop may have been ACCEPTED with the
+            # response lost. Query the broker before any destructive recovery.
+            try:
+                if self._stop_is_resting(sym, position_side, account_number=acct):
+                    return {"entry": entry, "stop": {"reconciled": True, "qty": stop_qty},
+                            "stop_qty": stop_qty, "stop_reconciled": True}
+            except Exception:  # noqa: BLE001 - broker unqueryable -> fall through to flatten
+                pass
             self._flatten(sym, side, account_number=acct, client_order_ref=client_order_ref,
                           qty=filled_qty)
             raise RHStopPlacementFailed(
@@ -937,7 +945,18 @@ class RHClient:
         ``{type: 'market', state: 'confirmed', stop_price: '25.520000'}``.
         A resting order's state is 'confirmed' (there is no 'open' state).
         """
-        orders = self.list_orders(account_number=account_number, symbol=symbol)
+        orders = None
+        for _ in range(RH_STOP_RETRY_N):
+            try:
+                orders = self.list_orders(account_number=account_number, symbol=symbol)
+                break
+            except Exception as e:  # noqa: BLE001
+                if not _is_transient(e):
+                    raise
+                time.sleep(RH_STOP_RETRY_BASE_S)
+        if orders is None:
+            raise RHNakedPosition(
+                f"{symbol}: cannot verify protective stop — broker unqueryable")
         want_side = "sell" if position_side == "long" else "buy"
         for o in orders:
             has_stop = (o.get("stop_price") not in (None, "", "0", "0.000000")
