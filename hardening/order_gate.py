@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import os
 from .risk_firewall import (PreTradeRiskFirewall, FirewallContext, OrderIntent, Decision)
+from .state_provider import query_dynamic
 
 
 class OrderBlockedError(Exception):
@@ -37,28 +38,17 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
-def build_context(broker: str, account: str, symbol: str,
-                  dynamic: dict | None = None) -> FirewallContext:
-    """Build the firewall context from authoritative control state + hard caps.
+def build_context(broker: str, account: str, symbol: str) -> FirewallContext:
+    """Build the firewall context from the authoritative control plane + the
+    authoritative dynamic state provider.
 
-    STATIC (config) vs DYNAMIC (live state) separation:
-
-    - SYSTEM_STATE / LIVE_AUTHORIZATION / RISK_PERMISSION / limits / allowed
-      symbols are *static*: read from the authoritative control plane (env or
-      DynamoDB), fail-closed (KILLED/OFF/DENIED) when absent.
-
-    - broker_healthy / data_fresh / market_open / realized_daily_pnl /
-      daily_trade_count / current_position / reference_price are *dynamic*:
-      supplied by the live broker + market-data clients via `dynamic`.
-      When `dynamic` is absent, they stay UNKNOWN/false -> BLOCK (fail-closed).
-      When `dynamic` is present (real clients), they carry real values and a
-      valid order can PASS. This is what makes the system tradeable when
-      deliberately armed WITHOUT weakening the safe-when-disabled default.
+    The strategy NEVER supplies dynamic state. Dynamic values (broker health,
+    P&L, position, reference price, data freshness, market session) come from
+    `state_provider.query_dynamic()`, which reads the registered broker /
+    market-data / clock clients. Absent provider -> UNKNOWN -> BLOCK.
     """
-    d = dynamic or {}
-
-    def _dyn(key, default):
-        return d.get(key, default)
+    d = query_dynamic(broker, account, symbol)
+    pos = d.get("_position") or (0.0, 0.0)
 
     system_state = os.getenv("SYSTEM_STATE", "KILLED").strip().upper()
     live_auth = os.getenv("LIVE_AUTHORIZATION", "OFF").strip().upper()
@@ -69,15 +59,15 @@ def build_context(broker: str, account: str, symbol: str,
         live_authorization=live_auth,
         risk_permission=risk,
         emergency_authorization=os.getenv("EMERGENCY_AUTHORIZATION", "NONE").strip().upper(),
-        # dynamic live state — UNKNOWN/false unless a real client supplies it
-        broker_healthy=bool(_dyn("broker_healthy", False)),
-        data_fresh=bool(_dyn("data_fresh", False)),
-        market_open=bool(_dyn("market_open", False)),
-        realized_daily_pnl=_dyn("realized_daily_pnl", None),
-        daily_trade_count=int(_dyn("daily_trade_count", 0) or 0),
-        current_position_qty=float(_dyn("current_position_qty", 0.0) or 0.0),
-        current_position_notional=float(_dyn("current_position_notional", 0.0) or 0.0),
-        reference_price=_dyn("reference_price", None),
+        # dynamic live state — sourced from the authoritative provider
+        broker_healthy=bool(d.get("broker_healthy", False)),
+        data_fresh=bool(d.get("data_fresh", False)),
+        market_open=bool(d.get("market_open", False)),
+        realized_daily_pnl=d.get("realized_daily_pnl"),
+        daily_trade_count=int(d.get("daily_trade_count", 0) or 0),
+        current_position_qty=float(pos[0] or 0.0),
+        current_position_notional=float(pos[1] or 0.0),
+        reference_price=d.get("reference_price"),
         # static hard caps (independent of strategy config). $700 defaults.
         max_order_notional=_env_float("MAX_ORDER_NOTIONAL", 700.0),
         max_position_notional=_env_float("MAX_POSITION_NOTIONAL", 700.0),
@@ -100,15 +90,19 @@ def _allowed_symbols() -> set:
 def gate_order(strategy: str, broker: str, account: str, symbol: str, side: str,
                quantity, price, order_type: str, signal_id: str = "",
                session: str = "", notional: float | None = None,
-               operation: str = "OPEN_NEW", dynamic: dict | None = None) -> None:
-    """Enforce the firewall. Raises OrderBlockedError unless PASS."""
+               operation: str = "OPEN_NEW") -> None:
+    """Enforce the firewall. Raises OrderBlockedError unless PASS.
+
+    Dynamic state is pulled from the authoritative StateProvider (never from
+    the caller). A caller can only describe the ORDER, not claim health.
+    """
     intent = OrderIntent(
         strategy=strategy, broker=broker, account=account, symbol=symbol,
         side=side, quantity=quantity, price=price, order_type=order_type,
         signal_id=signal_id, session=session, notional=notional,
         operation=operation,
     )
-    ctx = build_context(broker, account, symbol, dynamic=dynamic)
+    ctx = build_context(broker, account, symbol)
     r = _fw.authorize(intent, ctx)
     if r.decision is not Decision.PASS:
         raise OrderBlockedError(r.gate, r.decision.value, r.reason)
