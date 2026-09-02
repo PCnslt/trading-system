@@ -1,0 +1,94 @@
+{
+  "experiment": "phase4_intraday_sequence",
+  "target": "30m_return",
+  "n_symbols": 40,
+  "n_samples": 518269,
+  "n_train": 361076,
+  "n_test": 157193,
+  "split_threshold": "2026-06-22 09:55:00-04:00",
+  "split_ratio": 0.7,
+  "flat_features": [
+    "r1",
+    "r3",
+    "r6",
+    "r12",
+    "rsi14",
+    "vwap_dist",
+    "rel_vol",
+    "realized_vol20",
+    "cs_ret_rank",
+    "cs_vol_rank",
+    "minute_of_day"
+  ],
+  "sequence_shape": [
+    12,
+    4
+  ],
+  "sequence_channels": [
+    "return",
+    "volume_ratio",
+    "range_pct",
+    "vwap_dist"
+  ],
+  "data_range": [
+    "2025-12-30 09:30:00-05:00",
+    "2026-09-01 13:10:00-04:00"
+  ],
+  "label_stats_bp": {
+    "mean": 0.6391205787658691,
+    "std": 73.99663543701172
+  },
+  "models": {
+    "ridge": {
+      "rank_ic": -0.004185323588933632,
+      "top_decile_bp": 0.7502887456212193
+    },
+    "lightgbm": {
+      "rank_ic": 0.0017290525611581915,
+      "top_decile_bp": 1.2249663996044546
+    },
+    "momentum_baseline": {
+      "rank_ic": -0.001545787763564888,
+      "top_decile_bp": -0.1637490640860051
+    },
+    "mlp_sequence": {
+      "rank_ic": 0.004239287558427403,
+      "rank_ic_std": 0.004895180611128668,
+      "top_decile_bp": 1.217942723693947,
+      "top_decile_bp_std": 0.8830516664577494,
+      "seeds_rank_ic": [
+        0.010579,
+        -0.001338,
+        0.003477
+      ],
+      "seeds_top_decile_bp": [
+        2.0931,
+        0.0088,
+        1.5519
+      ]
+    },
+    "cnn_sequence": {
+      "rank_ic": 0.006926409813984464,
+      "rank_ic_std": 0.006787939892190772,
+      "top_decile_bp": 2.4178033830442778,
+      "top_decile_bp_std": 2.2364077354104626,
+      "seeds_rank_ic": [
+        0.00771,
+        0.01482,
+        -0.001751
+      ],
+      "seeds_top_decile_bp": [
+        3.2008,
+        4.6801,
+        -0.6274
+      ]
+    }
+  },
+  "verdict": {
+    "best_flat_rank_ic": 0.0017290525611581915,
+    "best_sequence_rank_ic": 0.006926409813984464,
+    "sequence_beats_flat": true,
+    "sequence_beats_flat_significant": false
+  },
+  "conclusion": "No model finds a tradable 30m intraday cross-sectional signal. Flat LightGBM rank IC is 0.0017 (Ridge -0.0042). The sequence CNN posts the largest nominal mean rank IC (0.0069) but its cross-seed std (0.0068) is larger than the mean, with per-seed ICs swinging from -0.0018 to 0.0148 (MLP likewise: mean 0.0042 +- 0.0049). Every top-decile excess return (best mean 2.42bp) sits below the 5.0bp base round-trip cost. Honest verdict: SEQUENCE rank_IC ~= 0; the sequence representation does NOT reliably beat flat scalars (mean edge < cross-seed noise), and neither is economically meaningful."
+}
