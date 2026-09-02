@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "created": "2026-09-01",
+  "sources": [
+    {"name": "ibkr_equities_5min", "type": "price", "coverage": "40 liquid US equities", "depth": "2025-12-30..2026-09-01", "resolution": "5min OHLCV", "quality": "RESEARCH-GRADE (post-audit)", "latency": "historical", "lookahead_risk": "low", "notes": "clean OHLCV, no symbol mixing", "cost": "free (IBKR)"},
+    {"name": "ibkr_equities_1min", "type": "price", "coverage": "US equities", "depth": "~2yr", "resolution": "1min OHLCV", "quality": "DEGRADED (unverified)", "latency": "historical", "lookahead_risk": "audit-pending", "notes": "monthly parquet, not yet quality-audited", "cost": "free (IBKR)"},
+    {"name": "ibkr_equities_daily", "type": "price", "coverage": "1000 US equities", "depth": "2006-08..2026-08 (20yr)", "resolution": "daily OHLCV", "quality": "DEGRADED: open field 64-85% == close", "latency": "historical", "lookahead_risk": "survivorship (today's 1000)", "notes": "close usable; open UNTRUSTED", "cost": "free (IBKR)"},
+    {"name": "crypto_daily_13", "type": "price", "coverage": "13 USDT pairs", "depth": "2018+", "resolution": "daily", "quality": "RESEARCH-GRADE", "latency": "historical", "lookahead_risk": "survivorship (13 survivors)", "notes": "binance.vision", "cost": "free"},
+    {"name": "crypto_1h", "type": "price", "coverage": "5 liquid pairs", "depth": "~2yr", "resolution": "1h", "quality": "RESEARCH-GRADE", "latency": "historical", "lookahead_risk": "low", "cost": "free"},
+    {"name": "sec_edgar_8k", "type": "event", "coverage": "20 mega-caps", "depth": "1996..2026", "resolution": "filing + exact acceptance timestamp", "quality": "RESEARCH-GRADE (timestamped)", "latency": "historical", "lookahead_risk": "low (timestamped)", "notes": "survivorship: today's mega-caps only", "cost": "free (SEC)"},
+    {"name": "alpha_vantage_earnings", "type": "fundamental/event", "coverage": "19 mega-caps", "depth": "1996..2026", "resolution": "quarterly EPS (reported/estimated) + reportTime", "quality": "RESEARCH-GRADE", "latency": "historical", "lookahead_risk": "low (point-in-time estimate)", "notes": "survivorship-biased", "cost": "free tier"},
+    {"name": "ibkr_futures_daily", "type": "price", "coverage": "~56 continuous contracts", "depth": "~1-3yr", "resolution": "daily (CONTFUT, settlement-contaminated old)", "quality": "BLOCKED (flat bars old portion + shallow)", "latency": "historical", "lookahead_risk": "n/a", "notes": "carry/seasonality DATA-BLOCKED", "cost": "free (IBKR)"},
+    {"name": "news_social_options_tradequote", "type": "alternative", "coverage": "n/a", "depth": "n/a", "resolution": "n/a", "quality": "NOT ACQUIRED", "latency": "n/a", "lookahead_risk": "n/a", "notes": "purchase-justified only after baseline signal demonstrated", "cost": "varies (not purchased)"},
+    {"name": "strategy_library_1000", "type": "reference", "coverage": "n/a", "depth": "n/a", "resolution": "n/a", "quality": "NOT_RECEIVED", "latency": "n/a", "lookahead_risk": "n/a", "notes": "ingest verbatim on delivery", "cost": "n/a"}
+  ]
+}
