@@ -4,7 +4,7 @@
 > winner-takes-all: nothing is ever deleted, every NO-GO stays here with its
 > reason **and** the precise trigger that would re-activate it. If a lane exists
 > exists in a backtest, a bot file, a gate report, or a plan doc, it appears here.
-> Last updated: **2026-08-31**.
+> Last updated: **2026-09-07**.
 
 ---
 
@@ -610,6 +610,55 @@ of no incremental, non-redundant value over the dip-buy already deployed in Lane
 re-estimated C2 (or an insider-trading/size/short-constraint proxy for informed trading, per the paper's own
 cross-sectional correlate) is shown to cleanly separate continuation from reversal on fresh data — the sign
 alone does not.
+
+## Lane 62 — Cumulative RSI(2,2) mean-reversion (Connors & Alvarez 2008; Quantitativo 2024) — NO-GO-WITH-REASON
+
+`research/cum_rsi2_backtest.py` → `research/cum_rsi2_results.json`. A/B the cumulative-RSI entry
+(**RSI(2) today + RSI(2) yesterday < 10**, close > 200d SMA, next-open entry) against the DEPLOYED
+vanilla RSI2<5 on the same sub-$50 universe (488 usable syms, 2006–2026, dollar-vol > $5M), identical
+house-style exits (2×ATR gap-aware stop → 5d time stop → revert `close>SMA5` or `RSI2>hi`; hi=70 vanilla
+/ 65 cum-RSI per the article), 5/10 bps-per-side, OOS from 2022.
+
+| variant | PF @5bp (IS/OOS) | avg/trade @5bp | PF @10bp (IS/OOS) | avg/trade @10bp |
+|---|---|---|---|---|
+| vanilla RSI2<5 (n=13,906) | 1.097 (1.120 / 1.069) | +15.7 bp (t=3.46) | 1.034 (1.048 / 1.017) | +5.7 bp |
+| **cum RSI(2,2)<10 (n=8,264)** | **1.172 (1.227 / 1.109)** | **+26.6 bp (t=4.78)** | **1.105 (1.149 / 1.054)** | **+16.6 bp** |
+| Δ cum − vanilla | +0.075 | **+10.9 bp** | +0.071 | +10.9 bp |
+
+**Verdict: NO-GO as a standalone lane, but a genuine signal improvement.** The cumulative RSI(2,2)<10
+entry is a *strict* upgrade over the deployed vanilla RSI2<5: **+10.9 bp/trade full-sample (+6.9 bp OOS)**,
+PF 1.17 vs 1.10 @5bp, win 64.5% vs 63.1%, ~40% fewer trades (8,264 vs 13,906) with a higher t-stat
+(4.78 vs 3.46) — consistent with the Quantitativo direction (cum-RSI beats vanilla). **But it does not
+clear the 1.3 OOS bar**: OOS PF **1.109 @5bp / 1.054 @10bp** (vs vanilla 1.069 / 1.017). The underlying
+sub-$50 RSI2 edge is thin (Lane 51) and a better entry filter does not rescue it to a tradeable lane on
+whole-share sub-$50 names. **Re-activate only if** cum-RSI(2,2)<10 shows OOS PF ≥ 1.3 at 2× cost on the
+large-cap universe (where the validated edge lives, Lane 1 OOS 1.36 @5bps) — a cheap re-test if the live
+lane's universe is ever upgraded.
+
+## Lane 63 — Gap-down filter on mean-reversion (Alvarez "Avoiding Gap Trades") — NO-GO-WITH-REASON
+
+`research/gap_filter_backtest.py` → `research/gap_filter_results.json`. Skip any setup where the stock
+gapped down ≥5% in the last 10 trading days (rolling 10d window on `open/prev_close`), A/B vs the
+unconditional lanes on the deployed sub-$50 universe (488 syms, 2006–2026), RSI2<5 and Broken Arrow
+(−8%/−10%) baselines, 5/10 bps-per-side, OOS from 2022.
+
+| lane | construction | PF @5bp (IS/OOS) | avg/trade | Δ vs unconditional |
+|---|---|---|---|---|
+| RSI2<5 | unconditional | 1.097 (1.120 / 1.069) | +15.7 bp | — |
+| RSI2<5 | skip-gapdown | 1.108 (1.140 / 1.064) | +16.2 bp | **+0.5 bp** (OOS −1.9 bp), n −7.3% |
+| Broken Arrow −8% | unconditional | 1.368 (1.542 / 1.235) | +42.5 bp | — |
+| Broken Arrow −8% | skip-gapdown | 1.226 (1.300 / 1.174) | +23.0 bp | **−19.5 bp** (OOS −9.0 bp), n −47.9% |
+| Broken Arrow −10% | unconditional | 1.517 (1.712 / 1.362) | +67.0 bp | — |
+| Broken Arrow −10% | skip-gapdown | 1.379 (1.527 / 1.283) | +45.2 bp | **−21.8 bp** (OOS −10.8 bp), n −59.2% |
+
+**Verdict: NO-GO.** The filter *falsifies* the Alvarez thesis on the reversion family. On Broken Arrow it
+**hurts badly**: skipping gap-down names removes ~48–59% of trades, and the removed trades are the
+*higher-edge* setups — a big down day that is *also* a gap-down bounces hardest (the −10%/−15% Broken
+Arrow cells are the strongest in the registry, Lane 47). Net **−19.5 to −21.8 bp/trade**. On RSI2<5 it is
+neutral-to-slightly-negative (Δ +0.5 bp full / −1.9 bp OOS — no robust improvement). "Avoiding gap trades"
+is *anti-correlated* with mean-reversion: the gap-down **is** the signal, not the poison. **Re-activate
+only if** the filter is shown to add ≥5 bp/trade on a *different* family (momentum/continuation, where a
+recent gap-down plausibly predicts continuation) — not on the reversion lanes.
 
 
 
