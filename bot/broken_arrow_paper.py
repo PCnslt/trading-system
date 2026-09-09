@@ -192,6 +192,26 @@ def settle():
         log(f'quote failed: {e!r}')
         return 1
     tot = 0.0
+    # measure the REAL exit (sell) half-spread via L2 book, instead of assuming 3bp
+    sell_half = {}
+    try:
+        raw = rh._tool('get_equity_price_book', symbols=syms)
+        books = {b.get('symbol'): b for b in ((raw.get('data') or {}).get('books') or [])}
+        for sym in syms:
+            b = books.get(sym) or {}
+            bid = b.get('bids') or []
+            if bid:
+                try:
+                    bb = float(bid[0]['price']); ba = float((b.get('asks') or [{}])[0].get('price') or bb)
+                    mid = (bb + ba) / 2 if ba else bb
+                    v, filled, _ = walk(bid, CLIP_USD, 'sell')
+                    if v and filled >= CLIP_USD * 0.99:
+                        sell_half[sym] = round((mid - v) / mid * 1e4, 1)
+                except Exception:
+                    pass
+    except Exception as e:
+        log(f'  exit price_book failed: {e!r}')
+
     for it in open_pos:
         sym = it['pk'].split('#', 1)[1]
         px = live.get(sym)
@@ -202,7 +222,8 @@ def settle():
         sh = int(it['shares'])
         gross_bp = (px / entry - 1.0) * 1e4
         buy_half = float(it['buy_half_bp']) if it.get('buy_half_bp') not in (None, '', 'None') else 3.0
-        net_bp = gross_bp - buy_half - 3.0          # entry half + assumed open sell half
+        sell_h = sell_half.get(sym, 3.0)   # measured live bid, else 3bp fallback
+        net_bp = gross_bp - buy_half - sell_h
         pnl = (px - entry) * sh
         tot += pnl
         table.put_item(Item={
@@ -211,7 +232,8 @@ def settle():
             'entry_price': it['entry_price'], 'exit_price': str(round(px, 4)),
             'shares': it['shares'], 'day_ret': it.get('day_ret', ''),
             'gross_bp': str(round(gross_bp, 1)), 'net_bp': str(round(net_bp, 1)),
-            'buy_half_bp': it.get('buy_half_bp', ''), 'pnl_usd': str(round(pnl, 4)),
+            'buy_half_bp': it.get('buy_half_bp', ''), 'sell_half_bp': str(sell_h),
+            'pnl_usd': str(round(pnl, 4)),
             'mode': 'PAPER', 'lane': 'broken_arrow', 'ts': int(time.time())})
         table.put_item(Item={**it, 'status': 'CLOSED',
                              'exit_date': str(now.date()),
