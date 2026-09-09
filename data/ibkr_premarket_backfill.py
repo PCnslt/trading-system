@@ -86,7 +86,7 @@ def main():
     ib.connect(HOST, PORT, clientId=81, timeout=20, readonly=True)
     print(f'connected {ib.managedAccounts()} | universe={len(syms)} | already done={len(done)}', flush=True)
 
-    start = dt.datetime.now(dt.timezone.utc).replace(microsecond=0)
+    start = dt.datetime.now(dt.timezone(dt.timedelta(hours=-4))).replace(microsecond=0)  # ET
     try:
         for si, sym in enumerate(syms):
             c = Stock(sym, 'SMART', 'USD')
