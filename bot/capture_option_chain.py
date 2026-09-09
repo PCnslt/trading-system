@@ -24,6 +24,7 @@ def main():
 
     ib = IB()
     ib.connect('127.0.0.1', 4001, clientId=250, timeout=30, readonly=True)
+    ib.reqMarketDataType(3)  # delayed OK for capture (no OPRA real-time sub)
     now = dt.datetime.now(ET)
     ts = now.isoformat()
 
@@ -32,7 +33,6 @@ def main():
         try:
             stk = Stock(sym, 'SMART', 'USD')
             ib.qualifyContracts(stk)
-            ib.reqMarketDataType(3)  # delayed OK for capture
             # get option params (strikes + expirations)
             cds = ib.reqSecDefOptParams(sym, '', 'STK', stk.conId)
             if not cds:
@@ -42,9 +42,12 @@ def main():
             expiries = sorted(expiries)[:9]  # nearest 9 expirations
             strikes = [s for s in cd.strikes if float(s).is_integer()]  # drop stale fractional strikes
             und = stk.conId
-            # build contracts: BROAD surface (ATM +/- 15 strikes, 9 nearest expiries) — no ATM-only selection bias
-            px = float(ib.reqMktData(stk, '', False, False).last or 0)
-            if px <= 0:
+            # underlying price — WAIT for the delayed tick before reading .last
+            ut = ib.reqMktData(stk, '', False, False)
+            ib.sleep(3)
+            px = float(ut.last or 0)
+            if not (px > 0):
+                print(f"{sym}: SKIP — no underlying price (last={ut.last})")
                 continue
             atm = min(strikes, key=lambda s: abs(s - px))
             atm_i = strikes.index(atm)
@@ -56,6 +59,7 @@ def main():
                         contracts.append(Option(sym, exp, k, right, 'SMART', tradingClass=sym))
             ib.qualifyContracts(*contracts)
             tickers = ib.reqTickers(*contracts)
+            ib.sleep(3)   # WAIT for delayed ticks to populate bid/ask/IV before reading
             for t in tickers:
                 c = t.contract
                 mg = t.modelGreeks
