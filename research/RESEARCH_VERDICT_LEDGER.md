@@ -9,7 +9,7 @@ registry) and the `trading-backtest-validation` / `trading-edge-research` skills
 | Edge | Structure | Verdict | Blockers |
 |---|---|---|---|
 | **Index VRP** | SPY bull-put spread 30/15Δ, ~30 DTE, monthly | **VALIDATED but REFINED** — VRP statistically real (t=13.9 vs shuffled-VIX placebo, +3.84 vol pts fwd), BUT bull-put spread = ~90% LONG-BETA (placebo +5.48% vs real +6.06%/trade; only +0.58% is VRP alpha); tail severe (maxDD −45..−100%, gamma touch-stop fails on gap-downs). Needs position sizing + tail hedge. | L3 + margin account (user app steps) |
-| **Broken Arrow** | buy close of ≥8% drop above rising 40d MA, sell next open | **VALIDATED** +34bp OOS t=3.96, single-name 1-day | already paper-testing |
+| **Broken Arrow** | buy close of ≥8% drop above rising 40d MA, sell next open | **FORWARD NO-GO (2026-09-09)** — 19-trade live paper sample: mean net −61bp, median −15bp, win 47%, 5-loss streak, 95% CI [−238,+116] spans zero. Fails all 3 halt conditions. Root cause: falling-knife names (e.g. AMIX) keep falling (dips CONTINUE) AND carry 54–85bp entry half-spreads (vs 6bp assumed). | — |
 | **12-1 momentum** | prior-month return, skip last week, long winners, ~20d hold | WEAK +34bp/mo net, t=0.74 | monthly + portfolio, not 1-5d |
 
 ## The L3 + capital plan (ready, waiting on user)
