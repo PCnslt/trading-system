@@ -660,5 +660,65 @@ is *anti-correlated* with mean-reversion: the gap-down **is** the signal, not th
 only if** the filter is shown to add ≥5 bp/trade on a *different* family (momentum/continuation, where a
 recent gap-down plausibly predicts continuation) — not on the reversion lanes.
 
+## Lane 64 — Overnight price-jump reversal (Bahcivan–Dam–Gonenc 2025) — NO-GO-WITH-REASON
+
+`research/overnight_jump_reversal_backtest.py` → `research/overnight_jump_reversal_results.json`.
+Lee-Mykland-style vol-standardized overnight jump (`jump = (open/prev_close − 1) / 21d local vol`,
+NOT a fixed % gap); symmetric-reversal thesis, fade the jump 1–3 trading days. Deployed sub-$50
+universe (488 usable syms, 2006–2026, dollar-vol > $5M), LONG negative-jump at the open, exit at the
+close H=1/2/3 later, 5/10 bps-per-side, IS/OOS split at 2022. Day-clustered t reported alongside
+per-trade t (jumps cluster on market down days).
+
+**Gross same-day (H=1) open→close return by jump bucket, bp:** jump≤−3 **+32.9 (t=3.37)** ·
+(−3,−2] +14.5 (t=2.48) · (−2,−1] +14.9 (t=8.66) · |jump|<1 +0.8 (baseline) · [1,2) **−7.4 (t=−4.18)** ·
+≥3 +11.9 (median **−25.8**, ns).
+
+**Tradeable LONG negative-jump lane (net PF):**
+
+| cell | PF @5bp (IS/OOS) | avg/trade | PF @10bp (IS/OOS) |
+|---|---|---|---|
+| z≤−2 H=1 | 1.080 (1.090 / 1.065) | +11.7 bp | 1.011 (1.014 / 1.007) |
+| z≤−2.5 H=1 | 1.108 (1.119 / 1.093) | +17.3 bp | 1.044 (1.047 / 1.040) |
+| z≤−3 H=1 | 1.133 (1.176 / 1.082) | +22.9 bp | 1.073 (1.106 / 1.032) |
+| z≤−2 H=3 | 0.897 (0.835 / 1.002) | −26.3 bp | 0.861 (0.799 / 0.965) |
+
+**Verdict: NO-GO.** (a) The negative-jump fade has a **real gross edge** — the same-day daytime
+bounce (+14.9 to +32.9 bp, per-trade t 2.2–3.4) — but it is **day-CLUSTERED**: the day-clustered t
+collapses to **0.7–1.3 (ns)** (many names jump together on the same market down day), and OOS PF is
+**1.03–1.09 @5bp / 1.00–1.03 @10bp** — far below the 1.3 OOS bar. Edge is H=1 daytime only (H=3 PF < 1).
+(b) The **symmetric-reversal thesis fails on the positive side OOS**: positive-jump names net PF
+**0.70–0.95 in IS** (they fell pre-2022) but **1.09–1.49 OOS** (they *continued up* in the 2022–26
+bull) — shorting positive jumps would have LOST out-of-sample. (c) Redundant with the RSI2/dip-buy
+family (same long-beta bounce), and as thin as Lane 51's sub-$50 edge. **Re-activate only if** the
+negative-jump fade shows day-clustered t ≥ 2 AND OOS PF ≥ 1.3 @10bp on fresh data.
+
+## Lane 65 — Market-level order-imbalance reversal (Chordia–Roll–Subrahmanyam 2002) — NO-GO-WITH-REASON
+
+`research/order_imbalance_reversal_backtest.py` → `research/order_imbalance_reversal_results.json`.
+Approximate daily dollar order imbalance from IBKR index-futures **5-min** RTH bars (Lee-Ready tick
+rule, no quotes): `OIB_t = Σ sign(bar)·$vol / Σ $vol`; LONG ES/MES/NQ at the next open after a big
+down day (R<−1%) with negative OIB, exit same-day close (1 day). Cost = 2×slip-ticks + commission
+(tick 0.25, comm $0.62–1.60/side), 1t and 2t stress. **Data ≈1y** (ES 181 sessions, MES 185, NQ 154;
+the 1-min bars the idea requested span only 31 sessions).
+
+| contract | OIB<0 next-day vs OIB>0 (bp) | corr(R_t, R_{t−1} \| R<−1%) | price-only PF (IS/OOS) | +OIB≤0 PF (IS/OOS) |
+|---|---|---|---|---|
+| ES (n=19 dn) | +14.1 vs +1.6 | **−0.379** (replicates −0.304) | 0.92 (−2.6 bp, win 37%) | 0.97 (1.11 / 0.80) |
+| MES (n=22) | +4.9 vs +7.4 | −0.018 (absent) | 1.53 (2.37 / 0.66) | 1.74 (4.90 / 0.52) |
+| NQ (n=33) | +2.4 vs +10.7 | −0.057 (absent) | 0.94 (0.96 / 0.90) | 0.98 (0.92 / 1.04) |
+
+**Verdict: NO-GO (partly data-blocked).** The imbalance channel is directionally present **on ES only**
+(OIB<0 → +14.1 bp next day; down-day reversal corr **−0.379** reproduces the paper's −0.304), but it does
+**not generalize** to MES/NQ (corr ≈ 0), and the tradeable lane does **not clear cost at significance**:
+n is tiny (~19–33 down days, OOS 6–14 trades), every t-stat < 1.3, ES/NQ down days *continued* not
+reversed in 2025-08→2026-09 (price-only PF 0.92–0.94), and the imbalance gate adds nothing robust (MES
+IS PF 4.9 collapses to OOS 0.52; deeper OIB≤−0.2/−0.3 cells are n=5–14 noise, IS PF 5–90 → OOS
+0.15–1.25). **Data blocker:** only ~1y of intraday futures bars exist (1-min = 31 sessions), so the
+test is underpowered regardless of the sign. **Re-activate only with multi-year intraday index-futures
+bars** to re-test the ES imbalance channel at adequate down-day count — on the current sample the lane
+is negative-to-noise.
+
+
+
 
 
