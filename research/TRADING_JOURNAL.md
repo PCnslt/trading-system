@@ -1,6 +1,6 @@
 # Trading Journal — Robinhood LIVE (account 515821577)
 
-Generated: 2026-09-09 09:00 EDT
+Generated: 2026-09-09 09:30 EDT
 
 ## Closed trades (realized P&L)
 
@@ -19,7 +19,12 @@ Generated: 2026-09-09 09:00 EDT
 
 ## Open positions
 
-(none)
+| symbol | entry | size | stop (2xATR) | take-profit (+2ATR arm) |
+|---|---|---|---|---|
+| NVDA | 194.53 | 0.883279 | None | None |
+| MBB | 93.23 | 1.072673 | None | None |
+| FMCC | 5.01 | 19.000000 | None | None |
+| FNMA | 5.52 | 19.000000 | None | None |
 
 ## Notes
 
