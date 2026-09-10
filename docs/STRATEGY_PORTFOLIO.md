@@ -718,6 +718,82 @@ test is underpowered regardless of the sign. **Re-activate only with multi-year 
 bars** to re-test the ES imbalance channel at adequate down-day count — on the current sample the lane
 is negative-to-noise.
 
+## Lane 66 — Cross-sectional overnight-return momentum ("Night Trading" OBG; Lachance 2023) — NO-GO-WITH-REASON
+
+`research/overnight_momentum_backtest.py` → `research/overnight_momentum_results.json`. Rank the
+sub-$50 universe (488 usable syms, 2006–2026, dollar-vol > $5M) on trailing overnight (close→open)
+return each rebalance date; LONG the top decile/top-quintile at the CLOSE, EXIT at the NEXT OPEN
+(overnight-only hold), weekly (5d) and monthly (21d) rebalance. Signals: on5 (5d overnight sum),
+on21 (21d overnight sum), and Lachance's OBG (252d rolling beta of overnight return on total return).
+Honest fills: 5 bps/side primary, 10 bps/side 2x stress; IS/OOS split at 2022-01-01; per-trade t AND
+day-clustered t.
+
+| signal | rebalance | top-decile PF @5bp (IS/OOS) | avg/trade @5bp | @10bp (IS/OOS) | gross spread top10−bot10 |
+|---|---|---|---|---|---|
+| on5 (5d) | weekly | 1.211 (1.238 / **1.178**) | +13.7 bp (t=8.11) | 1.053 (1.060 / 1.044) | +15.8 bp (t_day 4.65) |
+| **on21 (21d)** | weekly | **1.239 (1.270 / 1.201)** | +15.6 bp (t=9.24) | 1.079 (1.089 / 1.067) | +16.4 bp (t_day 5.05) |
+| on21 (21d) | monthly | 1.037 (1.165 / **0.893**) | +2.7 bp | 0.905 (1.001 / 0.795) | +32.3 bp (t_day 5.15) |
+| obg (252d beta) | weekly | 0.958 (0.920 / 1.021) | −2.8 bp (t=−1.73) | 0.822 (0.788 / 0.877) | **−4.7 bp** (t_day −1.74) |
+
+Unconditional close→open baseline @5bp PF 1.007 (avg +0.4 bp), @10bp 0.820 — Lane 49 confirmed dead.
+
+**Verdict: NO-GO.** Cross-sectional overnight-return persistence is REAL gross — the trailing-5d/21d
+overnight top-decile beats the bottom decile by +15.8/+16.4 bp with day-clustered t 4.65/5.05, and the
+weekly top-decile nets +13.7/+15.6 bp/trade @5bp (PF 1.21–1.24). But it is a thin overnight edge that
+(a) never clears the 1.3 OOS bar (best OOS PF 1.201 @5bp, 1.067 @10bp), (b) collapses at 2× cost (PF
+1.05–1.08), and (c) does not survive monthly rebalance (OOS PF 0.89) — the persistence is weekly, not
+monthly (consistent with Aboody et al. 2018 weekly overnight persistence). Critically, **Lachance's
+headline OBG does not replicate**: the 252d overnight-bias beta has a NEGATIVE spread (−4.7 bp, t=−1.74)
+and top-decile PF 0.96 → 0.82 @10bp — the "Night Trading" slope metric is dead on this universe. The
+long-only top-decile leg earns roughly half the ~16 bp gross spread, which cannot clear a ~20 bp 2×
+close→open round-trip. Redundant with Lane 49 (the overnight premium is not harvestable unconditionally
+or cross-sectionally at cost). **Re-activate only if** the trailing-overnight top-decile sustains OOS PF
+≥ 1.3 at 2× cost on fresh data (not expected — the raw spread is ~16 bp).
+
+## Lane 67 — Price-to-52-week-high (PTH) + turnover conditioning (Chen-Stivers-Sun 2024) — NO-GO-WITH-REASON
+
+`research/pth_turnover_backtest.py` → `research/pth_turnover_results.json`. PTH = close/max(close, 252d)
+[exact]; turnover proxied by 20d mean dollar-volume ranked cross-sectionally into terciles each day —
+true share turnover = volume/shares-outstanding is NOT available point-in-time for free on this universe
+(FMP fundamentals cover SPY/QQQ/indexes only; no per-stock shares-outstanding history), so the turnover
+dimension is indicative while the PTH dimension is exact. Test (a) the filter on the deployed RSI2<5 lane
+(488 syms, 2006–2026, OOS from 2022) and (b) a standalone short-horizon continuation leg in high-PTH +
+high-turnover names. 5/10 bps-per-side.
+
+**(a) RSI2<5 gates @5bp/side (PF · IS · OOS · avg/trade · n vs unconditional 13,910):**
+
+| gate | PF | IS | OOS | avg/trade | Δ OOS PF | n |
+|---|---|---|---|---|---|---|
+| unconditional | 1.096 | 1.120 | 1.067 | +15.6 bp | — | 13,910 |
+| **low-PTH (<0.80)** | 1.174 | 1.262 | **1.116** | +45.3 bp (t_day 2.29) | +0.049 | 3,078 (−78%) |
+| high-PTH (>0.90) | 0.975 | 0.986 | 0.952 | −2.8 bp | −0.115 | 6,217 |
+| **low-PTH + lo-turnover** | 1.397 | 1.203 | **1.550** | +97.6 bp (t_day 2.45) | +0.483 | 803 (−94%) |
+| high-PTH + hi-turnover | 0.952 | 0.967 | 0.920 | −5.5 bp | −0.147 | 2,122 |
+
+@10bp/side: low-PTH OOS 1.081, low-PTH+lo-to OOS 1.502 (n=455 OOS), high-PTH 0.875, high-PTH+hi-to 0.846.
+
+**(b) high-PTH + high-turnover continuation leg (LONG next open after ≥ +2% up day):** H=5 @5bp PF 1.066
+(IS 1.126 / OOS 1.011), @10bp 1.024 (OOS 0.979); H=1 PF 0.894 (OOS 0.966) — no better than unconditional
+up-day continuation (H=5 OOS 1.082). **No momentum flip to a tradeable edge.**
+
+**Gross fwd5d close-to-close by quadrant (the "flip" evidence):** loPTH/loTO down-move **+211.0 bp**
+(reversal), up-move +95.1 bp; hiPTH/loTO up +108.3 / down +86.6 bp; loPTH/hiTO down +58.6 / up +7.6 bp;
+hiPTH/hiTO down-move **+17.2 bp** (no reversal — the falling knife continues), up-move +22.0 bp (≈ drift).
+
+**Verdict: NO-GO (with one genuine signal improvement).** The PTH dimension of Chen-Stivers-Sun CONFIRMS
+cleanly: low-PTH (<0.80) names bounce hardest (+45.3 bp/trade, OOS PF 1.116 vs 1.067) and high-PTH names
+do not bounce (OOS 0.952) — PTH-anchoring underreaction is real. But it does not clear the 1.3 OOS bar at
+acceptable breadth: low-PTH alone OOS PF 1.116 @5bp / 1.081 @10bp; the only >1.3 cell is low-PTH +
+low-turnover (OOS 1.550 @5bp / 1.502 @10bp) at n=803 total / 455 OOS (day-clustered t≈2.0, small-sample,
+−94% of trades). The turnover dimension is a dollar-volume proxy (no point-in-time shares-outstanding) and
+the interaction leg cannot be trusted. The "flip to momentum" is ABSENT: the high-PTH/high-turnover
+continuation leg is breakeven-to-negative (OOS 0.98–1.01) and indistinguishable from unconditional up-day
+continuation. Carry the low-PTH filter forward as a candidate RSI2-lane filter (like the cum-RSI finding,
+Lane 62) — but it guts trade count (−78%), so it is a real improvement only if the live lane can absorb the
+lost breadth. **Re-activate only if** low-PTH/low-turnover RSI2 sustains OOS PF ≥ 1.3 at 2× cost with
+n ≫ 1,000 on fresh data, or the PTH filter is re-tested on the large-cap universe (Lane 1, where the
+validated edge lives) with ≥80% trade retention.
+
 
 
 
