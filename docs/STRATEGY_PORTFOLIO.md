@@ -794,6 +794,83 @@ lost breadth. **Re-activate only if** low-PTH/low-turnover RSI2 sustains OOS PF 
 n ≫ 1,000 on fresh data, or the PTH filter is re-tested on the large-cap universe (Lane 1, where the
 validated edge lives) with ≥80% trade retention.
 
+## Lane 68 — Volume lead-lag cross-autocorrelation (Chordia–Swaminathan 2000) — NO-GO-WITH-REASON
+
+`research/volume_leadlag_backtest.py` → `research/volume_leadlag_results.json`. 1,443 liquid names
+(S&P 1500, `universe_1500.json`, price≥$2, ADV≥$10M), daily bars 2006-2026, IS/OOS split 2022-01-01.
+
+**PART A — the core claim does NOT replicate.** Rank universe daily into turnover deciles by trailing
+20d dollar turnover (close×volume); equal-weight top-decile ("high-turnover") and bottom-decile
+("low-turnover") portfolio daily returns. Lead-lag cross-autocorrelations:
+
+| pair | corr | t | IS | OOS |
+|---|---|---|---|---|
+| **hi[t−1] → lo[t]** (the claim) | **−0.109** | −7.78 | −0.128 | −0.023 |
+| lo[t−1] → hi[t] | −0.066 | −4.72 | −0.082 | +0.004 |
+| hi→hi (own) | −0.091 | −6.48 | −0.112 | −0.004 |
+| lo→lo (own) | −0.097 | −6.87 | −0.110 | −0.025 |
+
+The paper's signature is a *strongly positive asymmetric* hi→lo autocorrelation (high-volume names
+lead low-volume). We measure the **opposite sign**: hi→lo is the most NEGATIVE of the four, and the
+asymmetry (hi→lo minus lo→hi) is **−0.043** — daily REVERSAL dominates at the daily horizon on this
+universe, with no high-volume leadership. Not a sign/replication issue: the same daily-reversal sign
+matches every short-horizon cross-sectional test already in this registry.
+
+**PART B — tradeable long-only lagged catch-up** (buy bottom-decile names that have NOT moved, next
+open, exit H days or 2×ATR stop, gated on hi-turnover portfolio up yesterday):
+
+| config | @5bp PF | IS | OOS | @10bp PF | OOS @10bp |
+|---|---|---|---|---|---|
+| H=1 | 0.941 | 0.945 | 0.927 | 0.841 | 0.810 |
+| H=2 | 1.072 | 1.071 | 1.075 | 0.993 | 0.982 |
+| H=3 | 1.134 | 1.136 | 1.124 | 1.066 | 1.048 |
+
+Best cell OOS PF 1.124 @5bp (1.048 @10bp) — **below the 1.3 bar at both cost levels**. Fast-leg
+control (buy high-turnover names after a market up-day, momentum) is a clear loser: H=1 @5bp PF 0.825
+(t=−29.6), all cells ≤1.0 net.
+
+**Verdict: NO-GO-WITH-REASON.** The lead-lag cross-autocorrelation that this entire idea rests on is
+absent (and mildly reversed) on a liquid 1,443-name daily universe — high-volume names do not lead
+low-volume names at 1-day horizon here. The "lagged catch-up" long-only lane is therefore just
+unconditional laggard-reversal/beta and does not clear 1.3 OOS at 5bp or 2×-cost. **Re-activate only
+if** the hi→lo cross-autocorrelation turns significantly positive on fresh data (contradicts the
+short-horizon daily-reversal finding), or a >1.3-OOS construction appears at 2× cost.
+
+## Lane 69 — Intraday half-hour periodicity + cross-half-hour reversal (Heston–Korajczyk–Sadka 2010) — NO-GO-WITH-REASON
+
+`research/intraday_periodicity_backtest.py` → `research/intraday_periodicity_results.json`. 61 liquid
+names, IBKR 1-min bars 2024-09→2026-09 aggregated to 30-min windows (13 per RTH day), IS/OOS split
+2025-09-01. Honest fills 5 bps/side primary, 10 bps/side 2× stress.
+
+**(a) PERIODICITY does NOT replicate.** Same-window return[t] vs return[t−1] pooled corr **+0.0052
+(t=1.73)**, lag-5d +0.0038 (t=1.65) — statistically zero. The paper's signature (strong positive
+~30-min same-window autocorrelation) is absent on modern liquid names; no same-window continuation
+to trade. The tradeable continuation leg (yesterday same-window up → buy window open → sell window
+close) is deeply negative: @5bp PF **0.689** (OOS 0.710, t=−48), @10bp 0.459 (t=−103).
+
+**(b) Intraday REVERSAL is zero gross, negative net.** Bottom-decile 30-min return → next-window
+return pooled gross **+1.0 bp (t=1.30)** — no intraday reversal (losers continue into the next
+half-hour). Tradeable next-window hold @5bp PF **0.736** (OOS 0.724, t=−17.5), @10bp 0.529. The
+opening/closing half-hour "reversal" only shows up as close→next-open (+20/30/41 bp by window),
+which is the **overnight gap premium, not intraday reversal** — already banked by Lanes 47/48/49
+and not a distinct edge.
+
+| leg | @5bp PF (IS/OOS) | @10bp PF (IS/OOS) | verdict |
+|---|---|---|---|
+| next-window reversal | 0.736 (0.750/0.724) | 0.529 (0.533/0.525) | negative |
+| close-half → next-open | 1.276 (1.114/1.428) | 1.155 (1.003/1.297) | = overnight drift (Lane 47/48) |
+| same-window continuation | 0.689 (0.664/0.710) | 0.459 (0.427/0.486) | negative |
+
+**Verdict: NO-GO-WITH-REASON.** Neither HKS 2010 mechanism survives as a *tradeable intraday* edge:
+periodicity autocorrelation is +0.005 (zero), intraday reversal is +1 bp gross (zero) and negative
+net, and the continuation leg is deeply negative. The only positive cell (close→next-open) is the
+already-documented overnight premium, not an intraday half-hour effect. **Re-activate only if**
+intraday bars deepen to multi-year for a broad universe AND same-window corr or next-window reversal
+turns significantly positive net of cost (contradicts this + every prior intraday reversal test:
+Lanes 20–23, 38, 40).
+
+
+
 
 
 
