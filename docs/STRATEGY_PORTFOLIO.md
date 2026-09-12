@@ -869,6 +869,66 @@ intraday bars deepen to multi-year for a broad universe AND same-window corr or 
 turns significantly positive net of cost (contradicts this + every prior intraday reversal test:
 Lanes 20–23, 38, 40).
 
+## Lane 70 — Sector-ETF overnight (close→open) TIME-SERIES momentum (Salotra et al. 2026) — NO-GO-WITH-REASON
+
+`research/sector_etf_overnight_momentum.py` → `research/sector_etf_overnight_momentum_results.json`.
+TIME-SERIES (not the cross-sectional single-stock Lane 66): LONG the overnight leg (close→next-open)
+of an ETF when its trailing overnight (close→open) return is positive (momentum), or fade it (reversal),
+or cross-sectionally rank top-N by trailing overnight. Universe = SPY + 9 Select Sector SPDRs
+(XLB/XLE/XLF/XLI/XLK/XLP/XLU/XLV/XLY), S3 daily bars, common sample 1998-12-22→2026-09-11. Honest fills:
+ETF round-trip cost swept 0 (gross) / 1 / 2 / 5 bps (1–2bp = the paper's cost; 5bp = repo RTH floor stress).
+IS/OOS = 60/40 chronological + post-2000 split; PF on net returns; Sharpe on the daily portfolio series.
+
+**Time-series (pooled across 10 ETFs, per-trade net PF):**
+
+| signal | @1bp PF (IS/OOS) | @2bp PF (IS/OOS) | @5bp PF (IS/OOS) |
+|---|---|---|---|
+| momentum N=21 (trailing overnight >0) | 1.145 (1.148 / 1.138) | 1.096 (1.102 / 1.087) | 0.964 (0.973 / 0.948) |
+| momentum N=10 | 1.113 (1.113 / 1.114) | 1.067 (1.069 / 1.065) | 0.940 (0.946 / 0.931) |
+| reversal N=1 (fade negative overnight) | 1.158 (1.198 / 1.097) | 1.117 (1.156 / 1.057) | 1.003 (1.041 / 0.944) |
+
+**Portfolio daily series (Sharpe, the paper's metric):** buy-and-hold-overnight baseline (always long all 10)
+Sharpe **0.820** gross / 0.589 @1bp / 0.358 @2bp / −0.336 @5bp. N=21 momentum basket Sharpe **1.144** gross
+(PF 1.248, OOS 1.187) / **0.886** @1bp / 0.628 @2bp / −0.146 @5bp. Cross-sectional rank top-2 by trailing-21d
+overnight: Sharpe **1.310** gross (PF 1.290, OOS 1.164) / 1.101 @1bp (OOS 1.117) / 0.892 @2bp (OOS 1.072) /
+0.264 @5bp (OOS 0.946).
+
+**Verdict: NO-GO-WITH-REASON.** The Salotra headline *replicates gross* — the momentum filter lifts the
+overnight Sharpe from 0.82 (buy-and-hold) to ~1.14 (N=21) / 1.31 (rank top-2), i.e. the paper's "0.95 vs
+0.61" is directionally right. But the edge is **2–4 bp/trade ≈ the cost floor**: at 1bp it survives
+(OOS PF ~1.09–1.14), at 2× cost (2bp) OOS PF is **1.03–1.09** and at 5bp every construction is breakeven-to-
+negative (PF 0.92–0.97). No construction clears **OOS PF ≥ 1.3 at 2× cost**. The "momentum" variant is ~93%
+long (trailing-21d overnight is positive most of the time) — it is a drift-timing overlay on the same
+overnight premium already shown non-harvestable unconditionally (Lane 49) and cross-sectionally (Lane 66).
+**Re-activate only if** a construction shows OOS PF ≥ 1.3 at 2bp sustained on fresh data (not expected —
+the raw edge is ~2–4bp, an order of magnitude below the 1.3-bar threshold once cost is 2bp+).
+
+## Lane 71 — Overnight→first-half-hour predictability (Iwanaga & Sakemoto 2026) — NO-GO-WITH-REASON
+
+`research/overnight_firsthalf_backtest.py` → `research/overnight_firsthalf_results.json`. Does the
+overnight (close→open) return of ES/MES/NQ predict the FIRST half-hour (09:30–10:00 ET) return —
+reversal (fade at the open) vs continuation? IBKR RTH 5-min bars from S3; usable clean sessions (full
+09:30 start, prior close present) ES 144 / MES 163 / NQ 130 (2026-01→2026-09; the 2025 tail has collector
+mid-day-start gaps). Honest fills: 2×slip-ticks + 2×commission (tick 0.25), 1t and 2t slip; IS/OOS 60/40
+by session date.
+
+| contract | corr(half-hr, overnight) | half-hr avg overnight>0 / <0 (bp) | fade @1t PF (IS/OOS) | fade @2t PF | continuation @1t PF |
+|---|---|---|---|---|---|
+| ES (n=144) | −0.064 | +1.00 / +0.40 (t ≤ 0.28) | 0.887 (0.687 / 1.205) | 0.829 | 0.968 (1.225 / 0.727) |
+| MES (n=163) | −0.111 | −2.00 / +1.92 (t ≤ 0.60) | 1.064 (1.041 / 1.102) | 1.001 | 0.783 (0.802 / 0.752) |
+| NQ (n=130) | −0.125 | −2.00 / −3.25 (t ≤ 0.55) | 0.977 (0.815 / 1.152) | 0.967 | 0.997 (1.186 / 0.852) |
+
+**Verdict: NO-GO-WITH-REASON.** The overnight return does **not** predict the first half-hour: the
+correlation is −0.06 to −0.13 (a *mild reversal* direction, but statistically zero at n≈130–163, |t| < 1.5),
+and the conditional first-half-hour means are ±1–3 bp with every t < 0.7. The tradeable fade (short high
+opens / long low opens) is breakeven-to-negative — best cell MES @1t PF 1.064 (OOS 1.102), @2t 1.001; ES
+0.887 (OOS 1.205), NQ 0.977 — and continuation is a clear loser (MES PF 0.783, all < 1). No construction
+clears **OOS PF ≥ 1.3** at any cost; the signal correlation is ≈0. Consistent with the recurring
+"intraday edges die at cost / are breakeven" finding (Lanes 20–23, 38, 40, 69). **Data caveat:** only ~1y
+of clean bars (~130–163 sessions, OOS ~52–65) — underpowered, but the point estimates are non-tradeable
+regardless. **Re-activate only if** multi-year intraday futures bars show a significant (|t|≥2) overnight→
+first-half-hour correlation net of 2-tick cost (contradicts this and every prior intraday test).
+
 
 
 
