@@ -2,6 +2,8 @@
 
 24/7 multi-market automated trading system. Futures → stocks → options → crypto.
 
+> **Resuming this repo after downtime? Read [RESTART.md](RESTART.md) first** — it has the bring-up steps, where the secrets/data live (AWS SSM + S3, not git), and the honest state of what's tested vs tradeable.
+
 ## Architecture
 - **Data lake:** DynamoDB `trading-data` (hot) + S3 `trading-datalake-…` JSON (cold) — the compounding asset. Futures: `futures-bars/` (43-sym universe) · `futures-ticks/` (L1) · `contracts/` · `sessions/` · `options/`; free sources `yf/` `macro/` `fmp/` `newsapi/` `crypto-tick/`; hot keys `CONTRACT#` `SESSION#` `QUOTE#` `OPTCHAIN#` `RISK#`. Full catalog: `docs/DATA-CATALOG.md`.
 - **Strategy engine:** per-market Python modules + Pine Script research on TradingView
