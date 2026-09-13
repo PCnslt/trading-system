@@ -14,9 +14,9 @@ Signal words for a negative catalyst (case-insensitive, matched in title+snippet
   slumps, plunges, crashes, halt, suspension, short report, activist short
 
 Also pulls the company name from a small map (fallback = the symbol) so the query is
-meaningful. Uses Serper (google.serper.dev) via SERPER_API_KEY in .env — already wired
-on this VPS. Returns UNKNOWN (fail-open, does NOT block) if the search fails, so the
-gate can never deadlock a buy; the caller decides whether UNKNOWN is a block.
+meaningful. Uses a free RSS/news search (`bot/news_sources.search_news`) — Serper was
+out of credits (2026-09-08). Returns UNKNOWN (fail-open, does NOT block) if the search
+fails, so the gate can never deadlock a buy; the caller decides whether UNKNOWN is a block.
 
 Use: from bot.news_gate import check_symbol
 """
@@ -27,9 +27,6 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, _ROOT)
 from dotenv import load_dotenv
 load_dotenv(os.path.join(_ROOT, '.env'))
-
-SERPER_KEY = os.getenv('SERPER_API_KEY', '')
-ENDPOINT = 'https://google.serper.dev/search'
 
 # SEVERE = hard skip (real thesis-breaker). MILD = surface as a warning, not a block.
 SEVERE_WORDS = [

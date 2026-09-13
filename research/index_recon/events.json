@@ -1,0 +1,2676 @@
+[
+ {
+  "ticker": "RDDT",
+  "eff": "2026-08-18",
+  "ann": "2026-08-13",
+  "add_sec": "Reddit",
+  "reason": "Equity Residential (now Vivmark Residential ) acquired AvalonBay Communities."
+ },
+ {
+  "ticker": "FERG",
+  "eff": "2026-08-05",
+  "ann": "2026-07-31",
+  "add_sec": "Ferguson Enterprises",
+  "reason": "An investor consortium comprising Saudi Arabia's Public Investment Fund (PIF), Silver Lake , and Affinity Partners acquired Electronic Arts."
+ },
+ {
+  "ticker": "HONA",
+  "eff": "2026-06-29",
+  "ann": "2026-06-23",
+  "add_sec": "Honeywell Aerospace",
+  "reason": "Honeywell completed the corporate spin-off of Honeywell Aerospace."
+ },
+ {
+  "ticker": "MRVL",
+  "eff": "2026-06-22",
+  "ann": "2026-06-05",
+  "add_sec": "Marvell Technology",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "FLEX",
+  "eff": "2026-06-22",
+  "ann": "2026-06-05",
+  "add_sec": "Flex Ltd.",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "FDXF",
+  "eff": "2026-06-01",
+  "ann": "2026-05-27",
+  "add_sec": "FedEx Freight",
+  "reason": "FedEx Corp. completed the corporate spin-off of FedEx Freight Holding."
+ },
+ {
+  "ticker": "VEEV",
+  "eff": "2026-05-07",
+  "ann": "2026-04-30",
+  "add_sec": "Veeva Systems",
+  "reason": "Devon Energy acquired Coterra Energy."
+ },
+ {
+  "ticker": "CASY",
+  "eff": "2026-04-09",
+  "ann": "2026-04-06",
+  "add_sec": "Casey's",
+  "reason": "Blackstone Inc. and TPG Inc. acquired Hologic."
+ },
+ {
+  "ticker": "VRT",
+  "eff": "2026-03-23",
+  "ann": "2026-03-06",
+  "add_sec": "Vertiv",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "LITE",
+  "eff": "2026-03-23",
+  "ann": "2026-03-06",
+  "add_sec": "Lumentum",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "COHR",
+  "eff": "2026-03-23",
+  "ann": "2026-03-06",
+  "add_sec": "Coherent Corp.",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "SATS",
+  "eff": "2026-03-23",
+  "ann": "2026-03-06",
+  "add_sec": "EchoStar",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "CIEN",
+  "eff": "2026-02-09",
+  "ann": "2026-02-04",
+  "add_sec": "Ciena",
+  "reason": "Thoma Bravo L.P. acquired Dayforce."
+ },
+ {
+  "ticker": "CRH",
+  "eff": "2025-12-22",
+  "ann": "2025-12-05",
+  "add_sec": "CRH",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "CVNA",
+  "eff": "2025-12-22",
+  "ann": "2025-12-05",
+  "add_sec": "Carvana",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "FIX",
+  "eff": "2025-12-22",
+  "ann": "2025-12-05",
+  "add_sec": "Comfort Systems USA",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ARES",
+  "eff": "2025-12-11",
+  "ann": "2025-12-08",
+  "add_sec": "Ares Management",
+  "reason": "Mars Inc. acquired Kellanova."
+ },
+ {
+  "ticker": "SNDK",
+  "eff": "2025-11-28",
+  "ann": "2025-11-24",
+  "add_sec": "Sandisk",
+  "reason": "Omnicom Group acquired (The) Interpublic Group."
+ },
+ {
+  "ticker": "Q",
+  "eff": "2025-11-03",
+  "ann": "2025-10-27",
+  "add_sec": "Qnity Electronics",
+  "reason": "Dupont completed the corporate spin-off of Qnity Electronics."
+ },
+ {
+  "ticker": "SOLS",
+  "eff": "2025-10-30",
+  "ann": "2025-10-27",
+  "add_sec": "Solstice Advanced Materials",
+  "reason": "Honeywell International completed the corporate spin-off of Solstice Advanced Materials."
+ },
+ {
+  "ticker": "EME",
+  "eff": "2025-09-22",
+  "ann": "2025-09-05",
+  "add_sec": "Emcor",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "HOOD",
+  "eff": "2025-09-22",
+  "ann": "2025-09-05",
+  "add_sec": "Robinhood Markets",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "APP",
+  "eff": "2025-09-22",
+  "ann": "2025-09-05",
+  "add_sec": "AppLovin",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "IBKR",
+  "eff": "2025-08-28",
+  "ann": "2025-08-25",
+  "add_sec": "Interactive Brokers",
+  "reason": "Sycamore Partners acquired Walgreen Boots Alliance."
+ },
+ {
+  "ticker": "XYZ",
+  "eff": "2025-07-23",
+  "ann": "2025-07-18",
+  "add_sec": "Block, Inc.",
+  "reason": "Chevron acquired Hess."
+ },
+ {
+  "ticker": "TTD",
+  "eff": "2025-07-18",
+  "ann": "2025-07-14",
+  "add_sec": "Trade Desk (The)",
+  "reason": "Synopsys acquired Ansys."
+ },
+ {
+  "ticker": "DDOG",
+  "eff": "2025-07-09",
+  "ann": "2025-07-02",
+  "add_sec": "Datadog",
+  "reason": "Hewlett Packard Enterprise acquired Juniper Networks."
+ },
+ {
+  "ticker": "COIN",
+  "eff": "2025-05-19",
+  "ann": "2025-05-12",
+  "add_sec": "Coinbase",
+  "reason": "Capital One acquired Discover Financial."
+ },
+ {
+  "ticker": "DASH",
+  "eff": "2025-03-24",
+  "ann": "2025-03-07",
+  "add_sec": "DoorDash",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "TKO",
+  "eff": "2025-03-24",
+  "ann": "2025-03-07",
+  "add_sec": "TKO Group Holdings",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "WSM",
+  "eff": "2025-03-24",
+  "ann": "2025-03-07",
+  "add_sec": "Williams-Sonoma, Inc.",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "EXE",
+  "eff": "2025-03-24",
+  "ann": "2025-03-07",
+  "add_sec": "Expand Energy",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "APO",
+  "eff": "2024-12-23",
+  "ann": "2024-12-06",
+  "add_sec": "Apollo Global Management",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "WDAY",
+  "eff": "2024-12-23",
+  "ann": "2024-12-06",
+  "add_sec": "Workday, Inc.",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "LII",
+  "eff": "2024-12-23",
+  "ann": "2024-12-18",
+  "add_sec": "Lennox International",
+  "reason": "Novo Holdings A/S acquired Catalent."
+ },
+ {
+  "ticker": "TPL",
+  "eff": "2024-11-26",
+  "ann": "2024-11-21",
+  "add_sec": "Texas Pacific Land Corporation",
+  "reason": "ConocoPhillips acquired Marathon Oil."
+ },
+ {
+  "ticker": "AMTM",
+  "eff": "2024-09-30",
+  "ann": "2024-09-24",
+  "add_sec": "Amentum",
+  "reason": "Jacobs Solutions completed the corporate spin-off of its Critical Mission Solutions and Cyber Intelligence business, which merged with private Amentum to create newly publicly traded Amentum Holdings."
+ },
+ {
+  "ticker": "PLTR",
+  "eff": "2024-09-23",
+  "ann": "2024-09-06",
+  "add_sec": "Palantir Technologies",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "DELL",
+  "eff": "2024-09-23",
+  "ann": "2024-09-06",
+  "add_sec": "Dell Technologies",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ERIE",
+  "eff": "2024-09-23",
+  "ann": "2024-09-06",
+  "add_sec": "Erie Indemnity",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "KKR",
+  "eff": "2024-06-24",
+  "ann": "2024-06-07",
+  "add_sec": "KKR",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "CRWD",
+  "eff": "2024-06-24",
+  "ann": "2024-06-07",
+  "add_sec": "CrowdStrike",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "GDDY",
+  "eff": "2024-06-24",
+  "ann": "2024-06-07",
+  "add_sec": "GoDaddy",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "VST",
+  "eff": "2024-05-08",
+  "ann": "2024-05-03",
+  "add_sec": "Vistra",
+  "reason": "ExxonMobil acquired Pioneer Natural Resources."
+ },
+ {
+  "ticker": "GEV",
+  "eff": "2024-04-02",
+  "ann": "2024-03-27",
+  "add_sec": "GE Vernova",
+  "reason": "General Electric completed the corporate spin-off of GE Vernova."
+ },
+ {
+  "ticker": "SOLV",
+  "eff": "2024-04-01",
+  "ann": "2024-03-27",
+  "add_sec": "Solventum",
+  "reason": "3M completed the corporate spin-off of Solventum."
+ },
+ {
+  "ticker": "CPAY",
+  "eff": "2024-03-25",
+  "ann": null,
+  "add_sec": "Corpay |",
+  "reason": "FLEETCOR Technologies changed its name to Corpay."
+ },
+ {
+  "ticker": "SMCI",
+  "eff": "2024-03-18",
+  "ann": "2024-03-01",
+  "add_sec": "Supermicro",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "DECK",
+  "eff": "2024-03-18",
+  "ann": "2024-03-01",
+  "add_sec": "Deckers Brands",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "DAY",
+  "eff": "2024-02-01",
+  "ann": null,
+  "add_sec": "Dayforce",
+  "reason": "Ceridian changed its ticker symbol from CDAY to DAY."
+ },
+ {
+  "ticker": "UBER",
+  "eff": "2023-12-18",
+  "ann": "2023-12-01",
+  "add_sec": "Uber",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "JBL",
+  "eff": "2023-12-18",
+  "ann": "2023-12-01",
+  "add_sec": "Jabil",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "BLDR",
+  "eff": "2023-12-18",
+  "ann": "2023-12-01",
+  "add_sec": "Builders FirstSource",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "HUBB",
+  "eff": "2023-10-18",
+  "ann": "2023-10-13",
+  "add_sec": "Hubbell",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "LULU",
+  "eff": "2023-10-18",
+  "ann": "2023-10-13",
+  "add_sec": "Lululemon Athletica",
+  "reason": "Acquisition of Activision Blizzard by Microsoft ."
+ },
+ {
+  "ticker": "VLTO",
+  "eff": "2023-10-02",
+  "ann": "2023-09-28",
+  "add_sec": "Veralto",
+  "reason": "Danaher Corporation completed the corporate spin-off of Veralto."
+ },
+ {
+  "ticker": "BX",
+  "eff": "2023-09-18",
+  "ann": "2023-09-01",
+  "add_sec": "Blackstone",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ABNB",
+  "eff": "2023-09-18",
+  "ann": "2023-09-01",
+  "add_sec": "Airbnb",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "KVUE",
+  "eff": "2023-08-25",
+  "ann": "2023-08-21",
+  "add_sec": "Kenvue",
+  "reason": "Johnson & Johnson offered to exchange the shares of Kenvue held for shares of Johnson & Johnson in a split-off exchange offer."
+ },
+ {
+  "ticker": "PANW",
+  "eff": "2023-06-20",
+  "ann": "2023-06-02",
+  "add_sec": "Palo Alto Networks",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "AXON",
+  "eff": "2023-05-04",
+  "ann": "2023-05-01",
+  "add_sec": "Axon Enterprise",
+  "reason": "The Federal Deposit Insurance Corporation (FDIC) placed First Republic Bank into receivership."
+ },
+ {
+  "ticker": "FICO",
+  "eff": "2023-03-20",
+  "ann": "2023-03-03",
+  "add_sec": "Fair Isaac",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "BG",
+  "eff": "2023-03-15",
+  "ann": "2023-03-13",
+  "add_sec": "Bunge Global",
+  "reason": "The FDIC placed Signature Bank into FDIC Receivership."
+ },
+ {
+  "ticker": "PODD",
+  "eff": "2023-03-15",
+  "ann": "2023-03-10",
+  "add_sec": "Insulet",
+  "reason": "The FDIC placed SVB's main subsidiary, Silicon Valley Bank , into receivership."
+ },
+ {
+  "ticker": "GEHC",
+  "eff": "2023-01-04",
+  "ann": "2022-12-28",
+  "add_sec": "GE HealthCare",
+  "reason": "General Electric completed the corporate spin-off of GE HealthCare."
+ },
+ {
+  "ticker": "STLD",
+  "eff": "2022-12-22",
+  "ann": "2022-12-19",
+  "add_sec": "Steel Dynamics",
+  "reason": "Johnson & Johnson acquired Abiomed."
+ },
+ {
+  "ticker": "FSLR",
+  "eff": "2022-12-19",
+  "ann": "2022-12-12",
+  "add_sec": "First Solar",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "MBC",
+  "eff": "2022-12-15",
+  "ann": "2022-12-12",
+  "add_sec": "MasterBrand",
+  "reason": "Fortune Brands Home & Security completed the corporate spin-off of MasterBrand."
+ },
+ {
+  "ticker": "ACGL",
+  "eff": "2022-11-01",
+  "ann": "2022-10-27",
+  "add_sec": "Arch Capital Group",
+  "reason": "Elon Musk acquired Twitter."
+ },
+ {
+  "ticker": "TRGP",
+  "eff": "2022-10-12",
+  "ann": "2022-10-06",
+  "add_sec": "Targa Resources",
+  "reason": "Elliott Investment Management acquired Nielsen Holdings."
+ },
+ {
+  "ticker": "PCG",
+  "eff": "2022-10-03",
+  "ann": "2022-09-23",
+  "add_sec": "PG&E",
+  "reason": "Vista Equity Partners acquired Citrix Systems."
+ },
+ {
+  "ticker": "EQT",
+  "eff": "2022-10-03",
+  "ann": "2022-09-23",
+  "add_sec": "EQT Corporation",
+  "reason": "Prologis acquired Duke Realty."
+ },
+ {
+  "ticker": "CSGP",
+  "eff": "2022-09-19",
+  "ann": "2022-09-02",
+  "add_sec": "CoStar Group",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "INVH",
+  "eff": "2022-09-19",
+  "ann": "2022-09-02",
+  "add_sec": "Invitation Homes",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "KDP",
+  "eff": "2022-06-21",
+  "ann": "2022-06-03",
+  "add_sec": "Keurig Dr Pepper",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ON",
+  "eff": "2022-06-21",
+  "ann": "2022-06-03",
+  "add_sec": "ON Semiconductor",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "VICI",
+  "eff": "2022-06-08",
+  "ann": "2022-06-03",
+  "add_sec": "Vici Properties",
+  "reason": "Oracle acquired Cerner."
+ },
+ {
+  "ticker": "WBD",
+  "eff": "2022-04-11",
+  "ann": "2022-04-07",
+  "add_sec": "Warner Bros. Discovery",
+  "reason": "WarnerMedia and Discovery merged to create Warner Bros. Discovery ."
+ },
+ {
+  "ticker": "CPT",
+  "eff": "2022-04-04",
+  "ann": "2022-03-29",
+  "add_sec": "Camden Property Trust",
+  "reason": "M&T Bank acquired People's United Financial."
+ },
+ {
+  "ticker": "MOH",
+  "eff": "2022-03-02",
+  "ann": "2022-02-25",
+  "add_sec": "Molina Healthcare",
+  "reason": "S&P Global acquired IHS Markit."
+ },
+ {
+  "ticker": "NDSN",
+  "eff": "2022-02-15",
+  "ann": "2022-02-10",
+  "add_sec": "Nordson Corporation",
+  "reason": "Advanced Micro Devices acquired Xilinx."
+ },
+ {
+  "ticker": "CEG",
+  "eff": "2022-02-02",
+  "ann": "2021-05-27",
+  "add_sec": "Constellation Energy",
+  "reason": "Exelon completed the corporate spin-off of Constellation Energy."
+ },
+ {
+  "ticker": "SBNY",
+  "eff": "2021-12-20",
+  "ann": "2021-12-03",
+  "add_sec": "Signature Bank",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "WTW",
+  "eff": "2022-01-10",
+  "ann": null,
+  "add_sec": "Willis Towers Watson",
+  "reason": "Willis Towers Watson changed its ticker symbol from WLTW to WTW."
+ },
+ {
+  "ticker": "SEDG",
+  "eff": "2021-12-20",
+  "ann": "2021-12-03",
+  "add_sec": "SolarEdge",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "FDS",
+  "eff": "2021-12-20",
+  "ann": "2021-12-03",
+  "add_sec": "FactSet",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "EPAM",
+  "eff": "2021-12-14",
+  "ann": null,
+  "add_sec": "EPAM Systems",
+  "reason": "Canadian Pacific acquired Kansas City Southern."
+ },
+ {
+  "ticker": "MTCH",
+  "eff": "2021-09-20",
+  "ann": "2021-09-03",
+  "add_sec": "Match Group",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "CDAY",
+  "eff": "2021-09-20",
+  "ann": "2021-09-03",
+  "add_sec": "Ceridian",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "BRO",
+  "eff": "2021-09-20",
+  "ann": "2021-09-03",
+  "add_sec": "Brown & Brown",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "TECH",
+  "eff": "2021-08-30",
+  "ann": "2021-08-24",
+  "add_sec": "Bio-Techne",
+  "reason": "Analog Devices acquired Maxim Integrated Products."
+ },
+ {
+  "ticker": "MRNA",
+  "eff": "2021-07-21",
+  "ann": "2021-07-15",
+  "add_sec": "Moderna",
+  "reason": "AstraZeneca acquired Alexion Pharmaceuticals."
+ },
+ {
+  "ticker": "OGN",
+  "eff": "2021-06-03",
+  "ann": "2021-05-27",
+  "add_sec": "Organon & Co.",
+  "reason": "Merck completed the corporate spin-off of Organon."
+ },
+ {
+  "ticker": "CRL",
+  "eff": "2021-05-14",
+  "ann": "2021-05-10",
+  "add_sec": "Charles River Laboratories",
+  "reason": "Teledyne Technologies acquired FLIR Systems."
+ },
+ {
+  "ticker": "PTC",
+  "eff": "2021-04-20",
+  "ann": "2021-04-15",
+  "add_sec": "PTC",
+  "reason": "Siemens Healthineers acquired Varian Medical Systems."
+ },
+ {
+  "ticker": "NXPI",
+  "eff": "2021-03-22",
+  "ann": "2021-03-12",
+  "add_sec": "NXP",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "PENN",
+  "eff": "2021-03-22",
+  "ann": "2021-03-12",
+  "add_sec": "Penn National Gaming",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "GNRC",
+  "eff": "2021-03-22",
+  "ann": "2021-03-12",
+  "add_sec": "Generac Holdings",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "CZR",
+  "eff": "2021-03-22",
+  "ann": "2021-03-12",
+  "add_sec": "Caesars Entertainment",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "MPWR",
+  "eff": "2021-02-12",
+  "ann": "2021-02-08",
+  "add_sec": "Monolithic Power Systems",
+  "reason": "Corporate spin-off of Technip Energies."
+ },
+ {
+  "ticker": "TRMB",
+  "eff": "2021-01-21",
+  "ann": "2021-01-15",
+  "add_sec": "Trimble",
+  "reason": "ConocoPhillips acquired Concho Resources."
+ },
+ {
+  "ticker": "ENPH",
+  "eff": "2021-01-07",
+  "ann": "2020-12-30",
+  "add_sec": "Enphase Energy",
+  "reason": "LVMH Moet Hennessy-Louis Vuitton SE acquired Tiffany & Co."
+ },
+ {
+  "ticker": "TSLA",
+  "eff": "2020-12-21",
+  "ann": "2020-12-11",
+  "add_sec": "Tesla",
+  "reason": "Aimco completed the corporate spin-off of Apartment Income REIT."
+ },
+ {
+  "ticker": "VNT",
+  "eff": "2020-10-09",
+  "ann": "2020-10-05",
+  "add_sec": "Vontier",
+  "reason": "Fortive completed the corporate spin-off of Vontier."
+ },
+ {
+  "ticker": "POOL",
+  "eff": "2020-10-07",
+  "ann": "2020-10-01",
+  "add_sec": "Pool Corporation",
+  "reason": "Morgan Stanley acquired E*Trade."
+ },
+ {
+  "ticker": "ETSY",
+  "eff": "2020-09-21",
+  "ann": "2020-09-04",
+  "add_sec": "Etsy",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "TER",
+  "eff": "2020-09-21",
+  "ann": "2020-09-04",
+  "add_sec": "Teradyne",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "CTLT",
+  "eff": "2020-09-21",
+  "ann": "2020-09-04",
+  "add_sec": "Catalent",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "BIO",
+  "eff": "2020-06-22",
+  "ann": "2020-06-12",
+  "add_sec": "Bio-Rad Laboratories",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "TDY",
+  "eff": "2020-06-22",
+  "ann": "2020-06-12",
+  "add_sec": "Teledyne",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "TYL",
+  "eff": "2020-06-22",
+  "ann": "2020-06-12",
+  "add_sec": "Tyler Technologies",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "WST",
+  "eff": "2020-05-22",
+  "ann": "2020-05-18",
+  "add_sec": "West Pharmaceutical Services",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "DPZ",
+  "eff": "2020-05-12",
+  "ann": "2020-05-06",
+  "add_sec": "Domino's Pizza",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "DXCM",
+  "eff": "2020-05-12",
+  "ann": "2020-05-06",
+  "add_sec": "Dexcom",
+  "reason": "Allergan was acquired by AbbVie ."
+ },
+ {
+  "ticker": "OTIS",
+  "eff": "2020-04-03",
+  "ann": "2020-03-31",
+  "add_sec": "Otis Worldwide",
+  "reason": "United Technologies corporate spin-off of Otis and Carrier and acquired Raytheon Company."
+ },
+ {
+  "ticker": "CARR",
+  "eff": "2020-04-03",
+  "ann": "2020-03-31",
+  "add_sec": "Carrier",
+  "reason": "United Technologies completed the corporate spin-off of Otis and Carrier and acquired Raytheon Company."
+ },
+ {
+  "ticker": "HWM",
+  "eff": "2020-04-01",
+  "ann": null,
+  "add_sec": "Howmet Aerospace",
+  "reason": "Arconic separated into 2 companies - Howmet remained in the index."
+ },
+ {
+  "ticker": "IR",
+  "eff": "2020-03-02",
+  "ann": "2020-02-27",
+  "add_sec": "Ingersoll Rand",
+  "reason": "Gardner Denver acquired Ingersoll Rand 's industrial businesses then changed its name to the \"new\" Ingersoll Rand Inc."
+ },
+ {
+  "ticker": "PAYC",
+  "eff": "2020-01-28",
+  "ann": "2020-01-22",
+  "add_sec": "Paycom",
+  "reason": "Centene acquired Wellcare."
+ },
+ {
+  "ticker": "LYV",
+  "eff": "2019-12-23",
+  "ann": "2019-12-13",
+  "add_sec": "Live Nation Entertainment",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ZBRA",
+  "eff": "2019-12-23",
+  "ann": "2019-12-13",
+  "add_sec": "Zebra Technologies",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "STE",
+  "eff": "2019-12-23",
+  "ann": "2019-12-13",
+  "add_sec": "Steris",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ODFL",
+  "eff": "2019-12-09",
+  "ann": "2019-12-02",
+  "add_sec": "Old Dominion Freight Line",
+  "reason": "BB&T acquired SunTrust to form Truist Financial ."
+ },
+ {
+  "ticker": "WRB",
+  "eff": "2019-12-05",
+  "ann": "2019-11-27",
+  "add_sec": "W. R. Berkley Corporation",
+  "reason": "CBS acquired Viacom to form ViacomCBS ."
+ },
+ {
+  "ticker": "NOW",
+  "eff": "2019-11-21",
+  "ann": "2019-11-18",
+  "add_sec": "ServiceNow",
+  "reason": "Bristol-Myers Squibb acquired Celgene."
+ },
+ {
+  "ticker": "LVS",
+  "eff": "2019-10-03",
+  "ann": "2019-09-26",
+  "add_sec": "Las Vegas Sands",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "NVR",
+  "eff": "2019-09-26",
+  "ann": "2019-09-20",
+  "add_sec": "NVR",
+  "reason": "SPB completed the corporate spin-off of Jefferies Financial Group."
+ },
+ {
+  "ticker": "CDW",
+  "eff": "2019-09-23",
+  "ann": null,
+  "add_sec": "CDW",
+  "reason": "Global Payments acquired TSS."
+ },
+ {
+  "ticker": "LDOS",
+  "eff": "2019-08-09",
+  "ann": "2019-08-01",
+  "add_sec": "Leidos",
+  "reason": "Occidental Petroleum acquired Anadarko Petroleum."
+ },
+ {
+  "ticker": "IEX",
+  "eff": "2019-08-09",
+  "ann": "2019-08-01",
+  "add_sec": "IDEX Corporation",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "TMUS",
+  "eff": "2019-07-15",
+  "ann": "2019-07-09",
+  "add_sec": "T-Mobile US",
+  "reason": "IBM acquired Red Hat."
+ },
+ {
+  "ticker": "MKTX",
+  "eff": "2019-07-01",
+  "ann": "2019-06-24",
+  "add_sec": "MarketAxess",
+  "reason": "L3 was acquired by Harris Corporation."
+ },
+ {
+  "ticker": "AMCR",
+  "eff": "2019-06-11",
+  "ann": "2019-06-03",
+  "add_sec": "Amcor",
+  "reason": "BMS changed to AMCR post merger with Amcor; subsequently renamed to Amcor ."
+ },
+ {
+  "ticker": "BMS",
+  "eff": "2019-06-07",
+  "ann": "2019-06-03",
+  "add_sec": "Bemis",
+  "reason": "Merger of Bemis and Amcor; Bemis was the surviving entity."
+ },
+ {
+  "ticker": "DD",
+  "eff": "2019-06-03",
+  "ann": null,
+  "add_sec": "DuPont",
+  "reason": "DWDP changed to DD after spinning off Corteva."
+ },
+ {
+  "ticker": "CTVA",
+  "eff": "2019-06-03",
+  "ann": null,
+  "add_sec": "Corteva",
+  "reason": "DowDuPont completed the corporate spin-off of Corteva."
+ },
+ {
+  "ticker": "DOW",
+  "eff": "2019-04-02",
+  "ann": null,
+  "add_sec": "Dow",
+  "reason": "DowDuPont completed the corporate spin-off of Dow Inc."
+ },
+ {
+  "ticker": "FOXA",
+  "eff": "2019-03-19",
+  "ann": "2019-03-14",
+  "add_sec": "Fox Corporation",
+  "reason": "21st Century Fox merged with Disney and some parts spun off as Fox Corporation."
+ },
+ {
+  "ticker": "FOX",
+  "eff": "2019-03-19",
+  "ann": "2019-03-14",
+  "add_sec": "Fox Corporation",
+  "reason": "21st Century Fox merged with Disney and some parts spun off as Fox Corporation."
+ },
+ {
+  "ticker": "WAB",
+  "eff": "2019-02-27",
+  "ann": null,
+  "add_sec": "Wabtec",
+  "reason": "Wabtec acquired GE transportation business"
+ },
+ {
+  "ticker": "ATO",
+  "eff": "2019-02-15",
+  "ann": null,
+  "add_sec": "Atmos Energy",
+  "reason": "Encana acquired Newfield Exploration."
+ },
+ {
+  "ticker": "TFX",
+  "eff": "2019-01-18",
+  "ann": null,
+  "add_sec": "Teleflex",
+  "reason": "Pacific Gas & Electric Company filed for bankruptcy."
+ },
+ {
+  "ticker": "FRC",
+  "eff": "2019-01-02",
+  "ann": null,
+  "add_sec": "First Republic Bank",
+  "reason": "Dominion Energy acquired SCANA."
+ },
+ {
+  "ticker": "CE",
+  "eff": "2018-12-24",
+  "ann": null,
+  "add_sec": "Celanese",
+  "reason": "Cigna acquired Express Scripts."
+ },
+ {
+  "ticker": "LW",
+  "eff": "2018-12-03",
+  "ann": null,
+  "add_sec": "Lamb Weston",
+  "reason": "UTX acquired Rockwell Collins."
+ },
+ {
+  "ticker": "MXIM",
+  "eff": "2018-12-03",
+  "ann": null,
+  "add_sec": "Maxim Integrated",
+  "reason": "CVS acquired Aetna."
+ },
+ {
+  "ticker": "FANG",
+  "eff": "2018-12-03",
+  "ann": null,
+  "add_sec": "Diamondback Energy",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "JKHY",
+  "eff": "2018-11-13",
+  "ann": null,
+  "add_sec": "Jack Henry & Associates",
+  "reason": "EQT completed the corporate spin-off of ETRN."
+ },
+ {
+  "ticker": "KEYS",
+  "eff": "2018-11-06",
+  "ann": null,
+  "add_sec": "Keysight",
+  "reason": "CA was acquired by Broadcom ."
+ },
+ {
+  "ticker": "FTNT",
+  "eff": "2018-10-11",
+  "ann": "2018-10-04",
+  "add_sec": "Fortinet",
+  "reason": "EVHC was acquired by KKR ."
+ },
+ {
+  "ticker": "ROL",
+  "eff": "2018-10-01",
+  "ann": "2018-09-25",
+  "add_sec": "Rollins",
+  "reason": "ANDV was acquired by Marathon Petroleum ."
+ },
+ {
+  "ticker": "WCG",
+  "eff": "2018-09-14",
+  "ann": "2018-09-11",
+  "add_sec": "WellCare",
+  "reason": "XL was acquired by Axa ."
+ },
+ {
+  "ticker": "ANET",
+  "eff": "2018-08-28",
+  "ann": "2018-08-23",
+  "add_sec": "Arista Networks",
+  "reason": "GGP was acquired by Brookfield Property Partners ."
+ },
+ {
+  "ticker": "CPRT",
+  "eff": "2018-07-02",
+  "ann": null,
+  "add_sec": "Copart",
+  "reason": "DPS was acquired by Keurig Green Mountain ."
+ },
+ {
+  "ticker": "FLT",
+  "eff": "2018-06-20",
+  "ann": null,
+  "add_sec": "FleetCor Technologies",
+  "reason": "AT&T acquired Time Warner."
+ },
+ {
+  "ticker": "BR",
+  "eff": "2018-06-18",
+  "ann": null,
+  "add_sec": "Broadridge Financial Solutions",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "HFC",
+  "eff": "2018-06-18",
+  "ann": null,
+  "add_sec": "HollyFrontier",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "TWTR",
+  "eff": "2018-06-07",
+  "ann": null,
+  "add_sec": "Twitter",
+  "reason": "Bayer acquired Monsanto."
+ },
+ {
+  "ticker": "EVRG",
+  "eff": "2018-06-05",
+  "ann": null,
+  "add_sec": "Evergy",
+  "reason": "Westar Energy acquired Great Plains Energy and changed name to Evergy."
+ },
+ {
+  "ticker": "ABMD",
+  "eff": "2018-05-31",
+  "ann": null,
+  "add_sec": "Abiomed",
+  "reason": "Wyndham Worldwide completed the corporate spin-off of Wyndham Hotels & Resorts ."
+ },
+ {
+  "ticker": "MSCI",
+  "eff": "2018-04-04",
+  "ann": null,
+  "add_sec": "MSCI",
+  "reason": "General Dynamics acquired CSRA."
+ },
+ {
+  "ticker": "TTWO",
+  "eff": "2018-03-19",
+  "ann": null,
+  "add_sec": "Take-Two Interactive",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "SIVB",
+  "eff": "2018-03-19",
+  "ann": null,
+  "add_sec": "SVB Financial Group",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "NKTR",
+  "eff": "2018-03-19",
+  "ann": null,
+  "add_sec": "Nektar Therapeutics",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "IPGP",
+  "eff": "2018-03-07",
+  "ann": null,
+  "add_sec": "IPG Photonics",
+  "reason": "Discovery Communications acquired Scripps Networks Interactive."
+ },
+ {
+  "ticker": "HII",
+  "eff": "2018-01-03",
+  "ann": "2017-12-28",
+  "add_sec": "Huntington Ingalls Industries",
+  "reason": "Becton Dickinson acquired CR Bard."
+ },
+ {
+  "ticker": "IQV",
+  "eff": "2017-11-15",
+  "ann": null,
+  "add_sec": "IQVIA",
+  "reason": "QuintilesIMS changed its name to IQVIA and ticker symbol from Q to IQV."
+ },
+ {
+  "ticker": "NCLH",
+  "eff": "2017-10-13",
+  "ann": null,
+  "add_sec": "Norwegian Cruise Line Holdings",
+  "reason": "CenturyLink acquired Level 3 Communications."
+ },
+ {
+  "ticker": "CDNS",
+  "eff": "2017-09-18",
+  "ann": null,
+  "add_sec": "Cadence Design Systems",
+  "reason": "Sycamore Partners acquired Staples."
+ },
+ {
+  "ticker": "DWDP",
+  "eff": "2017-09-01",
+  "ann": null,
+  "add_sec": "DuPont",
+  "reason": "The Dow Chemical Company renamed to DowDuPont Inc."
+ },
+ {
+  "ticker": "SBAC",
+  "eff": "2017-09-01",
+  "ann": null,
+  "add_sec": "SBA Communications",
+  "reason": "The Dow Chemical Company acquired DuPont."
+ },
+ {
+  "ticker": "Q",
+  "eff": "2017-08-29",
+  "ann": null,
+  "add_sec": "QuintilesIMS",
+  "reason": "Amazon acquired Whole Foods Market."
+ },
+ {
+  "ticker": "BHF",
+  "eff": "2017-08-08",
+  "ann": null,
+  "add_sec": "Brighthouse Financial",
+  "reason": "MetLife completed the corporate spin-off of Brighthouse Financial."
+ },
+ {
+  "ticker": "DRE",
+  "eff": "2017-07-26",
+  "ann": null,
+  "add_sec": "Duke Realty",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "AOS",
+  "eff": "2017-07-26",
+  "ann": null,
+  "add_sec": "A. O. Smith",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "PKG",
+  "eff": "2017-07-26",
+  "ann": null,
+  "add_sec": "Packaging Corporation of America",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "RMD",
+  "eff": "2017-07-26",
+  "ann": null,
+  "add_sec": "ResMed",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "MGM",
+  "eff": "2017-07-26",
+  "ann": null,
+  "add_sec": "MGM Resorts International",
+  "reason": "British American Tobacco (NYSE MKT:BTI) acquired Reynolds American."
+ },
+ {
+  "ticker": "BKR",
+  "eff": "2017-07-07",
+  "ann": null,
+  "add_sec": "Baker Hughes",
+  "reason": "Baker Hughes merged with GE Oil & Gas to form a new company."
+ },
+ {
+  "ticker": "HLT",
+  "eff": "2017-06-19",
+  "ann": null,
+  "add_sec": "Hilton",
+  "reason": "Verizon acquired Yahoo operations; remainder of Yahoo became Altaba ."
+ },
+ {
+  "ticker": "ALGN",
+  "eff": "2017-06-19",
+  "ann": null,
+  "add_sec": "Align Technology",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ANSS",
+  "eff": "2017-06-19",
+  "ann": null,
+  "add_sec": "Ansys",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "RE",
+  "eff": "2017-06-19",
+  "ann": null,
+  "add_sec": "Everest Re",
+  "reason": "Reckitt Benckiser acquired Mead Johnson Nutrition."
+ },
+ {
+  "ticker": "INFO",
+  "eff": "2017-06-02",
+  "ann": null,
+  "add_sec": "IHS Markit",
+  "reason": "TGNA completed the corporate spin-off of Cars.com ."
+ },
+ {
+  "ticker": "IT",
+  "eff": "2017-04-05",
+  "ann": null,
+  "add_sec": "Gartner",
+  "reason": "Gartner acquired CEB."
+ },
+ {
+  "ticker": "DXC",
+  "eff": "2017-04-04",
+  "ann": null,
+  "add_sec": "DXC Technology",
+  "reason": "HPE completed the corporate spin-off of Everett, merged with CSC to form DXC Technology."
+ },
+ {
+  "ticker": "AMD",
+  "eff": "2017-03-20",
+  "ann": null,
+  "add_sec": "Advanced Micro Devices",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "RJF",
+  "eff": "2017-03-20",
+  "ann": null,
+  "add_sec": "Raymond James Financial",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ARE",
+  "eff": "2017-03-20",
+  "ann": null,
+  "add_sec": "Alexandria Real Estate Equities",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "SNPS",
+  "eff": "2017-03-16",
+  "ann": null,
+  "add_sec": "Synopsys",
+  "reason": "Samsung Electronics acquired Harman International Industries."
+ },
+ {
+  "ticker": "DISH",
+  "eff": "2017-03-13",
+  "ann": null,
+  "add_sec": "Dish Network",
+  "reason": "Analog Devices acquired Linear Technology."
+ },
+ {
+  "ticker": "REG",
+  "eff": "2017-03-02",
+  "ann": null,
+  "add_sec": "Regency Centers",
+  "reason": "Regency Centers acquired EQY."
+ },
+ {
+  "ticker": "CBOE",
+  "eff": "2017-03-01",
+  "ann": null,
+  "add_sec": "Cboe Holdings",
+  "reason": "CBOE acquired BATS."
+ },
+ {
+  "ticker": "INCY",
+  "eff": "2017-02-28",
+  "ann": null,
+  "add_sec": "Incyte",
+  "reason": "SE was acquired by ENB"
+ },
+ {
+  "ticker": "IDXX",
+  "eff": "2017-01-05",
+  "ann": null,
+  "add_sec": "Idexx Laboratories",
+  "reason": "Abbott Laboratories acquired St. Jude Medical."
+ },
+ {
+  "ticker": "MAA",
+  "eff": "2016-12-02",
+  "ann": null,
+  "add_sec": "Mid-America Apartments",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "EVHC",
+  "eff": "2016-12-02",
+  "ann": null,
+  "add_sec": "Envision Healthcare",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "COTY",
+  "eff": "2016-09-30",
+  "ann": "2016-09-27",
+  "add_sec": "Coty",
+  "reason": "Siris Capital Group acquired Polycom."
+ },
+ {
+  "ticker": "COO",
+  "eff": "2016-09-22",
+  "ann": null,
+  "add_sec": "The Cooper Companies",
+  "reason": "MAR acquired Starwood Hotels"
+ },
+ {
+  "ticker": "CHTR",
+  "eff": "2016-09-08",
+  "ann": null,
+  "add_sec": "Charter Communications",
+  "reason": "Dell acquired EMC."
+ },
+ {
+  "ticker": "MTD",
+  "eff": "2016-09-06",
+  "ann": null,
+  "add_sec": "Mettler Toledo",
+  "reason": "TYC acquired JCI and retained JCI ticker."
+ },
+ {
+  "ticker": "FTV",
+  "eff": "2016-07-05",
+  "ann": null,
+  "add_sec": "Fortive Corp",
+  "reason": "CPGX was acquired by TRP."
+ },
+ {
+  "ticker": "LNT",
+  "eff": "2016-07-01",
+  "ann": null,
+  "add_sec": "Alliant Energy Corp",
+  "reason": "AGL Resources was acquired by Southern Company."
+ },
+ {
+  "ticker": "ALB",
+  "eff": "2016-07-01",
+  "ann": null,
+  "add_sec": "Albemarle Corporation",
+  "reason": "TECO Energy was acquired by EMA."
+ },
+ {
+  "ticker": "FBHS",
+  "eff": "2016-06-22",
+  "ann": "2016-06-21",
+  "add_sec": "Fortune Brands Home & Security",
+  "reason": "Cablevision Systems was acquired by Altice."
+ },
+ {
+  "ticker": "TDG",
+  "eff": "2016-06-03",
+  "ann": null,
+  "add_sec": "TransDigm Group",
+  "reason": "SHPG acquired Baxalta."
+ },
+ {
+  "ticker": "AJG",
+  "eff": "2016-05-31",
+  "ann": null,
+  "add_sec": "Arthur J. Gallagher & Co.",
+  "reason": "Coca-Cola Enterprises merged with European bottlers."
+ },
+ {
+  "ticker": "LKQ",
+  "eff": "2016-05-23",
+  "ann": null,
+  "add_sec": "LKQ Corporation",
+  "reason": "Airgas was acquired by Air Liquide."
+ },
+ {
+  "ticker": "DLR",
+  "eff": "2016-05-18",
+  "ann": null,
+  "add_sec": "Digital Realty",
+  "reason": "Time Warner Cable was acquired by Charter."
+ },
+ {
+  "ticker": "ALK",
+  "eff": "2016-05-13",
+  "ann": null,
+  "add_sec": "Alaska Air Group",
+  "reason": "Sandisk was acquired by Western Digital."
+ },
+ {
+  "ticker": "AYI",
+  "eff": "2016-05-03",
+  "ann": null,
+  "add_sec": "Acuity Brands",
+  "reason": "ADT was acquired by Apollo."
+ },
+ {
+  "ticker": "GPN",
+  "eff": "2016-04-25",
+  "ann": null,
+  "add_sec": "Global Payments",
+  "reason": "Global Payments acquired Heartland Payment Systems."
+ },
+ {
+  "ticker": "ULTA",
+  "eff": "2016-04-18",
+  "ann": null,
+  "add_sec": "Ulta Beauty",
+  "reason": ""
+ },
+ {
+  "ticker": "UA",
+  "eff": "2016-04-08",
+  "ann": null,
+  "add_sec": "Under Armour (Class C)",
+  "reason": "Under Armour distribution of second class of stock."
+ },
+ {
+  "ticker": "FL",
+  "eff": "2016-04-04",
+  "ann": null,
+  "add_sec": "Foot Locker",
+  "reason": "Schlumberger acquired Cameron."
+ },
+ {
+  "ticker": "HOLX",
+  "eff": "2016-03-30",
+  "ann": null,
+  "add_sec": "Hologic",
+  "reason": "Exelon acquired Pepco."
+ },
+ {
+  "ticker": "CNC",
+  "eff": "2016-03-30",
+  "ann": null,
+  "add_sec": "Centene Corporation",
+  "reason": "Centene acquired Health Net ."
+ },
+ {
+  "ticker": "UDR",
+  "eff": "2016-03-07",
+  "ann": null,
+  "add_sec": "UDR",
+  "reason": "JAB Holding Company acquired Keurig Green Mountain."
+ },
+ {
+  "ticker": "AWK",
+  "eff": "2016-03-04",
+  "ann": null,
+  "add_sec": "American Water Works",
+  "reason": ""
+ },
+ {
+  "ticker": "CXO",
+  "eff": "2016-02-22",
+  "ann": null,
+  "add_sec": "Concho Resources",
+  "reason": "Weyerhaeuser acquired Plum Creek Timber."
+ },
+ {
+  "ticker": "CFG",
+  "eff": "2016-02-01",
+  "ann": null,
+  "add_sec": "Citizens",
+  "reason": ""
+ },
+ {
+  "ticker": "FRT",
+  "eff": "2016-02-01",
+  "ann": null,
+  "add_sec": "Federal Realty Investment Trust",
+  "reason": ""
+ },
+ {
+  "ticker": "EXR",
+  "eff": "2016-01-19",
+  "ann": null,
+  "add_sec": "Extra Space Storage",
+  "reason": "ACE Ltd acquired Chubb and retained the CB ticker."
+ },
+ {
+  "ticker": "WLTW",
+  "eff": "2016-01-05",
+  "ann": null,
+  "add_sec": "Willis Towers Watson",
+  "reason": "Willis Holdings merged with Towers Watson and was renamed Willis Towers Watson."
+ },
+ {
+  "ticker": "CHD",
+  "eff": "2015-12-29",
+  "ann": null,
+  "add_sec": "Church & Dwight",
+  "reason": "Altera was acquired by Intel."
+ },
+ {
+  "ticker": "CSRA",
+  "eff": "2015-12-01",
+  "ann": null,
+  "add_sec": "CSRA",
+  "reason": "CSC completed the corporate spin-off off CSRA."
+ },
+ {
+  "ticker": "ILMN",
+  "eff": "2015-11-19",
+  "ann": null,
+  "add_sec": "Illumina",
+  "reason": "Sigma-Aldrich was acquired by Merck KGaA."
+ },
+ {
+  "ticker": "SYF",
+  "eff": "2015-11-18",
+  "ann": null,
+  "add_sec": "Synchrony Financial",
+  "reason": "GE completed the corporate spin-off of Synchrony Financial."
+ },
+ {
+  "ticker": "HPE",
+  "eff": "2015-11-02",
+  "ann": null,
+  "add_sec": "Hewlett Packard Enterprise",
+  "reason": "HPQ completed the corporate spin-off of Hewlett Packard Enterprise."
+ },
+ {
+  "ticker": "VRSK",
+  "eff": "2015-10-07",
+  "ann": null,
+  "add_sec": "Verisk Analytics",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "CMCSK",
+  "eff": "2015-09-18",
+  "ann": null,
+  "add_sec": "Comcast Class K Special",
+  "reason": "Share class methodology change."
+ },
+ {
+  "ticker": "FOX",
+  "eff": "2015-09-18",
+  "ann": null,
+  "add_sec": "Twenty-First Century Fox Class B",
+  "reason": "Share class methodology change."
+ },
+ {
+  "ticker": "NWS",
+  "eff": "2015-09-18",
+  "ann": null,
+  "add_sec": "News Corporation Class B",
+  "reason": "Share class methodology change."
+ },
+ {
+  "ticker": "UAL",
+  "eff": "2015-09-02",
+  "ann": null,
+  "add_sec": "United Continental Holdings",
+  "reason": "Hospira was acquired."
+ },
+ {
+  "ticker": "ATVI",
+  "eff": "2015-08-28",
+  "ann": null,
+  "add_sec": "Activision Blizzard",
+  "reason": "Pall was acquired."
+ },
+ {
+  "ticker": "SIG",
+  "eff": "2015-07-29",
+  "ann": null,
+  "add_sec": "Signet Jewelers",
+  "reason": "DirecTV was acquired by AT&T."
+ },
+ {
+  "ticker": "PYPL",
+  "eff": "2015-07-20",
+  "ann": null,
+  "add_sec": "PayPal",
+  "reason": "eBay completed the corporate spin-off of PayPal."
+ },
+ {
+  "ticker": "AAP",
+  "eff": "2015-07-08",
+  "ann": null,
+  "add_sec": "Advance Auto Parts",
+  "reason": "Family Dollar was acquired."
+ },
+ {
+  "ticker": "KHC",
+  "eff": "2015-07-06",
+  "ann": null,
+  "add_sec": "Kraft Heinz",
+  "reason": "Kraft merged with Heinz."
+ },
+ {
+  "ticker": "CPGX",
+  "eff": "2015-07-02",
+  "ann": null,
+  "add_sec": "Columbia Pipeline Group",
+  "reason": "Spin off of Columbia Pipeline."
+ },
+ {
+  "ticker": "JBHT",
+  "eff": "2015-07-01",
+  "ann": null,
+  "add_sec": "J.B. Hunt",
+  "reason": "Integrys was acquired."
+ },
+ {
+  "ticker": "BXLT",
+  "eff": "2015-07-01",
+  "ann": null,
+  "add_sec": "Baxalta",
+  "reason": "Baxter completed the corporate spin-off of Baxalta."
+ },
+ {
+  "ticker": "QRVO",
+  "eff": "2015-06-11",
+  "ann": null,
+  "add_sec": "Qorvo",
+  "reason": "Lorillard was acquired."
+ },
+ {
+  "ticker": "O",
+  "eff": "2015-04-07",
+  "ann": null,
+  "add_sec": "Realty Income Corporation",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "AAL",
+  "eff": "2015-03-23",
+  "ann": null,
+  "add_sec": "American Airlines Group",
+  "reason": "Allergan was acquired by Actavis (and changed its name to Allergan )."
+ },
+ {
+  "ticker": "EQIX",
+  "eff": "2015-03-23",
+  "ann": null,
+  "add_sec": "Equinix",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "HBI",
+  "eff": "2015-03-23",
+  "ann": null,
+  "add_sec": "Hanesbrands",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "HSIC",
+  "eff": "2015-03-18",
+  "ann": null,
+  "add_sec": "Henry Schein",
+  "reason": "Carefusion was acquired by Becton Dickinson."
+ },
+ {
+  "ticker": "SWKS",
+  "eff": "2015-03-12",
+  "ann": null,
+  "add_sec": "Skyworks",
+  "reason": "PetSmart was acquired by private equity consortium."
+ },
+ {
+  "ticker": "HCA",
+  "eff": "2015-01-27",
+  "ann": null,
+  "add_sec": "HCA Holdings",
+  "reason": "Safeway was acquired by a private equity consortium."
+ },
+ {
+  "ticker": "ENDP",
+  "eff": "2015-01-27",
+  "ann": null,
+  "add_sec": "Endo International",
+  "reason": "Covidien was acquired by Medtronic."
+ },
+ {
+  "ticker": "RCL",
+  "eff": "2014-12-05",
+  "ann": null,
+  "add_sec": "Royal Caribbean Cruises",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "LVLT",
+  "eff": "2014-11-05",
+  "ann": null,
+  "add_sec": "Level 3 Communications",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "URI",
+  "eff": "2014-09-20",
+  "ann": null,
+  "add_sec": "United Rentals",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "UHS",
+  "eff": "2014-09-20",
+  "ann": null,
+  "add_sec": "Universal Health Services",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "MNK",
+  "eff": "2014-08-18",
+  "ann": null,
+  "add_sec": "Mallinckrodt",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "DISCK",
+  "eff": "2014-08-06",
+  "ann": null,
+  "add_sec": "Discovery Communications",
+  "reason": "Class C share distribution."
+ },
+ {
+  "ticker": "MLM",
+  "eff": "2014-07-02",
+  "ann": null,
+  "add_sec": "Martin Marietta",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "AMG",
+  "eff": "2014-07-01",
+  "ann": null,
+  "add_sec": "Affiliated Managers Group",
+  "reason": "Actavis acquired Forest Laboratories."
+ },
+ {
+  "ticker": "XEC",
+  "eff": "2014-06-20",
+  "ann": null,
+  "add_sec": "Cimarex Energy",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "AVGO",
+  "eff": "2014-05-08",
+  "ann": null,
+  "add_sec": "Avago Technologies",
+  "reason": "Avago acquired LSI."
+ },
+ {
+  "ticker": "UA",
+  "eff": "2014-05-01",
+  "ann": null,
+  "add_sec": "Under Armour",
+  "reason": "Beam was acquired by Suntory."
+ },
+ {
+  "ticker": "NAVI",
+  "eff": "2014-05-01",
+  "ann": null,
+  "add_sec": "Navient",
+  "reason": "SLM completed the corporate spin-off of Navient."
+ },
+ {
+  "ticker": "GOOGL",
+  "eff": "2014-04-03",
+  "ann": null,
+  "add_sec": "Google",
+  "reason": "Google Class C share distribution."
+ },
+ {
+  "ticker": "ESS",
+  "eff": "2014-04-02",
+  "ann": null,
+  "add_sec": "Essex Property Trust",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "GMCR",
+  "eff": "2014-03-21",
+  "ann": null,
+  "add_sec": "Keurig Green Mountain",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "TSCO",
+  "eff": "2014-01-24",
+  "ann": null,
+  "add_sec": "Tractor Supply",
+  "reason": "Life Technologies was acquired by Thermo Fisher Scientific."
+ },
+ {
+  "ticker": "ADS",
+  "eff": "2013-12-23",
+  "ann": null,
+  "add_sec": "Alliance Data Systems",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "MHK",
+  "eff": "2013-12-23",
+  "ann": null,
+  "add_sec": "Mohawk Industries",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "FB",
+  "eff": "2013-12-23",
+  "ann": null,
+  "add_sec": "Facebook",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "GGP",
+  "eff": "2013-12-10",
+  "ann": null,
+  "add_sec": "General Growth Properties",
+  "reason": "MOLX was acquired by Koch Industries ."
+ },
+ {
+  "ticker": "ALLE",
+  "eff": "2013-12-02",
+  "ann": null,
+  "add_sec": "Allegion",
+  "reason": "Ingersoll Rand completed the corporate spin-off of Allegion."
+ },
+ {
+  "ticker": "KORS",
+  "eff": "2013-11-13",
+  "ann": null,
+  "add_sec": "Michael Kors",
+  "reason": "ICE Exchange acquired NYSE Euronext."
+ },
+ {
+  "ticker": "RIG",
+  "eff": "2013-10-29",
+  "ann": null,
+  "add_sec": "Transocean",
+  "reason": "Founder Michael Dell and Silver Lake Partners acquired Dell."
+ },
+ {
+  "ticker": "VRTX",
+  "eff": "2013-09-20",
+  "ann": null,
+  "add_sec": "Vertex Pharmaceuticals",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "AME",
+  "eff": "2013-09-20",
+  "ann": null,
+  "add_sec": "Ametek",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "DAL",
+  "eff": "2013-09-10",
+  "ann": null,
+  "add_sec": "Delta Air Lines",
+  "reason": "BMC was acquired by a consortium."
+ },
+ {
+  "ticker": "NLSN",
+  "eff": "2013-07-08",
+  "ann": null,
+  "add_sec": "Nielsen Holdings",
+  "reason": "Softbank consortium purchase resulted in public float below 50%."
+ },
+ {
+  "ticker": "NWSA",
+  "eff": "2013-07-01",
+  "ann": null,
+  "add_sec": "21st Century Fox",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ZTS",
+  "eff": "2013-06-21",
+  "ann": null,
+  "add_sec": "Zoetis",
+  "reason": "Pfizer completed the corporate spin-off of Zoetis."
+ },
+ {
+  "ticker": "GM",
+  "eff": "2013-06-06",
+  "ann": null,
+  "add_sec": "General Motors",
+  "reason": "HNZ was acquired by a consortium."
+ },
+ {
+  "ticker": "KSU",
+  "eff": "2013-05-23",
+  "ann": null,
+  "add_sec": "Kansas City Southern",
+  "reason": "DF was too small after spinoff of White Wave Foods."
+ },
+ {
+  "ticker": "MAC",
+  "eff": "2013-05-08",
+  "ann": null,
+  "add_sec": "Macerich",
+  "reason": "CVH was acquired by Aetna."
+ },
+ {
+  "ticker": "REGN",
+  "eff": "2013-04-30",
+  "ann": null,
+  "add_sec": "Regeneron Pharmaceuticals",
+  "reason": "A majority of MetroPCS was acquired by T-Mobile."
+ },
+ {
+  "ticker": "PVH",
+  "eff": "2013-02-15",
+  "ann": null,
+  "add_sec": "PVH",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ABBV",
+  "eff": "2013-01-02",
+  "ann": null,
+  "add_sec": "AbbVie",
+  "reason": "Abbott Labs completed the corporate spin-off of AbbVie."
+ },
+ {
+  "ticker": "DLPH",
+  "eff": "2012-12-21",
+  "ann": null,
+  "add_sec": "Delphi Automotive",
+  "reason": "TIE was acquired by Precision Cast Parts."
+ },
+ {
+  "ticker": "GRMN",
+  "eff": "2012-12-11",
+  "ann": null,
+  "add_sec": "Garmin",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "DG",
+  "eff": "2012-12-03",
+  "ann": null,
+  "add_sec": "Dollar General",
+  "reason": "Cooper was acquired by Eaton Corp. (ETN)"
+ },
+ {
+  "ticker": "PETM",
+  "eff": "2012-10-10",
+  "ann": null,
+  "add_sec": "PetSmart",
+  "reason": "Sunoco was acquired by Energy Transfer Partners (ETP)"
+ },
+ {
+  "ticker": "KRFT",
+  "eff": "2012-10-02",
+  "ann": null,
+  "add_sec": "Kraft Foods",
+  "reason": "Kraft split into two companies."
+ },
+ {
+  "ticker": "MDLZ",
+  "eff": "2012-10-02",
+  "ann": "2012-09-25",
+  "add_sec": "Mondelez",
+  "reason": "Old Kraft Foods was renamed Mondelez."
+ },
+ {
+  "ticker": "ADT",
+  "eff": "2012-10-01",
+  "ann": "2012-09-24",
+  "add_sec": "ADT",
+  "reason": "Tyco completed the corporate spin-off of ADT."
+ },
+ {
+  "ticker": "PNR",
+  "eff": "2012-10-01",
+  "ann": "2012-09-24",
+  "add_sec": "Pentair",
+  "reason": "Tyco spin-off merged with Pentair."
+ },
+ {
+  "ticker": "LYB",
+  "eff": "2012-09-05",
+  "ann": "2012-08-29",
+  "add_sec": "LyondellBasell",
+  "reason": "SHLD below public float threshold."
+ },
+ {
+  "ticker": "ESV",
+  "eff": "2012-07-31",
+  "ann": "2012-07-26",
+  "add_sec": "Ensco plc",
+  "reason": "Goodrich was acquired by United Technologies."
+ },
+ {
+  "ticker": "STX",
+  "eff": "2012-07-02",
+  "ann": "2012-06-25",
+  "add_sec": "Seagate Technology",
+  "reason": "Progress Energy was acquired by Duke Energy."
+ },
+ {
+  "ticker": "MNST",
+  "eff": "2012-06-29",
+  "ann": "2012-06-21",
+  "add_sec": "Monster Beverage",
+  "reason": "Split up of Sara Lee."
+ },
+ {
+  "ticker": "LRCX",
+  "eff": "2012-06-05",
+  "ann": "2012-05-10",
+  "add_sec": "Lam Research",
+  "reason": "Novellus Systems was acquired by Lam Research."
+ },
+ {
+  "ticker": "ALXN",
+  "eff": "2012-05-21",
+  "ann": "2012-05-21",
+  "add_sec": "Alexion Pharmaceuticals",
+  "reason": "Motorola Mobility was acquired by Google."
+ },
+ {
+  "ticker": "KMI",
+  "eff": "2012-05-17",
+  "ann": "2012-05-17",
+  "add_sec": "Kinder Morgan",
+  "reason": "El Paso was acquired by Kinder Morgan."
+ },
+ {
+  "ticker": "PSX",
+  "eff": "2012-04-23",
+  "ann": "2012-04-23",
+  "add_sec": "Phillips 66",
+  "reason": "ConocoPhillips completed the corporate spin-off of Phillips 66."
+ },
+ {
+  "ticker": "FOSL",
+  "eff": "2012-04-03",
+  "ann": null,
+  "add_sec": "Fossil Group",
+  "reason": "Medco was acquired by Express Scripts."
+ },
+ {
+  "ticker": "CCI",
+  "eff": "2012-03-13",
+  "ann": "2012-03-07",
+  "add_sec": "Crown Castle",
+  "reason": "Constellation was acquired by Exelon"
+ },
+ {
+  "ticker": "WPX",
+  "eff": "2011-12-31",
+  "ann": null,
+  "add_sec": "WPX Energy",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "TRIP",
+  "eff": "2011-12-20",
+  "ann": null,
+  "add_sec": "TripAdvisor",
+  "reason": "Expedia completed the corporate spin-off of TripAdvisor."
+ },
+ {
+  "ticker": "BWA",
+  "eff": "2011-12-16",
+  "ann": null,
+  "add_sec": "BorgWarner",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "PRGO",
+  "eff": "2011-12-16",
+  "ann": null,
+  "add_sec": "Perrigo",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "DLTR",
+  "eff": "2011-12-16",
+  "ann": null,
+  "add_sec": "Dollar Tree",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "GAS",
+  "eff": "2011-12-12",
+  "ann": "2011-12-09",
+  "add_sec": "AGL Resources.",
+  "reason": "Nicor was acquired by AGL, which retained the GAS ticker."
+ },
+ {
+  "ticker": "CBE",
+  "eff": "2011-11-18",
+  "ann": null,
+  "add_sec": "Cooper Industries",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "XYL",
+  "eff": "2011-10-31",
+  "ann": null,
+  "add_sec": "Xylem",
+  "reason": "ITT Corp. completed the corporate spin-off of Xylem."
+ },
+ {
+  "ticker": "TEL",
+  "eff": "2011-10-14",
+  "ann": null,
+  "add_sec": "TE Connectivity",
+  "reason": "Cephalon was acquired by Teva Pharmaceutical Industries ."
+ },
+ {
+  "ticker": "MOS",
+  "eff": "2011-09-23",
+  "ann": null,
+  "add_sec": "The Mosaic Company",
+  "reason": "National Semi was acquired by Texas Instruments ."
+ },
+ {
+  "ticker": "ACN",
+  "eff": "2011-07-05",
+  "ann": null,
+  "add_sec": "Accenture",
+  "reason": "Marshall & Ilsley was acquired by Bank of Montreal."
+ },
+ {
+  "ticker": "MPC",
+  "eff": "2011-06-30",
+  "ann": null,
+  "add_sec": "Marathon Oil",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ANR",
+  "eff": "2011-06-01",
+  "ann": null,
+  "add_sec": "Alpha Natural Resources",
+  "reason": "Alpha Natural Resources acquired Massey Energy."
+ },
+ {
+  "ticker": "CMG",
+  "eff": "2011-04-27",
+  "ann": null,
+  "add_sec": "Chipotle Mexican Grill",
+  "reason": "Novell was acquired by private equity firms."
+ },
+ {
+  "ticker": "BLK",
+  "eff": "2011-04-01",
+  "ann": null,
+  "add_sec": "BlackRock",
+  "reason": "Genzyme was acquired by Sanofi Aventis."
+ },
+ {
+  "ticker": "EW",
+  "eff": "2011-03-31",
+  "ann": null,
+  "add_sec": "Edwards Lifesciences",
+  "reason": "Qwest was acquired by CenturyLink."
+ },
+ {
+  "ticker": "COV",
+  "eff": "2011-02-28",
+  "ann": null,
+  "add_sec": "Covidien",
+  "reason": "McAfee was acquired by Intel ."
+ },
+ {
+  "ticker": "JOYG",
+  "eff": "2011-02-25",
+  "ann": null,
+  "add_sec": "Joy Global",
+  "reason": "Alleghany was acquired by First Energy."
+ },
+ {
+  "ticker": "MMI",
+  "eff": "2011-01-03",
+  "ann": null,
+  "add_sec": "Motorola Mobility",
+  "reason": "Motorola completed the corporate spin-off of Motorola Mobility."
+ },
+ {
+  "ticker": "CVC",
+  "eff": "2010-12-17",
+  "ann": null,
+  "add_sec": "Cablevision",
+  "reason": "King was acquired by Pfizer ."
+ },
+ {
+  "ticker": "FFIV",
+  "eff": "2010-12-17",
+  "ann": null,
+  "add_sec": "F5 Networks",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "NFLX",
+  "eff": "2010-12-17",
+  "ann": null,
+  "add_sec": "Netflix",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "NFX",
+  "eff": "2010-12-17",
+  "ann": null,
+  "add_sec": "Newfield Exploration",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "IR",
+  "eff": "2010-11-17",
+  "ann": null,
+  "add_sec": "Ingersoll-Rand",
+  "reason": "Reynolds Group Holdings acquired Pactiv."
+ },
+ {
+  "ticker": "TYC",
+  "eff": "2010-08-26",
+  "ann": null,
+  "add_sec": "Tyco International",
+  "reason": "Smith was acquired by Schlumberger ."
+ },
+ {
+  "ticker": "CB",
+  "eff": "2010-07-14",
+  "ann": null,
+  "add_sec": "Chubb",
+  "reason": "Millipore was acquired by Merck KGaA."
+ },
+ {
+  "ticker": "QEP",
+  "eff": "2010-06-30",
+  "ann": null,
+  "add_sec": "QEP Resources",
+  "reason": "Company split. QEP retained, but ticker changed."
+ },
+ {
+  "ticker": "KMX",
+  "eff": "2010-06-28",
+  "ann": null,
+  "add_sec": "CarMax",
+  "reason": "XTO was acquired by ExxonMobil ."
+ },
+ {
+  "ticker": "CERN",
+  "eff": "2010-04-29",
+  "ann": null,
+  "add_sec": "Cerner",
+  "reason": "BJ Services was acquired by Baker Hughes ."
+ },
+ {
+  "ticker": "HP",
+  "eff": "2010-02-26",
+  "ann": null,
+  "add_sec": "Helmerich & Payne",
+  "reason": "IMS was acquired by affiliates of TPG Capital"
+ },
+ {
+  "ticker": "V",
+  "eff": "2009-12-18",
+  "ann": null,
+  "add_sec": "Visa",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "MJN",
+  "eff": "2009-12-18",
+  "ann": null,
+  "add_sec": "Mead Johnson Nutrition",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "CLF",
+  "eff": "2009-12-18",
+  "ann": null,
+  "add_sec": "Cliffs Natural Resources",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "SAI",
+  "eff": "2009-12-18",
+  "ann": null,
+  "add_sec": "SAIC",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ROST",
+  "eff": "2009-12-18",
+  "ann": null,
+  "add_sec": "Ross Stores",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "PCLN",
+  "eff": "2009-11-03",
+  "ann": null,
+  "add_sec": "Priceline.com",
+  "reason": "Schering-Plough was acquired by Merck & Co."
+ },
+ {
+  "ticker": "ARG",
+  "eff": "2009-09-28",
+  "ann": null,
+  "add_sec": "Airgas",
+  "reason": "Cooper redomesticated to Ireland."
+ },
+ {
+  "ticker": "FMC",
+  "eff": "2009-08-19",
+  "ann": null,
+  "add_sec": "FMC Corporation",
+  "reason": "Centex was acquired by Pulte Homes ."
+ },
+ {
+  "ticker": "PCS",
+  "eff": "2009-06-29",
+  "ann": null,
+  "add_sec": "MetroPCS",
+  "reason": ""
+ },
+ {
+  "ticker": "FTI",
+  "eff": "2009-06-05",
+  "ann": null,
+  "add_sec": "FMC Technologies",
+  "reason": "Covidien moved its place of incorporation to Ireland, making it ineligible for inclusion in the index."
+ },
+ {
+  "ticker": "HRL",
+  "eff": "2009-03-03",
+  "ann": null,
+  "add_sec": "Hormel Foods",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "VTR",
+  "eff": "2009-03-03",
+  "ann": null,
+  "add_sec": "Ventas",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "OI",
+  "eff": "2008-12-31",
+  "ann": null,
+  "add_sec": "Owens-Illinois",
+  "reason": "Wachovia Bank was acquired by Wells Fargo ."
+ },
+ {
+  "ticker": "HRS",
+  "eff": "2008-09-16",
+  "ann": null,
+  "add_sec": "Harris Corporation",
+  "reason": "Lehman Brothers filed for bankruptcy ."
+ },
+ {
+  "ticker": "CRM",
+  "eff": "2008-09-12",
+  "ann": null,
+  "add_sec": "Salesforce",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "FAST",
+  "eff": "2008-09-12",
+  "ann": null,
+  "add_sec": "Fastenal",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "AKS",
+  "eff": "2008-07-01",
+  "ann": null,
+  "add_sec": "AK Steel",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "COG",
+  "eff": "2008-06-23",
+  "ann": null,
+  "add_sec": "Cabot Oil & Gas",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "MEE",
+  "eff": "2008-06-23",
+  "ann": null,
+  "add_sec": "Massey Energy",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "LO",
+  "eff": "2008-06-10",
+  "ann": null,
+  "add_sec": "Lorillard Tobacco Company",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "RRC",
+  "eff": "2007-12-20",
+  "ann": null,
+  "add_sec": "Range Resources",
+  "reason": "Tribune was acquired."
+ },
+ {
+  "ticker": "GME",
+  "eff": "2007-12-13",
+  "ann": null,
+  "add_sec": "GameStop",
+  "reason": "Dow Jones was acquired by News Corporation ."
+ },
+ {
+  "ticker": "JEC",
+  "eff": "2007-10-26",
+  "ann": null,
+  "add_sec": "Jacobs Engineering Group",
+  "reason": "Avaya was acquired."
+ },
+ {
+  "ticker": "EXPE",
+  "eff": "2007-10-02",
+  "ann": null,
+  "add_sec": "Expedia",
+  "reason": "Solectron was acquired by Flextronics ."
+ },
+ {
+  "ticker": "TDC",
+  "eff": "2007-10-01",
+  "ann": null,
+  "add_sec": "Teradata",
+  "reason": "NCR Corporation completed the corporate spin-off of Teradata."
+ },
+ {
+  "ticker": "TSO",
+  "eff": "2007-09-27",
+  "ann": null,
+  "add_sec": "Tesoro Corporation",
+  "reason": "MXIM was delisted from NASDAQ exchange."
+ },
+ {
+  "ticker": "ICE",
+  "eff": "2007-09-26",
+  "ann": null,
+  "add_sec": "Intercontinental Exchange",
+  "reason": "FDC was acquired by KKR ."
+ },
+ {
+  "ticker": "LUK",
+  "eff": "2007-08-24",
+  "ann": null,
+  "add_sec": "Leucadia National",
+  "reason": "KeySpan was acquired by National Grid plc ."
+ },
+ {
+  "ticker": "DFS",
+  "eff": "2007-07-02",
+  "ann": null,
+  "add_sec": "Discover Financial",
+  "reason": "Discover Financial Services was listed on New York Stock Exchange."
+ },
+ {
+  "ticker": "KFT",
+  "eff": "2007-03-30",
+  "ann": null,
+  "add_sec": "Kraft Foods",
+  "reason": "Sabre was acquired."
+ },
+ {
+  "ticker": "AVB",
+  "eff": "2007-01-10",
+  "ann": null,
+  "add_sec": "AvalonBay Communities",
+  "reason": "Symbol Technologies was acquired by Motorola."
+ },
+ {
+  "ticker": "JNPR",
+  "eff": "2006-06-02",
+  "ann": null,
+  "add_sec": "Juniper Networks",
+  "reason": "Albertsons was acquired by SuperValu and CVS Corp."
+ },
+ {
+  "ticker": "AMZN",
+  "eff": "2005-11-18",
+  "ann": null,
+  "add_sec": "Amazon",
+  "reason": "AT&T Corp. was acquired by SBC Communications"
+ },
+ {
+  "ticker": "STZ",
+  "eff": "2005-07-01",
+  "ann": null,
+  "add_sec": "Constellation Brands",
+  "reason": "Great Lakes Chemical was acquired by Crompton Corp."
+ },
+ {
+  "ticker": "ESRX",
+  "eff": "2003-09-25",
+  "ann": null,
+  "add_sec": "Express Scripts",
+  "reason": "Acquired."
+ },
+ {
+  "ticker": "INTU",
+  "eff": "2000-12-05",
+  "ann": null,
+  "add_sec": "Intuit",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "SBL",
+  "eff": "2000-12-05",
+  "ann": null,
+  "add_sec": "Symbol Technologies",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "AYE",
+  "eff": "2000-12-05",
+  "ann": null,
+  "add_sec": "Allegheny Energy",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "ABK",
+  "eff": "2000-12-05",
+  "ann": null,
+  "add_sec": "Ambac Financial",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "JDSU",
+  "eff": "2000-07-27",
+  "ann": null,
+  "add_sec": "JDS Uniphase",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "CVG",
+  "eff": "2000-06-12",
+  "ann": null,
+  "add_sec": "Convergys",
+  "reason": "Tribune Co. acquired Times Mirror."
+ },
+ {
+  "ticker": "SBUX",
+  "eff": "2000-06-07",
+  "ann": null,
+  "add_sec": "Starbucks",
+  "reason": "Siemens AG acquired Shared Medical Systems."
+ },
+ {
+  "ticker": "YHOO",
+  "eff": "1999-12-08",
+  "ann": null,
+  "add_sec": "Yahoo!",
+  "reason": "Market capitalization changes."
+ },
+ {
+  "ticker": "WLP",
+  "eff": "1999-06-09",
+  "ann": null,
+  "add_sec": "Wellpoint",
+  "reason": "Harnischfeger filed for bankruptcy."
+ },
+ {
+  "ticker": "ACT",
+  "eff": "1999-04-12",
+  "ann": null,
+  "add_sec": "Actavis",
+  "reason": "Actavis plc was added to the S&P 500."
+ },
+ {
+  "ticker": "FSR",
+  "eff": "1998-12-11",
+  "ann": null,
+  "add_sec": "Firstar",
+  "reason": "BP purchased Amoco."
+ },
+ {
+  "ticker": "CCL",
+  "eff": "1998-12-11",
+  "ann": null,
+  "add_sec": "Carnival Corporation",
+  "reason": "Berkshire Hathaway acquired General Re."
+ },
+ {
+  "ticker": "CPWR",
+  "eff": "1998-12-11",
+  "ann": null,
+  "add_sec": "Compuware",
+  "reason": "AIG acquired SunAmerica."
+ }
+]

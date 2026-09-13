@@ -1,0 +1,153 @@
+{
+  "experiment": "chronos_tiny_zero_shot_vs_baseline_reduced",
+  "note": "reduced eval grid (2h spacing) after full sweep aborted on CPU time",
+  "config": {
+    "universe": "ibkr/equities/5min",
+    "n_symbols": 40,
+    "symbols": [
+      "AAPL",
+      "ABT",
+      "ACN",
+      "ADBE",
+      "AMD",
+      "AMZN",
+      "AVGO",
+      "BA",
+      "COST",
+      "CRM",
+      "CSCO",
+      "DIS",
+      "GE",
+      "GOOGL",
+      "HD",
+      "INTC",
+      "JNJ",
+      "JPM",
+      "KO",
+      "LLY",
+      "MA",
+      "MCD",
+      "META",
+      "MSFT",
+      "MU",
+      "NFLX",
+      "NKE",
+      "NVDA",
+      "ORCL",
+      "PEP",
+      "PG",
+      "PLTR",
+      "QCOM",
+      "TMO",
+      "TSLA",
+      "TXN",
+      "UNH",
+      "V",
+      "WMT",
+      "XOM"
+    ],
+    "context_bars": 64,
+    "horizon_bars": 6,
+    "horizon_label": "30m",
+    "num_samples": 8,
+    "split": 0.7,
+    "eval_step_bars": 24,
+    "chronos_model": "amazon/chronos-t5-tiny",
+    "device": "cpu",
+    "n_train_rows": 362600,
+    "n_test_rows": 155400,
+    "n_eval_timestamps": 163,
+    "train_range": [
+      "2026-01-02 11:55:00",
+      "2026-06-22 13:20:00"
+    ],
+    "test_range": [
+      "2026-06-22 13:20:00",
+      "2026-09-01 12:00:00"
+    ]
+  },
+  "chronos_skipped_timestamps": 0,
+  "chronos_error": null,
+  "results": {
+    "chronos_tiny": {
+      "rank_ic": {
+        "n": 163,
+        "mean": -0.0008335369720761379,
+        "std": 0.1749434279001678,
+        "t_stat": -0.06083045126165646,
+        "median": 0.017636022514071297
+      },
+      "dir_acc": {
+        "n": 163,
+        "mean": 0.4989263803680981,
+        "std": 0.08075324516506861,
+        "t_stat": 78.88061459952908,
+        "median": 0.5
+      }
+    },
+    "ridge": {
+      "rank_ic": {
+        "n": 162,
+        "mean": -0.00538176866939946,
+        "std": 0.24143211276537374,
+        "t_stat": -0.2837183976555003,
+        "median": -0.005065666041275798
+      },
+      "dir_acc": {
+        "n": 162,
+        "mean": 0.49830246913580245,
+        "std": 0.09860628091495327,
+        "t_stat": 64.31998987582624,
+        "median": 0.5
+      }
+    },
+    "lightgbm": {
+      "rank_ic": {
+        "n": 162,
+        "mean": -0.012992016298512465,
+        "std": 0.23916197257731422,
+        "t_stat": -0.6914199991133667,
+        "median": 0.00826064329950177
+      },
+      "dir_acc": {
+        "n": 162,
+        "mean": 0.4881172839506173,
+        "std": 0.11610980253395889,
+        "t_stat": 53.50727166302855,
+        "median": 0.475
+      }
+    },
+    "momentum_r30": {
+      "rank_ic": {
+        "n": 163,
+        "mean": -7.379879061838314e-05,
+        "std": 0.2646248170389687,
+        "t_stat": -0.003560512184384041,
+        "median": 0.0
+      },
+      "dir_acc": {
+        "n": 163,
+        "mean": 0.49739263803680983,
+        "std": 0.10766674530216379,
+        "t_stat": 58.98092377971921,
+        "median": 0.5
+      }
+    },
+    "reversal_r30": {
+      "rank_ic": {
+        "n": 163,
+        "mean": 7.379879061838314e-05,
+        "std": 0.2646248170389687,
+        "t_stat": 0.003560512184384041,
+        "median": 0.0
+      },
+      "dir_acc": {
+        "n": 163,
+        "mean": 0.4894171779141105,
+        "std": 0.10746292360771709,
+        "t_stat": 58.145265641462764,
+        "median": 0.475
+      }
+    }
+  }
+}

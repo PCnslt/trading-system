@@ -658,8 +658,11 @@ def family_value(n_top_bot=3, mean_years=5):
         sig = (cdf[sym] < mean5[sym]).astype(float)  # 1=long, 0
         sig = sig.replace(0.0, -1.0)                  # -1=short
         fwd = cdf[sym].pct_change().shift(-1)
-        # position set at month-end t, return realized over next month
-        pos = sig.shift(1)
+        # position set at month-end t, return realized over next month.
+        # fwd[t] = close[t+1]/close[t]-1 already carries the forward shift, so the
+        # signal must NOT be shifted again (double-shift off-by-one bug: r[t] =
+        # sig[t-1]*return[t+1] misaligns the signal one month AND the return one month).
+        pos = sig
         r = pos * fwd
         all_ret[sym] = r
     ts_panel = pd.DataFrame(all_ret)

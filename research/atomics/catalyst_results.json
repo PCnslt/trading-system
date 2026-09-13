@@ -1,0 +1,782 @@
+{
+  "generated_at": "2026-09-08T18:42:57.939555+00:00",
+  "hypothesis": "CATALYST: surprise magnitude + reportTime predict subsequent 1/5/20-day return (continuation vs reversal).",
+  "entry_convention": {
+    "pre_market": "report before open on D -> entry at close of D (same-day close)",
+    "post_market": "report after close on D -> entry at close of next trading day (next close)",
+    "during_hours_8k": "8-K accepted intraday -> entry at same-day close",
+    "note": "entry strictly AFTER the event is public; forward returns close-to-close"
+  },
+  "market_adjustment": {
+    "primary": "universe equal-weight daily index (the 149 earnings-event symbols), same-window return subtracted",
+    "secondary": "broad equal-weight daily index (deterministic sample of ~504 daily parquets, stride 13, daily returns clipped +/-50%), same-window return subtracted",
+    "rationale": "universe adjustment removes the common mega-cap drift so the result isolates CROSS-SECTIONAL catalyst predictability; broad adjustment is reported for the raw-beta view"
+  },
+  "cost_model": "round-trip bps per position; long-short pays 2 round-trips; grid 0/5/10/20 bps",
+  "oos_split": "chronological 70/30 by entry date",
+  "survivorship": "CURRENT-UNIVERSE-ONLY: earnings symbols and daily prices are today's listed universe; historical results are upper bounds (survivorship-biased). 150 earnings symbols have AV data; 149 have daily parquets (BRK-B missing).",
+  "signals": {
+    "surp_pct": "surprise / prior_close * 100 (%% of price), winsorized +/-5%%",
+    "surp_mag": "abs(surprise / prior_close * 100)",
+    "sue": "surprise / |estimatedEPS|, winsorized +/-3"
+  },
+  "results": {
+    "earnings_surprise": {
+      "n_events": 10260,
+      "n_symbols": 149,
+      "entry_date_range": [
+        "2006-08-23",
+        "2026-08-07"
+      ],
+      "reportTime_counts": {
+        "pre-market": 5585,
+        "post-market": 4675
+      },
+      "horizons": {
+        "1d": {
+          "continuation": {
+            "spearman_signed_surprise": 0.032575109619067004,
+            "pearson_signed_surprise": 0.05013719255182133,
+            "ols_clustered": {
+              "coef": 24.974401155904967,
+              "se": 11.081153291675443,
+              "t": 2.2537727345281495,
+              "n": 10260
+            },
+            "quintile_spread": {
+              "top_mean_bp": 4.19805321025735,
+              "top_n": 2052,
+              "bot_mean_bp": -24.62499260624976,
+              "bot_n": 2052,
+              "spread_bp": 28.823045816507108,
+              "spread_t": 3.3575241851394533,
+              "n_days": 1851,
+              "quintiles": 5,
+              "spread_t_overlap_adj": 3.358,
+              "overlap_note": "1-day horizon => t divided by sqrt(1) for overlap"
+            }
+          },
+          "reversal": {
+            "spearman_abs_surprise": 0.008158365422795128,
+            "pearson_abs_surprise": 0.03652356715291928,
+            "ols_clustered_abs": {
+              "coef": 6.419609711094513,
+              "se": 2.6511329713788387,
+              "t": 2.4214589688255854,
+              "n": 10260
+            },
+            "magnitude_quintile_spread": {
+              "top_mean_bp": -3.7400334397826085,
+              "top_n": 2052,
+              "bot_mean_bp": -15.453619059323053,
+              "bot_n": 2052,
+              "spread_bp": 11.713585619540444,
+              "spread_t": 0.7039726478520294,
+              "n_days": 1860,
+              "quintiles": 5
+            }
+          },
+          "raw_mean_bp": 0.9052341061304857,
+          "broad_adjusted": {
+            "mean_bp": -1.983432543213897,
+            "continuation_spearman": 0.03400721491755894,
+            "continuation_quintile_spread": {
+              "top_mean_bp": 7.524847046856106,
+              "top_n": 2052,
+              "bot_mean_bp": -23.906949432265385,
+              "bot_n": 2052,
+              "spread_bp": 31.43179647912149,
+              "spread_t": 3.459532889701762,
+              "n_days": 1851,
+              "quintiles": 5
+            }
+          },
+          "sue_continuation": {
+            "spearman_signed_sue": 0.01830063099836014,
+            "quintile_spread": {
+              "top_mean_bp": 3.415854691779556,
+              "top_n": 2044,
+              "bot_mean_bp": -24.93272944776132,
+              "bot_n": 2044,
+              "spread_bp": 28.348584139540876,
+              "spread_t": 3.0616911429476485,
+              "n_days": 1851,
+              "quintiles": 5
+            },
+            "n_sue_events": 10219
+          },
+          "reportTime": {
+            "pre-market": {
+              "n": 5585,
+              "continuation_spearman": 0.021263982346982704,
+              "continuation_quintile_spread": {
+                "top_mean_bp": -6.125423316036852,
+                "top_n": 1117,
+                "bot_mean_bp": -26.724844888601353,
+                "bot_n": 1117,
+                "spread_bp": 20.599421572564502,
+                "spread_t": 1.8648876747640533,
+                "n_days": 1334,
+                "quintiles": 5
+              },
+              "mean_madj_bp": -3.2093375144281873,
+              "mean_madj_ttest": {
+                "mean": -7.729030127842197,
+                "t": -1.518706433459502,
+                "n_events": 5585,
+                "n_days": 1998
+              }
+            },
+            "post-market": {
+              "n": 4675,
+              "continuation_spearman": 0.04557216787490125,
+              "continuation_quintile_spread": {
+                "top_mean_bp": 16.74268465050615,
+                "top_n": 935,
+                "bot_mean_bp": -26.077066201399585,
+                "bot_n": 935,
+                "spread_bp": 42.81975085190574,
+                "spread_t": 3.021590398671285,
+                "n_days": 1081,
+                "quintiles": 5
+              },
+              "mean_madj_bp": -7.200108570490586,
+              "mean_madj_ttest": {
+                "mean": -6.698822992007913,
+                "t": -1.442029592361815,
+                "n_events": 4675,
+                "n_days": 1879
+              }
+            }
+          }
+        },
+        "5d": {
+          "continuation": {
+            "spearman_signed_surprise": 0.029294811354293498,
+            "pearson_signed_surprise": 0.010022493074671448,
+            "ols_clustered": {
+              "coef": 11.45631984093567,
+              "se": 19.115561081463213,
+              "t": 0.5993190465146806,
+              "n": 10260
+            },
+            "quintile_spread": {
+              "top_mean_bp": -14.091807236534674,
+              "top_n": 2052,
+              "bot_mean_bp": -34.658547958715474,
+              "bot_n": 2052,
+              "spread_bp": 20.5667407221808,
+              "spread_t": 1.2502887678177639,
+              "n_days": 1851,
+              "quintiles": 5,
+              "spread_t_overlap_adj": 0.559,
+              "overlap_note": "5-day horizon => t divided by sqrt(5) for overlap"
+            }
+          },
+          "reversal": {
+            "spearman_abs_surprise": -0.01039373406348239,
+            "pearson_abs_surprise": 0.04493370108947451,
+            "ols_clustered_abs": {
+              "coef": 18.123493800357608,
+              "se": 3.4301264971941507,
+              "t": 5.2836225763634825,
+              "n": 10260
+            },
+            "magnitude_quintile_spread": {
+              "top_mean_bp": -19.996776272668118,
+              "top_n": 2052,
+              "bot_mean_bp": 45.82508427093903,
+              "bot_n": 2052,
+              "spread_bp": -65.82186054360714,
+              "spread_t": -0.4513719534992824,
+              "n_days": 1860,
+              "quintiles": 5
+            }
+          },
+          "raw_mean_bp": 41.913926246443786,
+          "broad_adjusted": {
+            "mean_bp": 18.626690736050545,
+            "continuation_spearman": 0.027515924224566102,
+            "continuation_quintile_spread": {
+              "top_mean_bp": 9.18227106282844,
+              "top_n": 2052,
+              "bot_mean_bp": -14.073329893567525,
+              "bot_n": 2052,
+              "spread_bp": 23.255600956395966,
+              "spread_t": 1.376694403119212,
+              "n_days": 1851,
+              "quintiles": 5
+            }
+          },
+          "sue_continuation": {
+            "spearman_signed_sue": 0.01319993189006265,
+            "quintile_spread": {
+              "top_mean_bp": -22.732573095229206,
+              "top_n": 2044,
+              "bot_mean_bp": -35.49286411894205,
+              "bot_n": 2044,
+              "spread_bp": 12.760291023712846,
+              "spread_t": 1.1506987427458064,
+              "n_days": 1851,
+              "quintiles": 5
+            },
+            "n_sue_events": 10219
+          },
+          "reportTime": {
+            "pre-market": {
+              "n": 5585,
+              "continuation_spearman": 0.025046969521168447,
+              "continuation_quintile_spread": {
+                "top_mean_bp": -25.89427568406831,
+                "top_n": 1117,
+                "bot_mean_bp": -58.423068069777585,
+                "bot_n": 1117,
+                "spread_bp": 32.528792385709274,
+                "spread_t": 2.116028991958794,
+                "n_days": 1334,
+                "quintiles": 5
+              },
+              "mean_madj_bp": -20.624521860931203,
+              "mean_madj_ttest": {
+                "mean": -18.291202202656848,
+                "t": -2.2075133141140046,
+                "n_events": 5585,
+                "n_days": 1998
+              }
+            },
+            "post-market": {
+              "n": 4675,
+              "continuation_spearman": 0.033612291304896375,
+              "continuation_quintile_spread": {
+                "top_mean_bp": -9.468001200480337,
+                "top_n": 935,
+                "bot_mean_bp": -14.012224565936569,
+                "bot_n": 935,
+                "spread_bp": 4.544223365456231,
+                "spread_t": 0.054056012779741175,
+                "n_days": 1081,
+                "quintiles": 5
+              },
+              "mean_madj_bp": 14.06984247127066,
+              "mean_madj_ttest": {
+                "mean": -10.658148842597754,
+                "t": -1.0054958058820047,
+                "n_events": 4675,
+                "n_days": 1879
+              }
+            }
+          }
+        },
+        "20d": {
+          "continuation": {
+            "spearman_signed_surprise": 0.030329716197084453,
+            "pearson_signed_surprise": 0.021891032875569406,
+            "ols_clustered": {
+              "coef": 37.16118570875464,
+              "se": 34.40472521550232,
+              "t": 1.0801186603289683,
+              "n": 10260
+            },
+            "quintile_spread": {
+              "top_mean_bp": 30.611206625952114,
+              "top_n": 2052,
+              "bot_mean_bp": -51.285765342556296,
+              "bot_n": 2052,
+              "spread_bp": 81.89697196850841,
+              "spread_t": 2.195180427547142,
+              "n_days": 1851,
+              "quintiles": 5,
+              "spread_t_overlap_adj": 0.491,
+              "overlap_note": "20-day horizon => t divided by sqrt(20) for overlap"
+            }
+          },
+          "reversal": {
+            "spearman_abs_surprise": 0.01034413392079915,
+            "pearson_abs_surprise": 0.03422302151742043,
+            "ols_clustered_abs": {
+              "coef": 20.499441375643173,
+              "se": 15.95276131048399,
+              "t": 1.2850089697117923,
+              "n": 10260
+            },
+            "magnitude_quintile_spread": {
+              "top_mean_bp": 25.57497936059368,
+              "top_n": 2052,
+              "bot_mean_bp": -6.54473606209315,
+              "bot_n": 2052,
+              "spread_bp": 32.11971542268683,
+              "spread_t": 2.24593349260882,
+              "n_days": 1860,
+              "quintiles": 5
+            }
+          },
+          "raw_mean_bp": 128.5711214504102,
+          "broad_adjusted": {
+            "mean_bp": 60.92683582551368,
+            "continuation_spearman": 0.03356040240081554,
+            "continuation_quintile_spread": {
+              "top_mean_bp": 112.06480763858728,
+              "top_n": 2052,
+              "bot_mean_bp": 5.461362922452338,
+              "bot_n": 2052,
+              "spread_bp": 106.60344471613494,
+              "spread_t": 2.741201213584736,
+              "n_days": 1851,
+              "quintiles": 5
+            }
+          },
+          "sue_continuation": {
+            "spearman_signed_sue": 0.010771663261750716,
+            "quintile_spread": {
+              "top_mean_bp": -13.2795397601302,
+              "top_n": 2044,
+              "bot_mean_bp": -55.54475585385371,
+              "bot_n": 2044,
+              "spread_bp": 42.26521609372351,
+              "spread_t": 1.5533133390109182,
+              "n_days": 1851,
+              "quintiles": 5
+            },
+            "n_sue_events": 10219
+          },
+          "reportTime": {
+            "pre-market": {
+              "n": 5585,
+              "continuation_spearman": 0.01812025406968616,
+              "continuation_quintile_spread": {
+                "top_mean_bp": -9.33581559569,
+                "top_n": 1117,
+                "bot_mean_bp": -58.598577611326306,
+                "bot_n": 1117,
+                "spread_bp": 49.262762015636305,
+                "spread_t": 1.521512783892749,
+                "n_days": 1334,
+                "quintiles": 5
+              },
+              "mean_madj_bp": -47.664837468346335,
+              "mean_madj_ttest": {
+                "mean": -40.393161456937065,
+                "t": -2.9289490415840955,
+                "n_events": 5585,
+                "n_days": 1998
+              }
+            },
+            "post-market": {
+              "n": 4675,
+              "continuation_spearman": 0.04553416847600326,
+              "continuation_quintile_spread": {
+                "top_mean_bp": 59.741104367615144,
+                "top_n": 935,
+                "bot_mean_bp": -55.33691656716346,
+                "bot_n": 935,
+                "spread_bp": 115.0780209347786,
+                "spread_t": 1.4918667199775237,
+                "n_days": 1081,
+                "quintiles": 5
+              },
+              "mean_madj_bp": 1.9932370804940702,
+              "mean_madj_ttest": {
+                "mean": -6.729051383643635,
+                "t": -0.41247311379704305,
+                "n_events": 4675,
+                "n_days": 1879
+              }
+            }
+          }
+        }
+      },
+      "is_oos": {
+        "is_n": 7181,
+        "oos_n": 3079,
+        "split_entry_date": "2021-05-07",
+        "is": {
+          "1d": {
+            "continuation_spearman": 0.03234569063962429,
+            "continuation_quintile_spread": {
+              "top_mean_bp": 2.5113875075185237,
+              "top_n": 1436,
+              "bot_mean_bp": -22.964975300750435,
+              "bot_n": 1437,
+              "spread_bp": 25.47636280826896,
+              "spread_t": 2.6929532540882697,
+              "n_days": 1312,
+              "quintiles": 5
+            },
+            "reversal_spearman": 0.012532114622348291,
+            "magnitude_quintile_spread": {
+              "top_mean_bp": -7.632178737367268,
+              "top_n": 1436,
+              "bot_mean_bp": -17.86274223035081,
+              "bot_n": 1437,
+              "spread_bp": 10.230563492983542,
+              "spread_t": 0.551556762777934,
+              "n_days": 1315,
+              "quintiles": 5
+            }
+          },
+          "5d": {
+            "continuation_spearman": 0.034810355172379744,
+            "continuation_quintile_spread": {
+              "top_mean_bp": -10.547971509168256,
+              "top_n": 1436,
+              "bot_mean_bp": -33.75814011285129,
+              "bot_n": 1437,
+              "spread_bp": 23.21016860368303,
+              "spread_t": 1.3654982709563186,
+              "n_days": 1312,
+              "quintiles": 5
+            },
+            "reversal_spearman": -0.005165466858203785,
+            "magnitude_quintile_spread": {
+              "top_mean_bp": -23.626577497468077,
+              "top_n": 1436,
+              "bot_mean_bp": 66.69201267166108,
+              "bot_n": 1437,
+              "spread_bp": -90.31859016912915,
+              "spread_t": -0.3945372568452236,
+              "n_days": 1315,
+              "quintiles": 5
+            }
+          },
+          "20d": {
+            "continuation_spearman": 0.02767923645586053,
+            "continuation_quintile_spread": {
+              "top_mean_bp": 16.984246240171192,
+              "top_n": 1436,
+              "bot_mean_bp": -47.596624389338,
+              "bot_n": 1437,
+              "spread_bp": 64.58087062950919,
+              "spread_t": 1.7393599061386669,
+              "n_days": 1312,
+              "quintiles": 5
+            },
+            "reversal_spearman": 0.007355844252166878,
+            "magnitude_quintile_spread": {
+              "top_mean_bp": 21.50842746147443,
+              "top_n": 1436,
+              "bot_mean_bp": 24.446586662136045,
+              "bot_n": 1437,
+              "spread_bp": -2.938159200661616,
+              "spread_t": 1.07501372730801,
+              "n_days": 1315,
+              "quintiles": 5
+            }
+          }
+        },
+        "oos": {
+          "1d": {
+            "continuation_spearman": 0.030994059137174006,
+            "continuation_quintile_spread": {
+              "top_mean_bp": 14.997883869705255,
+              "top_n": 616,
+              "bot_mean_bp": -19.704933302844918,
+              "bot_n": 616,
+              "spread_bp": 34.70281717255017,
+              "spread_t": 2.567013927361765,
+              "n_days": 545,
+              "quintiles": 5
+            },
+            "reversal_spearman": 0.000145053869042127,
+            "magnitude_quintile_spread": {
+              "top_mean_bp": 1.119502187185521,
+              "top_n": 616,
+              "bot_mean_bp": -8.264272820603912,
+              "bot_n": 616,
+              "spread_bp": 9.383775007789433,
+              "spread_t": 0.06489237910180752,
+              "n_days": 547,
+              "quintiles": 5
+            }
+          },
+          "5d": {
+            "continuation_spearman": 0.018636612221611327,
+            "continuation_quintile_spread": {
+              "top_mean_bp": -17.130471786179854,
+              "top_n": 616,
+              "bot_mean_bp": -0.3598272599833881,
+              "bot_n": 616,
+              "spread_bp": -16.770644526196467,
+              "spread_t": -0.18208028728686787,
+              "n_days": 545,
+              "quintiles": 5
+            },
+            "reversal_spearman": -0.018450305322129778,
+            "magnitude_quintile_spread": {
+              "top_mean_bp": -27.71129960911428,
+              "top_n": 616,
+              "bot_mean_bp": -13.841068648476494,
+              "bot_n": 616,
+              "spread_bp": -13.870230960637787,
+              "spread_t": -0.3009769832262245,
+              "n_days": 547,
+              "quintiles": 5
+            }
+          },
+          "20d": {
+            "continuation_spearman": 0.039191456853030326,
+            "continuation_quintile_spread": {
+              "top_mean_bp": 71.01566928020807,
+              "top_n": 616,
+              "bot_mean_bp": -26.90919383686486,
+              "bot_n": 616,
+              "spread_bp": 97.92486311707293,
+              "spread_t": 1.201342103588386,
+              "n_days": 545,
+              "quintiles": 5
+            },
+            "reversal_spearman": 0.020650406169512945,
+            "magnitude_quintile_spread": {
+              "top_mean_bp": 5.89912931280763,
+              "top_n": 616,
+              "bot_mean_bp": -85.4476359481655,
+              "bot_n": 616,
+              "spread_bp": 91.34676526097313,
+              "spread_t": 1.9588704225156546,
+              "n_days": 547,
+              "quintiles": 5
+            }
+          }
+        }
+      },
+      "cost_aware_longshort": {
+        "1d": {
+          "gross_spread_bp": 28.823045816507108,
+          "net_after_roundtrip_bps": {
+            "0": 28.823,
+            "5": 18.823,
+            "10": 8.823,
+            "20": -11.177
+          }
+        },
+        "5d": {
+          "gross_spread_bp": 20.5667407221808,
+          "net_after_roundtrip_bps": {
+            "0": 20.567,
+            "5": 10.567,
+            "10": 0.567,
+            "20": -19.433
+          }
+        },
+        "20d": {
+          "gross_spread_bp": 81.89697196850841,
+          "net_after_roundtrip_bps": {
+            "0": 81.897,
+            "5": 71.897,
+            "10": 61.897,
+            "20": 41.897
+          }
+        }
+      }
+    },
+    "edgar_8k_catalyst": {
+      "n_events": 1937,
+      "n_symbols": 20,
+      "reportTime_counts": {
+        "post-market": 1540,
+        "pre-market": 302,
+        "during-hours": 95
+      },
+      "earnings_2_02_count": 704,
+      "horizons": {
+        "1d": {
+          "overall_mean_madj_bp": 2.0659171660942235,
+          "overall_ttest": {
+            "mean": 3.5694955386458407,
+            "t": 0.6416685481902366,
+            "n_events": 1937,
+            "n_days": 1253
+          },
+          "by_reportTime": {
+            "pre-market": {
+              "n": 302,
+              "mean_madj_bp": 4.735307500809848,
+              "ttest": {
+                "mean": 5.320934431372283,
+                "t": 0.3495695777360445,
+                "n_events": 302,
+                "n_days": 278
+              }
+            },
+            "during-hours": {
+              "n": 95,
+              "mean_madj_bp": 19.18107173946594,
+              "ttest": {
+                "mean": 16.171067981328616,
+                "t": 0.8832484741441736,
+                "n_events": 95,
+                "n_days": 92
+              }
+            },
+            "post-market": {
+              "n": 1540,
+              "mean_madj_bp": 0.48663433131861833,
+              "ttest": {
+                "mean": 1.734751460716755,
+                "t": 0.28970826277952766,
+                "n_events": 1540,
+                "n_days": 1069
+              }
+            }
+          },
+          "earnings_vs_other": {
+            "earnings_2_02": {
+              "n": 704,
+              "mean_madj_bp": 1.4324799245714517,
+              "ttest": {
+                "mean": 9.135830847180687,
+                "t": 0.8097311830179956,
+                "n_events": 704,
+                "n_days": 529
+              }
+            },
+            "other_8k": {
+              "n": 1233,
+              "mean_madj_bp": 2.4275877403294506,
+              "ttest": {
+                "mean": 1.415234902210968,
+                "t": 0.2478065811620963,
+                "n_events": 1233,
+                "n_days": 934
+              }
+            }
+          }
+        },
+        "5d": {
+          "overall_mean_madj_bp": 15.74434139400845,
+          "overall_ttest": {
+            "mean": 14.834822021635865,
+            "t": 1.2644413195275388,
+            "n_events": 1937,
+            "n_days": 1253
+          },
+          "by_reportTime": {
+            "pre-market": {
+              "n": 302,
+              "mean_madj_bp": 38.47056314961315,
+              "ttest": {
+                "mean": 42.12298069421558,
+                "t": 1.2852295780237342,
+                "n_events": 302,
+                "n_days": 278
+              }
+            },
+            "during-hours": {
+              "n": 95,
+              "mean_madj_bp": 32.84593064425005,
+              "ttest": {
+                "mean": 29.28582048576109,
+                "t": 0.6677570736289887,
+                "n_events": 95,
+                "n_days": 92
+              }
+            },
+            "post-market": {
+              "n": 1540,
+              "mean_madj_bp": 10.232672595978864,
+              "ttest": {
+                "mean": 8.890292313873296,
+                "t": 0.7032370607017498,
+                "n_events": 1540,
+                "n_days": 1069
+              }
+            }
+          },
+          "earnings_vs_other": {
+            "earnings_2_02": {
+              "n": 704,
+              "mean_madj_bp": 9.071412346600034,
+              "ttest": {
+                "mean": 22.26678900631636,
+                "t": 1.0459264387774643,
+                "n_events": 704,
+                "n_days": 529
+              }
+            },
+            "other_8k": {
+              "n": 1233,
+              "mean_madj_bp": 19.554351166413582,
+              "ttest": {
+                "mean": 15.80187622487196,
+                "t": 1.1740020682539745,
+                "n_events": 1233,
+                "n_days": 934
+              }
+            }
+          }
+        },
+        "20d": {
+          "overall_mean_madj_bp": 29.693773038236284,
+          "overall_ttest": {
+            "mean": 40.86312947367625,
+            "t": 1.5844284556923562,
+            "n_events": 1937,
+            "n_days": 1253
+          },
+          "by_reportTime": {
+            "pre-market": {
+              "n": 302,
+              "mean_madj_bp": 65.76073350014863,
+              "ttest": {
+                "mean": 80.5052782037669,
+                "t": 1.1324663469388192,
+                "n_events": 302,
+                "n_days": 278
+              }
+            },
+            "during-hours": {
+              "n": 95,
+              "mean_madj_bp": 78.66208019734565,
+              "ttest": {
+                "mean": 67.970233195491,
+                "t": 0.6476960345546018,
+                "n_events": 95,
+                "n_days": 92
+              }
+            },
+            "post-market": {
+              "n": 1540,
+              "mean_madj_bp": 19.60012937614996,
+              "ttest": {
+                "mean": 25.063960064960806,
+                "t": 0.9182631859477651,
+                "n_events": 1540,
+                "n_days": 1069
+              }
+            }
+          },
+          "earnings_vs_other": {
+            "earnings_2_02": {
+              "n": 704,
+              "mean_madj_bp": 1.6596887393506874,
+              "ttest": {
+                "mean": 39.799167086746884,
+                "t": 0.8521888411722793,
+                "n_events": 704,
+                "n_days": 529
+              }
+            },
+            "other_8k": {
+              "n": 1233,
+              "mean_madj_bp": 45.70025750410442,
+              "ttest": {
+                "mean": 38.93513901281694,
+                "t": 1.397366031693258,
+                "n_events": 1233,
+                "n_days": 934
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "verdict": {
+    "continuation_vs_reversal": "CONTINUATION, not reversal \u2014 and only at the 1-day horizon (overlap-free).",
+    "headline": "Earnings surprise magnitude (surprise/price, signed) predicts the NEXT 1-day market-adjusted return with a continuation sign: top-quintile minus bottom-quintile spread +28.8bp, day-clustered t=+3.36, and this is STABLE out-of-sample (IS 2006-2021 +25.5bp t=+2.69; OOS 2021-2026 +34.7bp t=+2.57). The effect is short-side concentrated (bottom quintile -24.6bp vs top +4.2bp). It DECAYS by 5 days and is NOT robust at 5d/20d once overlapping-window inflation is corrected.",
+    "no_reversal": "No reversal arm: |surprise| does not predict a bounce. Magnitude effects are insignificant (1d t=+0.70, 5d t=-0.45) or weakly POSITIVE at 20d (+32.1bp t=+2.25 before overlap correction), i.e. momentum, not mean-reversion.",
+    "reportTime": "reportTime matters at 1d only: post-market surprises drift more next-day (continuation spearman +0.046) than pre-market (+0.021). No timing effect at 5d/20d.",
+    "cost": "1d long-short spread +28.8bp gross breaks even at ~14.4bp round-trip (2 round-trips). Long-only top-quintile is only +4.2bp, below realistic cost \u2014 the edge is on the SHORT side (missers underperform), which pays borrow/locate costs not modeled here.",
+    "edgar_8k": "SEC 8-K filings show NO significant post-filing drift once universe-adjusted (20d +29.7bp t=+1.58); no timing (pre/during/post) or item-type (2.02 vs other) effect.",
+    "survivorship_caveat": "CURRENT-UNIVERSE-ONLY: 149 mega/large-caps alive today, 2006-2026. Survivorship and the 2021-2026 mega-cap bull regime inflate long-horizon continuation (broad-adjusted 20d spread +106.6bp vs universe-adjusted +81.9bp). The 1-day result is the only one that survives universe adjustment + OOS + overlap correction."
+  }
+}

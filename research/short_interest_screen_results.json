@@ -1,0 +1,89 @@
+{
+ "universe_n": 517,
+ "si_snapshots": 122,
+ "pub_lag_days": 14,
+ "bps_side": 0.0003,
+ "cost_bp_rt": 5.999999999999999,
+ "oos_from": "2022-01-01",
+ "generated_at": "2026-09-09T00:43:29-0400",
+ "RSI2": {
+  "base_full": {
+   "n": 18070,
+   "PF": 1.145,
+   "win%": 63.1,
+   "avg_bp": 24.0,
+   "t": 5.18
+  },
+  "base_oos": {
+   "n": 6156,
+   "PF": 1.069,
+   "win%": 61.7,
+   "avg_bp": 13.6,
+   "t": 1.6
+  },
+  "screens": {
+   "exclude top 10%": {
+    "oos": {
+     "n": 5569,
+     "PF": 1.03,
+     "win%": 61.7,
+     "avg_bp": 5.9,
+     "t": 0.74
+    },
+    "retained_frac": 0.905,
+    "oos_pf_delta": -0.039
+   },
+   "exclude top 20%": {
+    "oos": {
+     "n": 4998,
+     "PF": 1.024,
+     "win%": 61.6,
+     "avg_bp": 4.7,
+     "t": 0.56
+    },
+    "retained_frac": 0.812,
+    "oos_pf_delta": -0.045
+   }
+  }
+ },
+ "BROKEN_ARROW": {
+  "base_full": {
+   "n": 5289,
+   "PF": 1.409,
+   "win%": 56.4,
+   "avg_bp": 46.5,
+   "t": 7.0
+  },
+  "base_oos": {
+   "n": 3028,
+   "PF": 1.278,
+   "win%": 54.9,
+   "avg_bp": 31.6,
+   "t": 4.02
+  },
+  "screens": {
+   "exclude top 10%": {
+    "oos": {
+     "n": 2763,
+     "PF": 1.229,
+     "win%": 54.4,
+     "avg_bp": 27.0,
+     "t": 3.3
+    },
+    "retained_frac": 0.912,
+    "oos_pf_delta": -0.049
+   },
+   "exclude top 20%": {
+    "oos": {
+     "n": 2524,
+     "PF": 1.243,
+     "win%": 54.7,
+     "avg_bp": 29.2,
+     "t": 3.32
+    },
+    "retained_frac": 0.834,
+    "oos_pf_delta": -0.035
+   }
+  }
+ }
+}

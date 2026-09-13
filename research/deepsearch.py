@@ -13,11 +13,12 @@ QUERIES = [
 ]
 
 def serper(q, n=6):
-    body = json.dumps({'q': q, 'num': n}).encode()
-    req = urllib.request.Request('https://google.serper.dev/search', data=body,
-                                 headers={'X-API-KEY': SERPER, 'Content-Type': 'application/json'})
-    with urllib.request.urlopen(req, timeout=20) as r:
-        return json.loads(r.read())
+    # ddgs (free DuckDuckGo) — replaces dead Serper (out of credits 2026-09-08).
+    from ddgs import DDGS
+    with DDGS() as d:
+        res = list(d.text(q, max_results=n))
+    return {'organic': [{'title': r.get('title'), 'link': r.get('href'),
+                         'snippet': r.get('body')} for r in res]}
 
 for q in QUERIES:
     print('=' * 90)

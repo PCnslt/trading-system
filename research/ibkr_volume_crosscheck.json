@@ -1,0 +1,1478 @@
+[
+ {
+  "symbol": "AAL",
+  "ibkr": {
+   "total": 953571070.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.74,
+   "reg_pct": 94.72,
+   "post_pct": 4.53,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 502724890.0,
+   "pre_pct": 0.55,
+   "reg_pct": 91.06,
+   "post_pct": 8.39,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 5.27
+ },
+ {
+  "symbol": "ACHR",
+  "ibkr": {
+   "total": 758647321.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 3.11,
+   "reg_pct": 91.87,
+   "post_pct": 5.02,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 280138065.0,
+   "pre_pct": 2.22,
+   "reg_pct": 96.2,
+   "post_pct": 1.58,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 8.13
+ },
+ {
+  "symbol": "APLD",
+  "ibkr": {
+   "total": 278410285.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 3.1,
+   "reg_pct": 87.83,
+   "post_pct": 9.07,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 108225928.0,
+   "pre_pct": 2.41,
+   "reg_pct": 79.42,
+   "post_pct": 18.16,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 12.17
+ },
+ {
+  "symbol": "BP",
+  "ibkr": {
+   "total": 130091956.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3701,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 4.38,
+   "reg_pct": 88.61,
+   "post_pct": 7.01,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 34441994.0,
+   "pre_pct": 7.51,
+   "reg_pct": 92.0,
+   "post_pct": 0.49,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 11.39
+ },
+ {
+  "symbol": "CCL",
+  "ibkr": {
+   "total": 266837043.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.92,
+   "reg_pct": 83.82,
+   "post_pct": 15.26,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 70017242.0,
+   "pre_pct": 0.68,
+   "reg_pct": 97.76,
+   "post_pct": 1.56,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 16.18
+ },
+ {
+  "symbol": "CDE",
+  "ibkr": {
+   "total": 694626813.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 0.82,
+   "reg_pct": 92.27,
+   "post_pct": 6.92,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 261158581.0,
+   "pre_pct": 0.69,
+   "reg_pct": 98.74,
+   "post_pct": 0.57,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 7.74
+ },
+ {
+  "symbol": "CLSK",
+  "ibkr": {
+   "total": 365260792.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 2.54,
+   "reg_pct": 90.79,
+   "post_pct": 6.67,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 148221370.0,
+   "pre_pct": 1.84,
+   "reg_pct": 82.54,
+   "post_pct": 15.62,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 9.21
+ },
+ {
+  "symbol": "CMCSA",
+  "ibkr": {
+   "total": 373378610.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3703,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.24,
+   "reg_pct": 76.81,
+   "post_pct": 22.95,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 161853278.0,
+   "pre_pct": 0.09,
+   "reg_pct": 54.03,
+   "post_pct": 45.89,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 23.19
+ },
+ {
+  "symbol": "F",
+  "ibkr": {
+   "total": 796392483.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.81,
+   "reg_pct": 89.43,
+   "post_pct": 9.76,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 227022350.0,
+   "pre_pct": 0.69,
+   "reg_pct": 97.84,
+   "post_pct": 1.47,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 10.57
+ },
+ {
+  "symbol": "GRAB",
+  "ibkr": {
+   "total": 708677791.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 1.14,
+   "reg_pct": 88.21,
+   "post_pct": 10.65,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 238353638.0,
+   "pre_pct": 0.73,
+   "reg_pct": 71.21,
+   "post_pct": 28.06,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 11.79
+ },
+ {
+  "symbol": "HBAN",
+  "ibkr": {
+   "total": 393791174.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3153,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.02,
+   "reg_pct": 87.52,
+   "post_pct": 12.46,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 187914004.0,
+   "pre_pct": 0.01,
+   "reg_pct": 70.16,
+   "post_pct": 29.83,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 12.48
+ },
+ {
+  "symbol": "HL",
+  "ibkr": {
+   "total": 675722017.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 0.88,
+   "reg_pct": 94.69,
+   "post_pct": 4.43,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 316895529.0,
+   "pre_pct": 0.66,
+   "reg_pct": 99.15,
+   "post_pct": 0.2,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 5.31
+ },
+ {
+  "symbol": "IONQ",
+  "ibkr": {
+   "total": 293163220.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 4.08,
+   "reg_pct": 82.89,
+   "post_pct": 13.03,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 70896613.0,
+   "pre_pct": 2.51,
+   "reg_pct": 95.23,
+   "post_pct": 2.26,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 17.11
+ },
+ {
+  "symbol": "JOBY",
+  "ibkr": {
+   "total": 547158618.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 1.85,
+   "reg_pct": 92.31,
+   "post_pct": 5.84,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 185926339.0,
+   "pre_pct": 1.37,
+   "reg_pct": 97.9,
+   "post_pct": 0.73,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 7.69
+ },
+ {
+  "symbol": "KHC",
+  "ibkr": {
+   "total": 219587882.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3703,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.52,
+   "reg_pct": 77.38,
+   "post_pct": 22.09,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 107158806.0,
+   "pre_pct": 0.2,
+   "reg_pct": 50.45,
+   "post_pct": 49.35,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 22.61
+ },
+ {
+  "symbol": "KVUE",
+  "ibkr": {
+   "total": 335517465.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3445,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.07,
+   "reg_pct": 80.88,
+   "post_pct": 19.05,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 97197950.0,
+   "pre_pct": 0.08,
+   "reg_pct": 99.62,
+   "post_pct": 0.31,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 19.12
+ },
+ {
+  "symbol": "LCID",
+  "ibkr": {
+   "total": 163305221.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 1.39,
+   "reg_pct": 88.54,
+   "post_pct": 10.07,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 49937363.0,
+   "pre_pct": 0.92,
+   "reg_pct": 83.08,
+   "post_pct": 16.0,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 11.46
+ },
+ {
+  "symbol": "LUV",
+  "ibkr": {
+   "total": 59640493.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3444,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.34,
+   "reg_pct": 69.79,
+   "post_pct": 29.86,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 13471248.0,
+   "pre_pct": 0.64,
+   "reg_pct": 97.88,
+   "post_pct": 1.48,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 30.2
+ },
+ {
+  "symbol": "MARA",
+  "ibkr": {
+   "total": 847987501.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 2.0,
+   "reg_pct": 92.9,
+   "post_pct": 5.1,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 427237427.0,
+   "pre_pct": 1.89,
+   "reg_pct": 87.84,
+   "post_pct": 10.26,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 7.1
+ },
+ {
+  "symbol": "NOK",
+  "ibkr": {
+   "total": 1359473307.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 8.16,
+   "reg_pct": 87.6,
+   "post_pct": 4.23,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 391719162.0,
+   "pre_pct": 8.35,
+   "reg_pct": 90.59,
+   "post_pct": 1.06,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 12.39
+ },
+ {
+  "symbol": "OPEN",
+  "ibkr": {
+   "total": 724270969.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 4.78,
+   "reg_pct": 87.52,
+   "post_pct": 7.69,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 272891319.0,
+   "pre_pct": 4.93,
+   "reg_pct": 78.72,
+   "post_pct": 16.34,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 12.47
+ },
+ {
+  "symbol": "PFE",
+  "ibkr": {
+   "total": 637314823.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.98,
+   "reg_pct": 84.37,
+   "post_pct": 14.64,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 170605620.0,
+   "pre_pct": 0.85,
+   "reg_pct": 97.3,
+   "post_pct": 1.85,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 15.62
+ },
+ {
+  "symbol": "PLUG",
+  "ibkr": {
+   "total": 1168310706.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 3.17,
+   "reg_pct": 90.45,
+   "post_pct": 6.38,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 526967677.0,
+   "pre_pct": 2.68,
+   "reg_pct": 84.59,
+   "post_pct": 12.73,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 9.55
+ },
+ {
+  "symbol": "QBTS",
+  "ibkr": {
+   "total": 267935164.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 3.6,
+   "reg_pct": 84.97,
+   "post_pct": 11.43,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 96445208.0,
+   "pre_pct": 1.31,
+   "reg_pct": 70.2,
+   "post_pct": 28.48,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 15.03
+ },
+ {
+  "symbol": "RGTI",
+  "ibkr": {
+   "total": 319716733.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 2.44,
+   "reg_pct": 86.03,
+   "post_pct": 11.53,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 134906521.0,
+   "pre_pct": 1.13,
+   "reg_pct": 74.17,
+   "post_pct": 24.7,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 13.97
+ },
+ {
+  "symbol": "RIOT",
+  "ibkr": {
+   "total": 381030887.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 2.8,
+   "reg_pct": 86.76,
+   "post_pct": 10.44,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 177294304.0,
+   "pre_pct": 2.67,
+   "reg_pct": 79.73,
+   "post_pct": 17.6,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 13.24
+ },
+ {
+  "symbol": "RIVN",
+  "ibkr": {
+   "total": 385906243.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 2.12,
+   "reg_pct": 88.49,
+   "post_pct": 9.39,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 172189810.0,
+   "pre_pct": 1.37,
+   "reg_pct": 74.53,
+   "post_pct": 24.1,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 11.51
+ },
+ {
+  "symbol": "SIRI",
+  "ibkr": {
+   "total": 60105043.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3281,
+   "window": [
+    "2026-07-29T06:35:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 1.0,
+   "reg_pct": 76.73,
+   "post_pct": 22.27,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 24296429.0,
+   "pre_pct": 0.04,
+   "reg_pct": 59.04,
+   "post_pct": 40.92,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 23.27
+ },
+ {
+  "symbol": "SNAP",
+  "ibkr": {
+   "total": 740333115.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 4.64,
+   "reg_pct": 81.77,
+   "post_pct": 13.59,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 168587746.0,
+   "pre_pct": 9.06,
+   "reg_pct": 89.46,
+   "post_pct": 1.48,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 18.23
+ },
+ {
+  "symbol": "SOFI",
+  "ibkr": {
+   "total": 1019038472.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 3.12,
+   "reg_pct": 90.28,
+   "post_pct": 6.6,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 357407625.0,
+   "pre_pct": 1.77,
+   "reg_pct": 78.58,
+   "post_pct": 19.65,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 9.72
+ },
+ {
+  "symbol": "SOUN",
+  "ibkr": {
+   "total": 597350785.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 2.7,
+   "reg_pct": 89.6,
+   "post_pct": 7.7,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 214044125.0,
+   "pre_pct": 1.3,
+   "reg_pct": 88.76,
+   "post_pct": 9.94,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 10.4
+ },
+ {
+  "symbol": "T",
+  "ibkr": {
+   "total": 692540288.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3708,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.32,
+   "reg_pct": 82.95,
+   "post_pct": 16.73,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 153526178.0,
+   "pre_pct": 0.15,
+   "reg_pct": 97.63,
+   "post_pct": 2.22,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 17.05
+ },
+ {
+  "symbol": "TEVA",
+  "ibkr": {
+   "total": 89076174.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3607,
+   "window": [
+    "2026-07-29T04:10:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.93,
+   "reg_pct": 86.86,
+   "post_pct": 12.21,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 22524664.0,
+   "pre_pct": 0.29,
+   "reg_pct": 99.3,
+   "post_pct": 0.41,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 13.14
+ },
+ {
+  "symbol": "VALE",
+  "ibkr": {
+   "total": 455236354.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3579,
+   "window": [
+    "2026-07-29T05:25:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.57,
+   "reg_pct": 93.81,
+   "post_pct": 5.62,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 151526527.0,
+   "pre_pct": 0.47,
+   "reg_pct": 96.71,
+   "post_pct": 2.82,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 6.19
+ },
+ {
+  "symbol": "WBD",
+  "ibkr": {
+   "total": 337360966.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3468,
+   "window": [
+    "2026-07-29T06:55:00-04:00",
+    "2026-08-25T08:55:00-04:00"
+   ],
+   "pre_pct": 0.7,
+   "reg_pct": 81.08,
+   "post_pct": 18.22,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 147401680.0,
+   "pre_pct": 0.49,
+   "reg_pct": 60.6,
+   "post_pct": 38.91,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 18.92
+ },
+ {
+  "symbol": "WULF",
+  "ibkr": {
+   "total": 565135575.0,
+   "hours_present": [
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19
+   ],
+   "n_bars": 3709,
+   "window": [
+    "2026-07-29T04:00:00-04:00",
+    "2026-08-25T09:00:00-04:00"
+   ],
+   "pre_pct": 2.08,
+   "reg_pct": 91.46,
+   "post_pct": 6.46,
+   "overnight_pct": 0.0
+  },
+  "rh": {
+   "total": 228077412.0,
+   "pre_pct": 1.24,
+   "reg_pct": 79.91,
+   "post_pct": 18.85,
+   "overnight_pct": 0.0
+  },
+  "ibkr_extended_pct": 8.54
+ }
+]

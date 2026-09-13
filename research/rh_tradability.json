@@ -1,0 +1,254 @@
+{
+ "F": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "T": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "PFE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "SOFI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "NOK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "KVUE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "WBD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "CMCSA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "HBAN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "KHC": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "BP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "VALE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "AAL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "CCL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "LUV": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "TEVA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "GRAB": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "SIRI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "RIVN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "LCID": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "SNAP": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "MARA": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "RIOT": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "PLUG": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "IONQ": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "OPEN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "HL": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "CDE": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "WULF": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "APLD": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "RGTI": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "QBTS": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "SOUN": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "ACHR": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "untradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "JOBY": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ },
+ "CLSK": {
+  "tradeable": true,
+  "state": "active",
+  "all_day": "tradable",
+  "tfs": null,
+  "suspend": null
+ }
+}

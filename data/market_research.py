@@ -88,13 +88,17 @@ def score_batch(texts):
 
 
 def serper_news(q, n=8):
-    body = json.dumps({'q': q, 'num': n}).encode()
-    req = urllib.request.Request(
-        'https://google.serper.dev/news', data=body,
-        headers={'X-API-KEY': SERPER, 'Content-Type': 'application/json'},
-    )
-    with urllib.request.urlopen(req, timeout=15) as r:
-        return json.loads(r.read().decode()).get('news', [])
+    """NewsAPI (free tier) — replaces dead Serper (out of credits 2026-09-08)."""
+    import urllib.parse as _up
+    nkey = os.getenv('NEWSAPI_ORG_API_KEY')
+    if not nkey:
+        return []
+    url = ('https://newsapi.org/v2/everything?q=' + _up.quote(q) +
+           '&sortBy=publishedAt&pageSize=%d&language=en&apiKey=%s' % (n, nkey))
+    with urllib.request.urlopen(url, timeout=15) as r:
+        arts = json.loads(r.read().decode()).get('articles', [])
+    return [{'title': a.get('title'), 'source': (a.get('source') or {}).get('name'),
+             'date': a.get('publishedAt'), 'link': a.get('url')} for a in arts]
 
 
 def _enable_ttl(table):

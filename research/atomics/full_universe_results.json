@@ -1,0 +1,2481 @@
+{
+  "generated_at": "2026-09-09T04:39:25Z",
+  "headline_survivorship_disclosure": "CURRENT-UNIVERSE-ONLY UPPER BOUND. The S3 daily lake holds ~6551 symbols that are TODAY's listed survivors back-applied through 2006-2026. Delisted/acquired/bankrupt names are absent and carry no delisting return (no -100%). Reversal and RSI2 dip-buy results are the MOST inflated (the names that kept falling to zero are missing); the liquid universe is the least distorted. Treat every number below as an upper bound on the true tradeable edge, and the liquid column as the closest to reality.",
+  "data_cleaning_disclosure": "1) close<=0 dropped (295 obs); 2) split/reverse-split gaps neutralized by zeroing single-day |return|>40% (0.10% of daily returns, across 41% of symbols) before the cumulative adjusted close; all signals + forward returns use this adjusted series; 3) sub-$1 names excluded from every universe (the unfiltered run printed a +1015 bp/mo reversal excess on the full set -- an illiquidity artifact, not alpha).",
+  "methodology": {
+    "data": "ibkr/equities/daily/{SYMBOL}.parquet, close+volume only (open NOT used)",
+    "rebalance": "month-end close, hold to next month-end close (close-to-close)",
+    "signals": {
+      "momentum_12_1": "close[t-21]/close[t-252]-1 (skip most recent month)",
+      "rsi2": "Wilder RSI(2) at month-end",
+      "reversal_1m": "-(close[t]/close[t-21]-1), long biggest 1-month losers"
+    },
+    "market_adjustment": "top/bottom-decile mean next-month return minus equal-weight cross-sectional mean (same month)",
+    "rank_ic": "Spearman(signal, next-month return) per month; t-stat on monthly IC series (date-clustered)",
+    "walk_forward": "chronological split, IS = rebalances < 2021-01-01, OOS >= 2021-01-01",
+    "cost_model": "round-trip = 2 * bps_side * turnover_fraction; turnover = fraction of decile names replaced month-over-month; first month = full establishment (turnover=1)",
+    "min_names_per_rebalance": 30,
+    "split_neutralization_threshold_daily_ret": 0.4,
+    "forward_return_clip": [
+      -0.99,
+      3.0
+    ],
+    "universes": {
+      "full_px_ge_1": "all symbols with month-end close >= $1 (sub-$1 excluded)",
+      "common_equity_px_ge_1": "common equity (ex warrants/units/rights/pref) AND close >= $1",
+      "liquid": "common AND close >= $5 AND trailing-21d median dollar-vol >= $1M"
+    }
+  },
+  "data": {
+    "n_symbols_discovered": 6551,
+    "n_symbols_loaded": 6551,
+    "n_common_equity": 6521,
+    "n_days": 5043,
+    "date_range": [
+      "2006-08-21",
+      "2026-09-04"
+    ],
+    "n_rebalances": 241,
+    "rebalance_range": [
+      "2006-08-31",
+      "2026-08-31"
+    ],
+    "oos_cut": "2021-01-01",
+    "n_oos_months": 68
+  },
+  "equal_weight_cross_section_drift_bp_per_month": {
+    "mean": 28.67255968185305,
+    "median": 64.18674252927303,
+    "tstat": 0.8475316916281097,
+    "n": 241
+  },
+  "results": {
+    "full_px_ge_1": {
+      "description": "all symbols with month-end close >= $1 (sub-$1 excluded)",
+      "momentum_12_1": {
+        "full": {
+          "rank_ic": {
+            "mean": 0.06322097188329924,
+            "median": 0.08152518666172504,
+            "tstat": 7.076357214315273,
+            "n": 229
+          },
+          "top_decile_excess_bp": {
+            "mean": 79.39729393982455,
+            "median": 108.53126645088196,
+            "tstat": 4.123056647537334,
+            "n": 229
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -262.2692294898707,
+            "median": -271.15248143672943,
+            "tstat": -7.736803293640942,
+            "n": 229
+          },
+          "mean_n_names_per_month": 3226.3449781659388,
+          "mean_turnover_top": 0.2739094951971907,
+          "mean_turnover_bot": 0.22814524051538296,
+          "n_months": 229,
+          "net_top_bp_5bps_side": {
+            "mean": 76.65819898785263,
+            "median": 105.64064145088196,
+            "tstat": 3.9803306066398703,
+            "n": 229
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -264.5506818950246,
+            "median": -274.01633120198767,
+            "tstat": -7.807678922945099,
+            "n": 229
+          },
+          "net_top_bp_10bps_side": {
+            "mean": 73.91910403588074,
+            "median": 102.75001645088196,
+            "tstat": 3.8376201898710702,
+            "n": 229
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -266.8321343001784,
+            "median": -276.88018096724585,
+            "tstat": -7.878599231925365,
+            "n": 229
+          },
+          "net_top_bp_20bps_side": {
+            "mean": 68.4409141319369,
+            "median": 96.85415053656742,
+            "tstat": 3.552254819248726,
+            "n": 229
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -271.39503911048604,
+            "median": -282.6078804977623,
+            "tstat": -8.020571828673424,
+            "n": 229
+          }
+        },
+        "is": {
+          "rank_ic": {
+            "mean": 0.045911751219735265,
+            "median": 0.05298922966992272,
+            "tstat": 4.207694361136217,
+            "n": 161
+          },
+          "top_decile_excess_bp": {
+            "mean": 67.47252475224458,
+            "median": 98.04494678974152,
+            "tstat": 3.026408095345191,
+            "n": 161
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -125.78756279479828,
+            "median": -183.65424126386642,
+            "tstat": -3.6824768556981016,
+            "n": 161
+          },
+          "mean_n_names_per_month": 2624.9316770186338,
+          "mean_turnover_top": 0.2808504652968663,
+          "mean_turnover_bot": 0.24223546986686795,
+          "n_months": 161,
+          "net_top_bp_5bps_side": {
+            "mean": 64.66402009927594,
+            "median": 95.32048858540716,
+            "tstat": 2.9000457706656686,
+            "n": 161
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -128.20991749346697,
+            "median": -186.22999883962402,
+            "tstat": -3.7539346365330193,
+            "n": 161
+          },
+          "net_top_bp_10bps_side": {
+            "mean": 61.85551544630726,
+            "median": 92.59603038107278,
+            "tstat": 2.773698883742959,
+            "n": 161
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -130.63227219213567,
+            "median": -188.80575641538155,
+            "tstat": -3.8254005952845547,
+            "n": 161
+          },
+          "net_top_bp_20bps_side": {
+            "mean": 56.23850614036993,
+            "median": 87.14711397240406,
+            "tstat": 2.521061548948073,
+            "n": 161
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -135.47698158947298,
+            "median": -193.95727156689674,
+            "tstat": -3.968354239834998,
+            "n": 161
+          }
+        },
+        "oos": {
+          "rank_ic": {
+            "mean": 0.10420309727791392,
+            "median": 0.11480225525696039,
+            "tstat": 7.261892856129132,
+            "n": 68
+          },
+          "top_decile_excess_bp": {
+            "mean": 107.6309386339477,
+            "median": 123.70800599455833,
+            "tstat": 2.853783668204797,
+            "n": 68
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -585.4096462237923,
+            "median": -651.1231139302254,
+            "tstat": -8.87061419267792,
+            "n": 68
+          },
+          "mean_n_names_per_month": 4650.279411764706,
+          "mean_turnover_top": 0.2574757277553118,
+          "mean_turnover_bot": 0.1947845504331904,
+          "n_months": 68,
+          "net_top_bp_5bps_side": {
+            "mean": 105.05618135639457,
+            "median": 120.95772790779526,
+            "tstat": 2.7854315087496424,
+            "n": 68
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -587.3574917281242,
+            "median": -653.8456649506336,
+            "tstat": -8.905828809731462,
+            "n": 68
+          },
+          "net_top_bp_10bps_side": {
+            "mean": 102.48142407884143,
+            "median": 118.13646706521756,
+            "tstat": 2.717079668299435,
+            "n": 68
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -589.3053372324559,
+            "median": -656.5682159710417,
+            "tstat": -8.941066368950391,
+            "n": 68
+          },
+          "net_top_bp_20bps_side": {
+            "mean": 97.33190952373522,
+            "median": 112.39187443167461,
+            "tstat": 2.5803780890131525,
+            "n": 68
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -593.20102824112,
+            "median": -662.013318011858,
+            "tstat": -9.011609267349396,
+            "n": 68
+          }
+        },
+        "per_year_rank_ic": {
+          "2007": {
+            "ic_mean": 0.05829102324003682,
+            "n_months": 5
+          },
+          "2008": {
+            "ic_mean": 0.05169239810953061,
+            "n_months": 12
+          },
+          "2009": {
+            "ic_mean": -0.09118218894133275,
+            "n_months": 12
+          },
+          "2010": {
+            "ic_mean": 0.04820174965436786,
+            "n_months": 12
+          },
+          "2011": {
+            "ic_mean": 0.025111881396312843,
+            "n_months": 12
+          },
+          "2012": {
+            "ic_mean": 0.06543019870335642,
+            "n_months": 12
+          },
+          "2013": {
+            "ic_mean": 0.10666123509122967,
+            "n_months": 12
+          },
+          "2014": {
+            "ic_mean": 0.04820497719280367,
+            "n_months": 12
+          },
+          "2015": {
+            "ic_mean": 0.11228137479175714,
+            "n_months": 12
+          },
+          "2016": {
+            "ic_mean": -0.01825145627980516,
+            "n_months": 12
+          },
+          "2017": {
+            "ic_mean": 0.07435975881064014,
+            "n_months": 12
+          },
+          "2018": {
+            "ic_mean": 0.04033965057833034,
+            "n_months": 12
+          },
+          "2019": {
+            "ic_mean": 0.08825349625206869,
+            "n_months": 12
+          },
+          "2020": {
+            "ic_mean": 0.04059166048884006,
+            "n_months": 12
+          },
+          "2021": {
+            "ic_mean": 0.07263288572417724,
+            "n_months": 12
+          },
+          "2022": {
+            "ic_mean": 0.10626366596825831,
+            "n_months": 12
+          },
+          "2023": {
+            "ic_mean": 0.10759482305847302,
+            "n_months": 12
+          },
+          "2024": {
+            "ic_mean": 0.13265375582748878,
+            "n_months": 12
+          },
+          "2025": {
+            "ic_mean": 0.11200409744928093,
+            "n_months": 12
+          },
+          "2026": {
+            "ic_mean": 0.08900248482075085,
+            "n_months": 8
+          }
+        },
+        "strategy_long_side": "top",
+        "strategy_description": "long TOP decile (highest 12-1 momentum)"
+      },
+      "rsi2": {
+        "full": {
+          "rank_ic": {
+            "mean": -0.02996671527084864,
+            "median": -0.02349773279206815,
+            "tstat": -6.238173884950691,
+            "n": 241
+          },
+          "top_decile_excess_bp": {
+            "mean": -60.149757167386255,
+            "median": -46.93642258644104,
+            "tstat": -5.107980903368227,
+            "n": 241
+          },
+          "bottom_decile_excess_bp": {
+            "mean": 10.30161138237512,
+            "median": 2.4123862385749817,
+            "tstat": 0.9964222367157427,
+            "n": 241
+          },
+          "mean_n_names_per_month": 3372.597510373444,
+          "mean_turnover_top": 0.8738683771845557,
+          "mean_turnover_bot": 0.8783281552899568,
+          "n_months": 241,
+          "net_top_bp_5bps_side": {
+            "mean": -68.88844093923181,
+            "median": -55.88379100749367,
+            "tstat": -5.850453000620758,
+            "n": 241
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": 1.51832982947555,
+            "median": -6.347917806018483,
+            "tstat": 0.14687331338101137,
+            "n": 241
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -77.62712471107737,
+            "median": -64.8311594285463,
+            "tstat": -6.5929968951996,
+            "n": 241
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -7.2649517234240175,
+            "median": -14.98428144238212,
+            "tstat": -0.7028235433673319,
+            "n": 241
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -95.10449225476847,
+            "median": -82.232526597139,
+            "tstat": -8.078268880196898,
+            "n": 241
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -24.83151482922315,
+            "median": -32.25700871510939,
+            "tstat": -2.4026207433557683,
+            "n": 241
+          }
+        },
+        "is": {
+          "rank_ic": {
+            "mean": -0.036204475906262176,
+            "median": -0.026590380298104194,
+            "tstat": -6.267684088590769,
+            "n": 173
+          },
+          "top_decile_excess_bp": {
+            "mean": -74.05722077069211,
+            "median": -53.2103655859828,
+            "tstat": -5.452874571850324,
+            "n": 173
+          },
+          "bottom_decile_excess_bp": {
+            "mean": 31.593449661411302,
+            "median": 10.220827534794807,
+            "tstat": 2.6011280934674925,
+            "n": 173
+          },
+          "mean_n_names_per_month": 2728.5375722543354,
+          "mean_turnover_top": 0.8758827478687188,
+          "mean_turnover_bot": 0.8788673644437215,
+          "n_months": 173,
+          "net_top_bp_5bps_side": {
+            "mean": -82.8160482493793,
+            "median": -61.86738075724074,
+            "tstat": -6.097561412950156,
+            "n": 173
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": 22.804776016974085,
+            "median": 1.4045010041825625,
+            "tstat": 1.8775879740199437,
+            "n": 173
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -91.5748757280665,
+            "median": -70.59349540692227,
+            "tstat": -6.742174183154484,
+            "n": 173
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": 14.016102372536873,
+            "median": -7.05390330992247,
+            "tstat": 1.1540100674301828,
+            "n": 173
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -109.09253068544088,
+            "median": -87.19103511295512,
+            "tstat": -8.031148507837763,
+            "n": 173
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -3.561244916337557,
+            "median": -23.780791528370916,
+            "tstat": -0.2932203200713389,
+            "n": 173
+          }
+        },
+        "oos": {
+          "rank_ic": {
+            "mean": -0.014097118360164198,
+            "median": -0.016394524892118862,
+            "tstat": -1.6873241202373623,
+            "n": 68
+          },
+          "top_decile_excess_bp": {
+            "mean": -24.76753358838751,
+            "median": -18.147272057831287,
+            "tstat": -1.0761454536207111,
+            "n": 68
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -43.867330121643406,
+            "median": -49.8685147613287,
+            "tstat": -2.405966970115406,
+            "n": 68
+          },
+          "mean_n_names_per_month": 5011.161764705882,
+          "mean_turnover_top": 0.8687435811792583,
+          "mean_turnover_bot": 0.8769563437664083,
+          "n_months": 68,
+          "net_top_bp_5bps_side": {
+            "mean": -33.4549694001801,
+            "median": -26.833325841446047,
+            "tstat": -1.4541506926219347,
+            "n": 68
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -52.636893559307495,
+            "median": -58.74032011501087,
+            "tstat": -2.887668871266744,
+            "n": 68
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -42.14240521197268,
+            "median": -35.51937962506081,
+            "tstat": -1.8324303281072742,
+            "n": 68
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -61.40645699697158,
+            "median": -67.61212546869304,
+            "tstat": -3.3696011830578496,
+            "n": 68
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -59.517276835557865,
+            "median": -52.89148719229033,
+            "tstat": -2.589800913444778,
+            "n": 68
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -78.94558387229975,
+            "median": -85.35573617605738,
+            "tstat": -4.334139179833726,
+            "n": 68
+          }
+        },
+        "per_year_rank_ic": {
+          "2006": {
+            "ic_mean": -0.03582193423067339,
+            "n_months": 5
+          },
+          "2007": {
+            "ic_mean": -0.010904043777177722,
+            "n_months": 12
+          },
+          "2008": {
+            "ic_mean": -0.07529461065545366,
+            "n_months": 12
+          },
+          "2009": {
+            "ic_mean": -0.035102691771294756,
+            "n_months": 12
+          },
+          "2010": {
+            "ic_mean": -0.0728581821089351,
+            "n_months": 12
+          },
+          "2011": {
+            "ic_mean": -0.042673747552201664,
+            "n_months": 12
+          },
+          "2012": {
+            "ic_mean": -0.01578053449966253,
+            "n_months": 12
+          },
+          "2013": {
+            "ic_mean": -0.027487903432163036,
+            "n_months": 12
+          },
+          "2014": {
+            "ic_mean": -0.02113719137057375,
+            "n_months": 12
+          },
+          "2015": {
+            "ic_mean": -0.06859096031925398,
+            "n_months": 12
+          },
+          "2016": {
+            "ic_mean": -0.04848672782671715,
+            "n_months": 12
+          },
+          "2017": {
+            "ic_mean": -0.010335628058955387,
+            "n_months": 12
+          },
+          "2018": {
+            "ic_mean": -0.02262445918052466,
+            "n_months": 12
+          },
+          "2019": {
+            "ic_mean": -0.009608204359290511,
+            "n_months": 12
+          },
+          "2020": {
+            "ic_mean": -0.04613717014029519,
+            "n_months": 12
+          },
+          "2021": {
+            "ic_mean": -0.03597886547933934,
+            "n_months": 12
+          },
+          "2022": {
+            "ic_mean": -0.03229421960945105,
+            "n_months": 12
+          },
+          "2023": {
+            "ic_mean": -0.00807192362790316,
+            "n_months": 12
+          },
+          "2024": {
+            "ic_mean": 0.0067959291072330645,
+            "n_months": 12
+          },
+          "2025": {
+            "ic_mean": -0.008239792902532987,
+            "n_months": 12
+          },
+          "2026": {
+            "ic_mean": -0.0031421972934054573,
+            "n_months": 8
+          }
+        },
+        "strategy_long_side": "bottom",
+        "strategy_description": "long BOTTOM decile (most oversold = classic Connors RSI2 long)"
+      },
+      "reversal_1m": {
+        "full": {
+          "rank_ic": {
+            "mean": -0.004359302906819936,
+            "median": -0.01818941743947397,
+            "tstat": -0.5991257654430784,
+            "n": 240
+          },
+          "top_decile_excess_bp": {
+            "mean": -140.95731766428798,
+            "median": -121.56485579907894,
+            "tstat": -5.5001172593952825,
+            "n": 240
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -5.858466150433135,
+            "median": 0.9113550186157227,
+            "tstat": -0.3556497707682201,
+            "n": 240
+          },
+          "mean_n_names_per_month": 3353.8875,
+          "mean_turnover_top": 0.7830482008076934,
+          "mean_turnover_bot": 0.8382111002399093,
+          "n_months": 240,
+          "net_top_bp_5bps_side": {
+            "mean": -148.7877996723649,
+            "median": -130.0078016095349,
+            "tstat": -5.808152898560356,
+            "n": 240
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -14.240577152832229,
+            "median": -7.046314807744002,
+            "tstat": -0.8646182934939172,
+            "n": 240
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -156.61828168044184,
+            "median": -138.45074741999085,
+            "tstat": -6.116438267078082,
+            "n": 240
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -22.62268815523132,
+            "median": -15.003984634103727,
+            "tstat": -1.373718242421623,
+            "n": 240
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -172.27924569659575,
+            "median": -155.33663904090275,
+            "tstat": -6.733750392279548,
+            "n": 240
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -39.38691016002951,
+            "median": -30.95319196383122,
+            "tstat": -2.39229008066338,
+            "n": 240
+          }
+        },
+        "is": {
+          "rank_ic": {
+            "mean": 0.010535479939895134,
+            "median": -0.0068995708617331855,
+            "tstat": 1.1950078834570934,
+            "n": 172
+          },
+          "top_decile_excess_bp": {
+            "mean": -36.28427179010455,
+            "median": -21.30668144673109,
+            "tstat": -1.390863240011188,
+            "n": 172
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -5.686834791599405,
+            "median": -5.638329312205315,
+            "tstat": -0.30119380743926466,
+            "n": 172
+          },
+          "mean_n_names_per_month": 2711.5406976744184,
+          "mean_turnover_top": 0.7988547222897909,
+          "mean_turnover_bot": 0.8391763947972909,
+          "n_months": 172,
+          "net_top_bp_5bps_side": {
+            "mean": -44.27281901300246,
+            "median": -29.850792044879377,
+            "tstat": -1.6974517336435682,
+            "n": 172
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -14.07859873957231,
+            "median": -14.208189591646434,
+            "tstat": -0.7457191014077338,
+            "n": 172
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -52.26136623590037,
+            "median": -38.39490264302766,
+            "tstat": -2.0041673796852555,
+            "n": 172
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -22.47036268754523,
+            "median": -22.77804987108755,
+            "tstat": -1.1903220617269792,
+            "n": 172
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -68.2384606816962,
+            "median": -55.48312383932424,
+            "tstat": -2.6179695051088543,
+            "n": 172
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -39.25389058349105,
+            "median": -39.917770429969785,
+            "tstat": -2.079738331191296,
+            "n": 172
+          }
+        },
+        "oos": {
+          "rank_ic": {
+            "mean": -0.0420343418720404,
+            "median": -0.04280740802728536,
+            "tstat": -3.6150451144326015,
+            "n": 68
+          },
+          "top_decile_excess_bp": {
+            "mean": -405.71855134604607,
+            "median": -435.1506754755974,
+            "tstat": -8.254719035466088,
+            "n": 68
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -6.292592528659632,
+            "median": 10.597091168165207,
+            "tstat": -0.1884612918901345,
+            "n": 68
+          },
+          "mean_n_names_per_month": 4978.64705882353,
+          "mean_turnover_top": 0.7430669994117997,
+          "mean_turnover_bot": 0.8357694728300613,
+          "n_months": 68,
+          "net_top_bp_5bps_side": {
+            "mean": -413.1492213401641,
+            "median": -442.7829786508736,
+            "tstat": -8.407265476635803,
+            "n": 68
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -14.65028725696025,
+            "median": 2.658464717667305,
+            "tstat": -0.4388676847296775,
+            "n": 68
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -420.57989133428197,
+            "median": -450.4152818261498,
+            "tstat": -8.559843846707151,
+            "n": 68
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -23.00798198526086,
+            "median": -5.280161732830597,
+            "tstat": -0.6893818472585284,
+            "n": 68
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -435.44123132251815,
+            "median": -465.6798881767022,
+            "tstat": -8.865092647957297,
+            "n": 68
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -39.72337144186209,
+            "median": -21.1574146338264,
+            "tstat": -1.1907262803064222,
+            "n": 68
+          }
+        },
+        "per_year_rank_ic": {
+          "2006": {
+            "ic_mean": 0.031181232611807847,
+            "n_months": 4
+          },
+          "2007": {
+            "ic_mean": -0.028967544780549952,
+            "n_months": 12
+          },
+          "2008": {
+            "ic_mean": 0.02487003525553458,
+            "n_months": 12
+          },
+          "2009": {
+            "ic_mean": 0.031868386036176595,
+            "n_months": 12
+          },
+          "2010": {
+            "ic_mean": 0.02812972261513401,
+            "n_months": 12
+          },
+          "2011": {
+            "ic_mean": 0.01809200741720016,
+            "n_months": 12
+          },
+          "2012": {
+            "ic_mean": -0.011236012987430932,
+            "n_months": 12
+          },
+          "2013": {
+            "ic_mean": -0.013627276238453556,
+            "n_months": 12
+          },
+          "2014": {
+            "ic_mean": 0.025971067748624954,
+            "n_months": 12
+          },
+          "2015": {
+            "ic_mean": 0.022144753897363475,
+            "n_months": 12
+          },
+          "2016": {
+            "ic_mean": 0.027955468281060557,
+            "n_months": 12
+          },
+          "2017": {
+            "ic_mean": -0.00347343335325802,
+            "n_months": 12
+          },
+          "2018": {
+            "ic_mean": 0.009718249539786583,
+            "n_months": 12
+          },
+          "2019": {
+            "ic_mean": 0.02080666739791931,
+            "n_months": 12
+          },
+          "2020": {
+            "ic_mean": -0.011637289227880118,
+            "n_months": 12
+          },
+          "2021": {
+            "ic_mean": -0.04778647320373086,
+            "n_months": 12
+          },
+          "2022": {
+            "ic_mean": 0.0052139032854075186,
+            "n_months": 12
+          },
+          "2023": {
+            "ic_mean": -0.023832892195865586,
+            "n_months": 12
+          },
+          "2024": {
+            "ic_mean": -0.04993810296015385,
+            "n_months": 12
+          },
+          "2025": {
+            "ic_mean": -0.08883356092445936,
+            "n_months": 12
+          },
+          "2026": {
+            "ic_mean": -0.049526216914140164,
+            "n_months": 8
+          }
+        },
+        "strategy_long_side": "top",
+        "strategy_description": "signal = -1m_return; long TOP decile = biggest 1-month losers"
+      }
+    },
+    "common_equity_px_ge_1": {
+      "description": "common equity (ex warrants/units/rights/pref) AND close >= $1",
+      "momentum_12_1": {
+        "full": {
+          "rank_ic": {
+            "mean": 0.06301456238235749,
+            "median": 0.08011095949497271,
+            "tstat": 7.046805341619656,
+            "n": 229
+          },
+          "top_decile_excess_bp": {
+            "mean": 79.39254723216801,
+            "median": 111.37589812278748,
+            "tstat": 4.121939106171268,
+            "n": 229
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -261.6870147887796,
+            "median": -267.99071580171585,
+            "tstat": -7.732021563899781,
+            "n": 229
+          },
+          "mean_n_names_per_month": 3214.109170305677,
+          "mean_turnover_top": 0.27382471889208804,
+          "mean_turnover_bot": 0.2285828314805034,
+          "n_months": 229,
+          "net_top_bp_5bps_side": {
+            "mean": 76.65430004324713,
+            "median": 108.52502092980502,
+            "tstat": 3.9793172144526996,
+            "n": 229
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -263.9728431035847,
+            "median": -270.4442474002289,
+            "tstat": -7.803150324655564,
+            "n": 229
+          },
+          "net_top_bp_10bps_side": {
+            "mean": 73.91605285432627,
+            "median": 105.67414373682256,
+            "tstat": 3.836708747065357,
+            "n": 229
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -266.2586714183897,
+            "median": -272.89777899874184,
+            "tstat": -7.874324287914517,
+            "n": 229
+          },
+          "net_top_bp_20bps_side": {
+            "mean": 68.43955847648449,
+            "median": 99.42659450855372,
+            "tstat": 3.5515406873317126,
+            "n": 229
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -270.8303280479998,
+            "median": -277.8048421957679,
+            "tstat": -8.016805752140126,
+            "n": 229
+          }
+        },
+        "is": {
+          "rank_ic": {
+            "mean": 0.045861599418023286,
+            "median": 0.05242625102162416,
+            "tstat": 4.198791917847154,
+            "n": 161
+          },
+          "top_decile_excess_bp": {
+            "mean": 68.0717049088468,
+            "median": 102.60108858346939,
+            "tstat": 3.054036388486685,
+            "n": 161
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -125.86754330243014,
+            "median": -185.15905365347862,
+            "tstat": -3.699031335935149,
+            "n": 161
+          },
+          "mean_n_names_per_month": 2616.4844720496894,
+          "mean_turnover_top": 0.28079063302607377,
+          "mean_turnover_bot": 0.24273837528337752,
+          "n_months": 161,
+          "net_top_bp_5bps_side": {
+            "mean": 65.26379857858606,
+            "median": 99.89922522943213,
+            "tstat": 2.9277078375452072,
+            "n": 161
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -128.29492705526388,
+            "median": -187.28340598508484,
+            "tstat": -3.7709149997551927,
+            "n": 161
+          },
+          "net_top_bp_10bps_side": {
+            "mean": 62.45589224832531,
+            "median": 97.19736187539485,
+            "tstat": 2.8013908947566017,
+            "n": 161
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -130.7223108080977,
+            "median": -189.40775831669106,
+            "tstat": -3.842806884490019,
+            "n": 161
+          },
+          "net_top_bp_20bps_side": {
+            "mean": 56.84007958780384,
+            "median": 91.79363516732032,
+            "tstat": 2.5488019841732585,
+            "n": 161
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -135.5770783137652,
+            "median": -193.65646297990347,
+            "tstat": -3.986612469844868,
+            "n": 161
+          }
+        },
+        "oos": {
+          "rank_ic": {
+            "mean": 0.10362672469497232,
+            "median": 0.11445910620230484,
+            "tstat": 7.205397852933052,
+            "n": 68
+          },
+          "top_decile_excess_bp": {
+            "mean": 106.19630626238444,
+            "median": 127.38463003188372,
+            "tstat": 2.810954894241639,
+            "n": 68
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -583.2595869844013,
+            "median": -646.7420235276222,
+            "tstat": -8.807876168588647,
+            "n": 68
+          },
+          "mean_n_names_per_month": 4629.073529411765,
+          "mean_turnover_top": 0.25733189278073926,
+          "mean_turnover_bot": 0.19506749982958085,
+          "n_months": 68,
+          "net_top_bp_5bps_side": {
+            "mean": 103.62298733457705,
+            "median": 124.55159012578042,
+            "tstat": 2.742733410302551,
+            "n": 68
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -585.2102619826971,
+            "median": -648.3101289431745,
+            "tstat": -8.842984187195622,
+            "n": 68
+          },
+          "net_top_bp_10bps_side": {
+            "mean": 101.04966840676964,
+            "median": 121.71855021967716,
+            "tstat": 2.6745135184177284,
+            "n": 68
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -587.1609369809929,
+            "median": -649.9750897053316,
+            "tstat": -8.878115357938466,
+            "n": 68
+          },
+          "net_top_bp_20bps_side": {
+            "mean": 95.90303055115488,
+            "median": 116.05247040747057,
+            "tstat": 2.538079656839682,
+            "n": 68
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -591.0622869775846,
+            "median": -655.6398763782648,
+            "tstat": -8.948446129485752,
+            "n": 68
+          }
+        },
+        "per_year_rank_ic": {
+          "2007": {
+            "ic_mean": 0.058811826772988386,
+            "n_months": 5
+          },
+          "2008": {
+            "ic_mean": 0.05140164157291879,
+            "n_months": 12
+          },
+          "2009": {
+            "ic_mean": -0.09110850680225745,
+            "n_months": 12
+          },
+          "2010": {
+            "ic_mean": 0.04888021148299901,
+            "n_months": 12
+          },
+          "2011": {
+            "ic_mean": 0.024754875819186672,
+            "n_months": 12
+          },
+          "2012": {
+            "ic_mean": 0.06585481258496176,
+            "n_months": 12
+          },
+          "2013": {
+            "ic_mean": 0.10675513695781802,
+            "n_months": 12
+          },
+          "2014": {
+            "ic_mean": 0.04864372614675474,
+            "n_months": 12
+          },
+          "2015": {
+            "ic_mean": 0.11228010631469387,
+            "n_months": 12
+          },
+          "2016": {
+            "ic_mean": -0.018838484915593305,
+            "n_months": 12
+          },
+          "2017": {
+            "ic_mean": 0.07461497398573949,
+            "n_months": 12
+          },
+          "2018": {
+            "ic_mean": 0.03971855761428778,
+            "n_months": 12
+          },
+          "2019": {
+            "ic_mean": 0.08738218184482893,
+            "n_months": 12
+          },
+          "2020": {
+            "ic_mean": 0.04046563176339565,
+            "n_months": 12
+          },
+          "2021": {
+            "ic_mean": 0.07081317523510881,
+            "n_months": 12
+          },
+          "2022": {
+            "ic_mean": 0.10598873650798828,
+            "n_months": 12
+          },
+          "2023": {
+            "ic_mean": 0.10763781504578972,
+            "n_months": 12
+          },
+          "2024": {
+            "ic_mean": 0.13264546797296783,
+            "n_months": 12
+          },
+          "2025": {
+            "ic_mean": 0.11118213028088753,
+            "n_months": 12
+          },
+          "2026": {
+            "ic_mean": 0.08842617234315141,
+            "n_months": 8
+          }
+        },
+        "strategy_long_side": "top",
+        "strategy_description": "long TOP decile (highest 12-1 momentum)"
+      },
+      "rsi2": {
+        "full": {
+          "rank_ic": {
+            "mean": -0.030096405397737905,
+            "median": -0.023716197786069503,
+            "tstat": -6.259760995280877,
+            "n": 241
+          },
+          "top_decile_excess_bp": {
+            "mean": -60.21615742373423,
+            "median": -41.88099876046181,
+            "tstat": -5.12415635613653,
+            "n": 241
+          },
+          "bottom_decile_excess_bp": {
+            "mean": 11.085304450939304,
+            "median": 4.831328988075256,
+            "tstat": 1.0719988094548925,
+            "n": 241
+          },
+          "mean_n_names_per_month": 3359.697095435685,
+          "mean_turnover_top": 0.8740052296114773,
+          "mean_turnover_bot": 0.8784157535819943,
+          "n_months": 241,
+          "net_top_bp_5bps_side": {
+            "mean": -68.956209719849,
+            "median": -50.88369417825157,
+            "tstat": -5.868203587122525,
+            "n": 241
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": 2.3011469151193595,
+            "median": -3.935427044096326,
+            "tstat": 0.22255110683943893,
+            "n": 241
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -77.69626201596378,
+            "median": -59.88470786094666,
+            "tstat": -6.6123042507147005,
+            "n": 241
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -6.48301062070058,
+            "median": -12.702183076267909,
+            "tstat": -0.6270456486013917,
+            "n": 241
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -95.17636660819333,
+            "median": -77.56470786094665,
+            "tstat": -8.100634128080387,
+            "n": 241
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -24.051325692340463,
+            "median": -30.235695140611075,
+            "tstat": -2.326645982712153,
+            "n": 241
+          }
+        },
+        "is": {
+          "rank_ic": {
+            "mean": -0.03633022541436399,
+            "median": -0.027564323332541125,
+            "tstat": -6.280851480316274,
+            "n": 173
+          },
+          "top_decile_excess_bp": {
+            "mean": -73.86353995376454,
+            "median": -53.62531170248985,
+            "tstat": -5.452712978136744,
+            "n": 173
+          },
+          "bottom_decile_excess_bp": {
+            "mean": 32.25545622300723,
+            "median": 12.846539029851556,
+            "tstat": 2.6526681398876257,
+            "n": 173
+          },
+          "mean_n_names_per_month": 2719.450867052023,
+          "mean_turnover_top": 0.8761014577434522,
+          "mean_turnover_bot": 0.8790329060274726,
+          "n_months": 173,
+          "net_top_bp_5bps_side": {
+            "mean": -82.62455453119908,
+            "median": -62.22959111552,
+            "tstat": -6.09917758091933,
+            "n": 173
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": 23.4651271627325,
+            "median": 3.864550428025848,
+            "tstat": 1.9297999982874552,
+            "n": 173
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -91.38556910863358,
+            "median": -70.20466899713995,
+            "tstat": -6.7455558160025815,
+            "n": 173
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": 14.674798102457773,
+            "median": -4.8064136123258745,
+            "tstat": 1.206894351100477,
+            "n": 173
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -108.9075982635026,
+            "median": -86.15482476037982,
+            "tstat": -8.03802368487344,
+            "n": 173
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -2.9058600180916834,
+            "median": -21.525253588184317,
+            "tstat": -0.23899096734036065,
+            "n": 173
+          }
+        },
+        "oos": {
+          "rank_ic": {
+            "mean": -0.01423683388485097,
+            "median": -0.016560520710268666,
+            "tstat": -1.7050743099424535,
+            "n": 68
+          },
+          "top_decile_excess_bp": {
+            "mean": -25.495610692921808,
+            "median": -14.171258080750704,
+            "tstat": -1.1078283388256818,
+            "n": 68
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -42.77405226329232,
+            "median": -52.62645427137613,
+            "tstat": -2.3491390326475297,
+            "n": 68
+          },
+          "mean_n_names_per_month": 4988.558823529412,
+          "mean_turnover_top": 0.8686721786286592,
+          "mean_turnover_bot": 0.8768456451545265,
+          "n_months": 68,
+          "net_top_bp_5bps_side": {
+            "mean": -34.1823324792084,
+            "median": -22.86174070129782,
+            "tstat": -1.485801595327755,
+            "n": 68
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -51.54250871483759,
+            "median": -61.431920440338246,
+            "tstat": -2.8314006899786732,
+            "n": 68
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -42.86905426549499,
+            "median": -31.552223321844927,
+            "tstat": -1.8640342637319092,
+            "n": 68
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -60.31096516638284,
+            "median": -70.23738660930036,
+            "tstat": -3.313890214189651,
+            "n": 68
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -60.242497838068175,
+            "median": -48.93318856293915,
+            "tstat": -2.6212656431869528,
+            "n": 68
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -77.84787806947338,
+            "median": -87.84831894722458,
+            "tstat": -4.2795344875639225,
+            "n": 68
+          }
+        },
+        "per_year_rank_ic": {
+          "2006": {
+            "ic_mean": -0.03486442660778814,
+            "n_months": 5
+          },
+          "2007": {
+            "ic_mean": -0.011130069016495782,
+            "n_months": 12
+          },
+          "2008": {
+            "ic_mean": -0.07608121821435825,
+            "n_months": 12
+          },
+          "2009": {
+            "ic_mean": -0.03509048831015795,
+            "n_months": 12
+          },
+          "2010": {
+            "ic_mean": -0.07290060654670939,
+            "n_months": 12
+          },
+          "2011": {
+            "ic_mean": -0.04207292155454232,
+            "n_months": 12
+          },
+          "2012": {
+            "ic_mean": -0.016054828624165816,
+            "n_months": 12
+          },
+          "2013": {
+            "ic_mean": -0.027322332839384064,
+            "n_months": 12
+          },
+          "2014": {
+            "ic_mean": -0.021711256057203487,
+            "n_months": 12
+          },
+          "2015": {
+            "ic_mean": -0.06861783160809863,
+            "n_months": 12
+          },
+          "2016": {
+            "ic_mean": -0.048839127843676666,
+            "n_months": 12
+          },
+          "2017": {
+            "ic_mean": -0.010584285682684068,
+            "n_months": 12
+          },
+          "2018": {
+            "ic_mean": -0.02255944159490222,
+            "n_months": 12
+          },
+          "2019": {
+            "ic_mean": -0.010092531216996352,
+            "n_months": 12
+          },
+          "2020": {
+            "ic_mean": -0.04617696619446071,
+            "n_months": 12
+          },
+          "2021": {
+            "ic_mean": -0.035844813609790804,
+            "n_months": 12
+          },
+          "2022": {
+            "ic_mean": -0.03240061207153996,
+            "n_months": 12
+          },
+          "2023": {
+            "ic_mean": -0.008287800985278579,
+            "n_months": 12
+          },
+          "2024": {
+            "ic_mean": 0.00644739878475323,
+            "n_months": 12
+          },
+          "2025": {
+            "ic_mean": -0.008373790265978847,
+            "n_months": 12
+          },
+          "2026": {
+            "ic_mean": -0.0033236607994808097,
+            "n_months": 8
+          }
+        },
+        "strategy_long_side": "bottom",
+        "strategy_description": "long BOTTOM decile (most oversold = classic Connors RSI2 long)"
+      },
+      "reversal_1m": {
+        "full": {
+          "rank_ic": {
+            "mean": -0.004165276734805056,
+            "median": -0.01811559095808521,
+            "tstat": -0.5723390671742632,
+            "n": 240
+          },
+          "top_decile_excess_bp": {
+            "mean": -140.780814642009,
+            "median": -115.07319286465645,
+            "tstat": -5.494641006061766,
+            "n": 240
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -5.881435543415137,
+            "median": -1.0973773896694183,
+            "tstat": -0.35628964137293767,
+            "n": 240
+          },
+          "mean_n_names_per_month": 3341.0875,
+          "mean_turnover_top": 0.7829113225271542,
+          "mean_turnover_bot": 0.8380000798304944,
+          "n_months": 240,
+          "net_top_bp_5bps_side": {
+            "mean": -148.60992786728053,
+            "median": -122.81814532700022,
+            "tstat": -5.802714389021976,
+            "n": 240
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -14.26143634172008,
+            "median": -9.657257493216356,
+            "tstat": -0.8640598384942836,
+            "n": 240
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -156.4390410925521,
+            "median": -130.56309778934397,
+            "tstat": -6.111039025628601,
+            "n": 240
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -22.64143714002502,
+            "median": -18.178729356248333,
+            "tstat": -1.3719669533038963,
+            "n": 240
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -172.09726754309517,
+            "median": -145.77412899975118,
+            "tstat": -6.7284342006610895,
+            "n": 240
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -39.40143873663491,
+            "median": -34.131057592072395,
+            "tstat": -2.3881697221358236,
+            "n": 240
+          }
+        },
+        "is": {
+          "rank_ic": {
+            "mean": 0.010738849687080743,
+            "median": -0.006528317228193286,
+            "tstat": 1.218668657560664,
+            "n": 172
+          },
+          "top_decile_excess_bp": {
+            "mean": -35.93403958379789,
+            "median": -19.184565171599388,
+            "tstat": -1.3836439826088598,
+            "n": 172
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -5.572967300310644,
+            "median": -3.8002547807991505,
+            "tstat": -0.29482670404187733,
+            "n": 172
+          },
+          "mean_n_names_per_month": 2702.563953488372,
+          "mean_turnover_top": 0.7988266030379744,
+          "mean_turnover_bot": 0.8389366838753755,
+          "n_months": 172,
+          "net_top_bp_5bps_side": {
+            "mean": -43.922305614177624,
+            "median": -26.89153214161989,
+            "tstat": -1.691603518859985,
+            "n": 172
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -13.962334139064394,
+            "median": -12.29211690792205,
+            "tstat": -0.7387232588204015,
+            "n": 172
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -51.91057164455738,
+            "median": -34.59849911164039,
+            "tstat": -1.9996920053681968,
+            "n": 172
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -22.351700977818158,
+            "median": -21.210953182603163,
+            "tstat": -1.1827035689872103,
+            "n": 172
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -67.88710370531685,
+            "median": -49.763175580846635,
+            "tstat": -2.6162450192040967,
+            "n": 172
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -39.13043465532565,
+            "median": -39.04862573196539,
+            "tstat": -2.0708928996569105,
+            "n": 172
+          }
+        },
+        "oos": {
+          "rank_ic": {
+            "mean": -0.04186394944898678,
+            "median": -0.04268387042528129,
+            "tstat": -3.5906851589847584,
+            "n": 68
+          },
+          "top_decile_excess_bp": {
+            "mean": -405.9814809657195,
+            "median": -447.0478370785713,
+            "tstat": -8.208870216369814,
+            "n": 68
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -6.661678746561794,
+            "median": 7.20856711268425,
+            "tstat": -0.19869513498698815,
+            "n": 68
+          },
+          "mean_n_names_per_month": 4956.176470588235,
+          "mean_turnover_top": 0.7426550247644917,
+          "mean_turnover_bot": 0.835631022540501,
+          "n_months": 68,
+          "net_top_bp_5bps_side": {
+            "mean": -413.40803121336444,
+            "median": -454.66110503450614,
+            "tstat": -8.360373033874328,
+            "n": 68
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -15.017988971966812,
+            "median": -0.7019872563205469,
+            "tstat": -0.44803437172157806,
+            "n": 68
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -420.83458146100935,
+            "median": -462.27437299044084,
+            "tstat": -8.511906951074877,
+            "n": 68
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -23.374299197371805,
+            "median": -8.612541625325344,
+            "tstat": -0.6974821479176476,
+            "n": 68
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -435.68768195629923,
+            "median": -477.5009089023104,
+            "tstat": -8.81506437828612,
+            "n": 68
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -40.08691964818183,
+            "median": -24.433650363334937,
+            "tstat": -1.1966961525711113,
+            "n": 68
+          }
+        },
+        "per_year_rank_ic": {
+          "2006": {
+            "ic_mean": 0.0318866694199869,
+            "n_months": 4
+          },
+          "2007": {
+            "ic_mean": -0.029469110375243135,
+            "n_months": 12
+          },
+          "2008": {
+            "ic_mean": 0.025419537106124924,
+            "n_months": 12
+          },
+          "2009": {
+            "ic_mean": 0.0315380967551867,
+            "n_months": 12
+          },
+          "2010": {
+            "ic_mean": 0.028719757333641138,
+            "n_months": 12
+          },
+          "2011": {
+            "ic_mean": 0.01750897062775849,
+            "n_months": 12
+          },
+          "2012": {
+            "ic_mean": -0.010826873471279521,
+            "n_months": 12
+          },
+          "2013": {
+            "ic_mean": -0.013696606027464378,
+            "n_months": 12
+          },
+          "2014": {
+            "ic_mean": 0.02679666093769713,
+            "n_months": 12
+          },
+          "2015": {
+            "ic_mean": 0.022179207009981494,
+            "n_months": 12
+          },
+          "2016": {
+            "ic_mean": 0.02905138183249738,
+            "n_months": 12
+          },
+          "2017": {
+            "ic_mean": -0.0033568419081491108,
+            "n_months": 12
+          },
+          "2018": {
+            "ic_mean": 0.009851102874762397,
+            "n_months": 12
+          },
+          "2019": {
+            "ic_mean": 0.021035607902131135,
+            "n_months": 12
+          },
+          "2020": {
+            "ic_mean": -0.0114562682228163,
+            "n_months": 12
+          },
+          "2021": {
+            "ic_mean": -0.04716374078504296,
+            "n_months": 12
+          },
+          "2022": {
+            "ic_mean": 0.005630722698357772,
+            "n_months": 12
+          },
+          "2023": {
+            "ic_mean": -0.023991522010339217,
+            "n_months": 12
+          },
+          "2024": {
+            "ic_mean": -0.049623353769109695,
+            "n_months": 12
+          },
+          "2025": {
+            "ic_mean": -0.0891610240824357,
+            "n_months": 12
+          },
+          "2026": {
+            "ic_mean": -0.04938019339353296,
+            "n_months": 8
+          }
+        },
+        "strategy_long_side": "top",
+        "strategy_description": "signal = -1m_return; long TOP decile = biggest 1-month losers"
+      }
+    },
+    "liquid": {
+      "description": "common AND close >= $5 AND trailing-21d median dollar-vol >= $1M",
+      "momentum_12_1": {
+        "full": {
+          "rank_ic": {
+            "mean": 0.02783356188728193,
+            "median": 0.04047935029428198,
+            "tstat": 2.720128148384119,
+            "n": 229
+          },
+          "top_decile_excess_bp": {
+            "mean": 38.06975997545183,
+            "median": 55.66348321735859,
+            "tstat": 1.7272173343300241,
+            "n": 229
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -84.00226250803301,
+            "median": -126.59186497330666,
+            "tstat": -2.8817876606606783,
+            "n": 229
+          },
+          "mean_n_names_per_month": 1974.9213973799126,
+          "mean_turnover_top": 0.2905404701047845,
+          "mean_turnover_bot": 0.3137218633741302,
+          "n_months": 229,
+          "net_top_bp_5bps_side": {
+            "mean": 35.16435527440399,
+            "median": 52.690989906694874,
+            "tstat": 1.595282105533655,
+            "n": 229
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -87.13948114177431,
+            "median": -129.75733259920594,
+            "tstat": -2.9894798308575283,
+            "n": 229
+          },
+          "net_top_bp_10bps_side": {
+            "mean": 32.258950573356145,
+            "median": 50.06687643151757,
+            "tstat": 1.4633599502921077,
+            "n": 229
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -90.27669977551564,
+            "median": -133.25314946444098,
+            "tstat": -3.0971693684865222,
+            "n": 229
+          },
+          "net_top_bp_20bps_side": {
+            "mean": 26.44814117126046,
+            "median": 43.132166623739906,
+            "tstat": 1.199561749180156,
+            "n": 229
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -96.55113704299822,
+            "median": -139.66046752717028,
+            "tstat": -3.3125374452694945,
+            "n": 229
+          }
+        },
+        "is": {
+          "rank_ic": {
+            "mean": 0.022010831334695117,
+            "median": 0.03475382737006116,
+            "tstat": 1.700574840001135,
+            "n": 161
+          },
+          "top_decile_excess_bp": {
+            "mean": 37.41858518387405,
+            "median": 55.66348321735859,
+            "tstat": 1.5185108731913193,
+            "n": 161
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -16.11951462380727,
+            "median": -76.90676487982273,
+            "tstat": -0.47208773263842513,
+            "n": 161
+          },
+          "mean_n_names_per_month": 1680.136645962733,
+          "mean_turnover_top": 0.29512389489646046,
+          "mean_turnover_bot": 0.3137438032643502,
+          "n_months": 161,
+          "net_top_bp_5bps_side": {
+            "mean": 34.46734623490945,
+            "median": 52.690989906694874,
+            "tstat": 1.398549306232362,
+            "n": 161
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -19.25695265645077,
+            "median": -80.1625788333111,
+            "tstat": -0.5640104236730847,
+            "n": 161
+          },
+          "net_top_bp_10bps_side": {
+            "mean": 31.516107285944837,
+            "median": 50.06687643151757,
+            "tstat": 1.278613441188782,
+            "n": 161
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -22.394390689094266,
+            "median": -83.41839278679947,
+            "tstat": -0.6559433467102577,
+            "n": 161
+          },
+          "net_top_bp_20bps_side": {
+            "mean": 25.613629388015628,
+            "median": 43.132166623739906,
+            "tstat": 1.0388275295182408,
+            "n": 161
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -28.669266754381283,
+            "median": -89.68947659402886,
+            "tstat": -0.8398365870579315,
+            "n": 161
+          }
+        },
+        "oos": {
+          "rank_ic": {
+            "mean": 0.04161973275443602,
+            "median": 0.051934668269560294,
+            "tstat": 2.6393338163200424,
+            "n": 68
+          },
+          "top_decile_excess_bp": {
+            "mean": 39.611512055510985,
+            "median": 64.64263424277306,
+            "tstat": 0.8574522184053155,
+            "n": 68
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -244.72465088097925,
+            "median": -239.77511562407017,
+            "tstat": -4.802219759248496,
+            "n": 68
+          },
+          "mean_n_names_per_month": 2672.8676470588234,
+          "mean_turnover_top": 0.27968853787743403,
+          "mean_turnover_bot": 0.31366991745758005,
+          "n_months": 68,
+          "net_top_bp_5bps_side": {
+            "mean": 36.81462667673665,
+            "median": 62.054679561795126,
+            "tstat": 0.7969363703690338,
+            "n": 68
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -247.86135005555505,
+            "median": -243.25432067803175,
+            "tstat": -4.863354559557003,
+            "n": 68
+          },
+          "net_top_bp_10bps_side": {
+            "mean": 34.01774129796231,
+            "median": 59.46672488081718,
+            "tstat": 0.7364153478266577,
+            "n": 68
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -250.99804923013085,
+            "median": -246.7335257319933,
+            "tstat": -4.924472171663921,
+            "n": 68
+          },
+          "net_top_bp_20bps_side": {
+            "mean": 28.423970540413617,
+            "median": 54.290815518861315,
+            "tstat": 0.6153588289827954,
+            "n": 68
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -257.27144757928244,
+            "median": -253.69193583991645,
+            "tstat": -5.046654856079701,
+            "n": 68
+          }
+        },
+        "per_year_rank_ic": {
+          "2007": {
+            "ic_mean": 0.06045092480277179,
+            "n_months": 5
+          },
+          "2008": {
+            "ic_mean": 0.027357586662151708,
+            "n_months": 12
+          },
+          "2009": {
+            "ic_mean": -0.1142033151966775,
+            "n_months": 12
+          },
+          "2010": {
+            "ic_mean": 0.03815887007507367,
+            "n_months": 12
+          },
+          "2011": {
+            "ic_mean": 0.022150585178261354,
+            "n_months": 12
+          },
+          "2012": {
+            "ic_mean": 0.059140254857464186,
+            "n_months": 12
+          },
+          "2013": {
+            "ic_mean": 0.09701076225851414,
+            "n_months": 12
+          },
+          "2014": {
+            "ic_mean": 0.02953732332812342,
+            "n_months": 12
+          },
+          "2015": {
+            "ic_mean": 0.08982681031694299,
+            "n_months": 12
+          },
+          "2016": {
+            "ic_mean": -0.06412463687015278,
+            "n_months": 12
+          },
+          "2017": {
+            "ic_mean": 0.03881472857806576,
+            "n_months": 12
+          },
+          "2018": {
+            "ic_mean": -0.014997664575917965,
+            "n_months": 12
+          },
+          "2019": {
+            "ic_mean": 0.027209884835665943,
+            "n_months": 12
+          },
+          "2020": {
+            "ic_mean": 0.034242912291822934,
+            "n_months": 12
+          },
+          "2021": {
+            "ic_mean": 0.0252719302063126,
+            "n_months": 12
+          },
+          "2022": {
+            "ic_mean": 0.05999458298138364,
+            "n_months": 12
+          },
+          "2023": {
+            "ic_mean": 0.0507799378683075,
+            "n_months": 12
+          },
+          "2024": {
+            "ic_mean": 0.06460203181173686,
+            "n_months": 12
+          },
+          "2025": {
+            "ic_mean": 0.02888046817265356,
+            "n_months": 12
+          },
+          "2026": {
+            "ic_mean": 0.00947430185211487,
+            "n_months": 8
+          }
+        },
+        "strategy_long_side": "top",
+        "strategy_description": "long TOP decile (highest 12-1 momentum)"
+      },
+      "rsi2": {
+        "full": {
+          "rank_ic": {
+            "mean": -0.025512829170396698,
+            "median": -0.022807843386204337,
+            "tstat": -4.684452620518896,
+            "n": 241
+          },
+          "top_decile_excess_bp": {
+            "mean": -46.73221527262595,
+            "median": -41.649527847766876,
+            "tstat": -4.15517941470133,
+            "n": 241
+          },
+          "bottom_decile_excess_bp": {
+            "mean": 28.895223522906605,
+            "median": 23.55143427848816,
+            "tstat": 2.644509358903702,
+            "n": 241
+          },
+          "mean_n_names_per_month": 2022.8423236514523,
+          "mean_turnover_top": 0.8927033255915843,
+          "mean_turnover_bot": 0.8969783458874258,
+          "n_months": 241,
+          "net_top_bp_5bps_side": {
+            "mean": -55.65924852854179,
+            "median": -50.437406635645665,
+            "tstat": -4.9483851590007335,
+            "n": 241
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": 19.92544006403235,
+            "median": 14.829973091273546,
+            "tstat": 1.8235466685711486,
+            "n": 241
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -64.58628178445764,
+            "median": -59.225285423524454,
+            "tstat": -5.741391696294645,
+            "n": 241
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": 10.955656605158094,
+            "median": 5.921127795439048,
+            "tstat": 1.0026180340805548,
+            "n": 241
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -82.44034829628932,
+            "median": -76.80104299928203,
+            "tstat": -7.3267633623889195,
+            "n": 241
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -6.983910312590421,
+            "median": -12.232602523491446,
+            "tstat": -0.6390969203947361,
+            "n": 241
+          }
+        },
+        "is": {
+          "rank_ic": {
+            "mean": -0.030097177606664208,
+            "median": -0.024975802315685143,
+            "tstat": -4.635469467901996,
+            "n": 173
+          },
+          "top_decile_excess_bp": {
+            "mean": -57.64080888478656,
+            "median": -42.97655541449785,
+            "tstat": -4.534311681443487,
+            "n": 173
+          },
+          "bottom_decile_excess_bp": {
+            "mean": 41.88367895071389,
+            "median": 31.84617031365633,
+            "tstat": 3.2339379841353835,
+            "n": 173
+          },
+          "mean_n_names_per_month": 1718.7976878612717,
+          "mean_turnover_top": 0.8947427466090423,
+          "mean_turnover_bot": 0.8978596722390849,
+          "n_months": 173,
+          "net_top_bp_5bps_side": {
+            "mean": -66.58823635087697,
+            "median": -52.047351874674845,
+            "tstat": -5.236256490743279,
+            "n": 173
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": 32.90508222832304,
+            "median": 22.785396832993346,
+            "tstat": 2.540766315592733,
+            "n": 173
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -75.5356638169674,
+            "median": -60.2416640476053,
+            "tstat": -5.937663753932872,
+            "n": 173
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": 23.92648550593219,
+            "median": 13.724623352330363,
+            "tstat": 1.8475391287352088,
+            "n": 173
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -93.43051874914823,
+            "median": -77.21464327337414,
+            "tstat": -7.338829382111279,
+            "n": 173
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": 5.9692920611504885,
+            "median": -4.396923608995604,
+            "tstat": 0.4609543161947629,
+            "n": 173
+          }
+        },
+        "oos": {
+          "rank_ic": {
+            "mean": -0.013849707413422006,
+            "median": -0.021143481662724846,
+            "tstat": -1.3961184339809467,
+            "n": 68
+          },
+          "top_decile_excess_bp": {
+            "mean": -18.979469759334975,
+            "median": -20.16986720263958,
+            "tstat": -0.8210284570134135,
+            "n": 68
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -4.1489351390148785,
+            "median": -10.530706495046616,
+            "tstat": -0.20810821313811426,
+            "n": 68
+          },
+          "mean_n_names_per_month": 2796.3676470588234,
+          "mean_turnover_top": 0.8875147985912869,
+          "mean_turnover_bot": 0.8947361479633509,
+          "n_months": 68,
+          "net_top_bp_5bps_side": {
+            "mean": -27.85461774524785,
+            "median": -28.67455916510388,
+            "tstat": -1.2054959127295255,
+            "n": 68
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -13.096296618648394,
+            "median": -19.456250912606244,
+            "tstat": -0.6567571231451446,
+            "n": 68
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -36.72976573116071,
+            "median": -37.17925112756818,
+            "tstat": -1.590300974161788,
+            "n": 68
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -22.043658098281895,
+            "median": -28.381795330165872,
+            "tstat": -1.1052032965579037,
+            "n": 68
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -54.480061702986454,
+            "median": -54.18863505249678,
+            "tstat": -2.3609058135878,
+            "n": 68
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -39.938381057548916,
+            "median": -46.23288416528513,
+            "tstat": -2.001469188704561,
+            "n": 68
+          }
+        },
+        "per_year_rank_ic": {
+          "2006": {
+            "ic_mean": -0.0015857192121693966,
+            "n_months": 5
+          },
+          "2007": {
+            "ic_mean": 0.006360774028200918,
+            "n_months": 12
+          },
+          "2008": {
+            "ic_mean": -0.06129121852580138,
+            "n_months": 12
+          },
+          "2009": {
+            "ic_mean": -0.0413179403215784,
+            "n_months": 12
+          },
+          "2010": {
+            "ic_mean": -0.06038794930890462,
+            "n_months": 12
+          },
+          "2011": {
+            "ic_mean": -0.02843457815592081,
+            "n_months": 12
+          },
+          "2012": {
+            "ic_mean": -0.012124647678081421,
+            "n_months": 12
+          },
+          "2013": {
+            "ic_mean": -0.023267104339986914,
+            "n_months": 12
+          },
+          "2014": {
+            "ic_mean": -0.0011089158233735061,
+            "n_months": 12
+          },
+          "2015": {
+            "ic_mean": -0.07129834968623766,
+            "n_months": 12
+          },
+          "2016": {
+            "ic_mean": -0.06632466030067241,
+            "n_months": 12
+          },
+          "2017": {
+            "ic_mean": -0.02002307516002628,
+            "n_months": 12
+          },
+          "2018": {
+            "ic_mean": -0.016574815495194992,
+            "n_months": 12
+          },
+          "2019": {
+            "ic_mean": -0.0014757053918144575,
+            "n_months": 12
+          },
+          "2020": {
+            "ic_mean": -0.03597207466494647,
+            "n_months": 12
+          },
+          "2021": {
+            "ic_mean": -0.02494523420765221,
+            "n_months": 12
+          },
+          "2022": {
+            "ic_mean": -0.016177743037853284,
+            "n_months": 12
+          },
+          "2023": {
+            "ic_mean": -0.018178232100584373,
+            "n_months": 12
+          },
+          "2024": {
+            "ic_mean": 0.014473168172429074,
+            "n_months": 12
+          },
+          "2025": {
+            "ic_mean": -0.01877910318361799,
+            "n_months": 12
+          },
+          "2026": {
+            "ic_mean": -0.02231179647816888,
+            "n_months": 8
+          }
+        },
+        "strategy_long_side": "bottom",
+        "strategy_description": "long BOTTOM decile (most oversold = classic Connors RSI2 long)"
+      },
+      "reversal_1m": {
+        "full": {
+          "rank_ic": {
+            "mean": 0.0022682987744399195,
+            "median": -0.01712436430932196,
+            "tstat": 0.2890624538684193,
+            "n": 240
+          },
+          "top_decile_excess_bp": {
+            "mean": -42.38232215478396,
+            "median": -30.892416834831238,
+            "tstat": -1.9435806578258112,
+            "n": 240
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -7.748990222656478,
+            "median": -4.919720813632011,
+            "tstat": -0.44031975856974975,
+            "n": 240
+          },
+          "mean_n_names_per_month": 2016.4708333333333,
+          "mean_turnover_top": 0.8403992791198495,
+          "mean_turnover_bot": 0.8553968378900331,
+          "n_months": 240,
+          "net_top_bp_5bps_side": {
+            "mean": -50.78631494598244,
+            "median": -39.50326212988706,
+            "tstat": -2.3291999822772436,
+            "n": 240
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -16.302958601556806,
+            "median": -13.208094092571327,
+            "tstat": -0.9265912212178128,
+            "n": 240
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -59.19030773718094,
+            "median": -48.11410742494288,
+            "tstat": -2.714886522912121,
+            "n": 240
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -24.856926980457143,
+            "median": -21.496467371510644,
+            "tstat": -1.4130786317671538,
+            "n": 240
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -75.99829331957794,
+            "median": -65.33579801505452,
+            "tstat": -3.486447956196681,
+            "n": 240
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -41.9648637382578,
+            "median": -38.71799135080911,
+            "tstat": -2.3866806048104316,
+            "n": 240
+          }
+        },
+        "is": {
+          "rank_ic": {
+            "mean": 0.013689744740328934,
+            "median": -0.007707905910562542,
+            "tstat": 1.4231566112536531,
+            "n": 172
+          },
+          "top_decile_excess_bp": {
+            "mean": 21.154082049940563,
+            "median": 1.1272530537098646,
+            "tstat": 0.8731762020901221,
+            "n": 172
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -5.361576453609349,
+            "median": -4.067709669470787,
+            "tstat": -0.2701087708092749,
+            "n": 172
+          },
+          "mean_n_names_per_month": 1714.5988372093022,
+          "mean_turnover_top": 0.8469122178561235,
+          "mean_turnover_bot": 0.8567620032665192,
+          "n_months": 172,
+          "net_top_bp_5bps_side": {
+            "mean": 12.684959871379329,
+            "median": -7.623765538522262,
+            "tstat": 0.5236391388626965,
+            "n": 172
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -13.92919648627454,
+            "median": -12.194821155957271,
+            "tstat": -0.7018951532417926,
+            "n": 172
+          },
+          "net_top_bp_10bps_side": {
+            "mean": 4.215837692818091,
+            "median": -15.846129348652877,
+            "tstat": 0.1740447219972059,
+            "n": 172
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -22.496816518939728,
+            "median": -20.321932642443755,
+            "tstat": -1.1338757971397753,
+            "n": 172
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -12.722406664304378,
+            "median": -32.290856968914106,
+            "tstat": -0.5253034125614822,
+            "n": 172
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -39.63205658427011,
+            "median": -37.22093303683656,
+            "tstat": -1.9983991327372697,
+            "n": 172
+          }
+        },
+        "oos": {
+          "rank_ic": {
+            "mean": -0.026621241021632294,
+            "median": -0.03909224023715044,
+            "tstat": -2.101158814436449,
+            "n": 68
+          },
+          "top_decile_excess_bp": {
+            "mean": -203.09205043732243,
+            "median": -219.62611936032772,
+            "tstat": -4.984944860183926,
+            "n": 68
+          },
+          "bottom_decile_excess_bp": {
+            "mean": -13.7877426973051,
+            "median": -5.595646798610687,
+            "tstat": -0.3745788909534324,
+            "n": 68
+          },
+          "mean_n_names_per_month": 2780.029411764706,
+          "mean_turnover_top": 0.8239253752575096,
+          "mean_turnover_bot": 0.8519437725259799,
+          "n_months": 68,
+          "net_top_bp_5bps_side": {
+            "mean": -211.33130418989754,
+            "median": -226.93209924343904,
+            "tstat": -5.186315323180127,
+            "n": 68
+          },
+          "net_bot_bp_5bps_side": {
+            "mean": -22.307180422564898,
+            "median": -14.50537672831842,
+            "tstat": -0.6061634240885859,
+            "n": 68
+          },
+          "net_top_bp_10bps_side": {
+            "mean": -219.57055794247262,
+            "median": -234.23807912655042,
+            "tstat": -5.3876020803976585,
+            "n": 68
+          },
+          "net_bot_bp_10bps_side": {
+            "mean": -30.8266181478247,
+            "median": -23.415106658026154,
+            "tstat": -0.8378469043430772,
+            "n": 68
+          },
+          "net_top_bp_20bps_side": {
+            "mean": -236.0490654476228,
+            "median": -249.5930389127224,
+            "tstat": -5.7899172330536555,
+            "n": 68
+          },
+          "net_bot_bp_20bps_side": {
+            "mean": -47.8654935983443,
+            "median": -41.23456651744162,
+            "tstat": -1.3015032663941386,
+            "n": 68
+          }
+        },
+        "per_year_rank_ic": {
+          "2006": {
+            "ic_mean": 0.020417511851887653,
+            "n_months": 4
+          },
+          "2007": {
+            "ic_mean": -0.04217434594344808,
+            "n_months": 12
+          },
+          "2008": {
+            "ic_mean": 0.008149411956323002,
+            "n_months": 12
+          },
+          "2009": {
+            "ic_mean": 0.02892275582640173,
+            "n_months": 12
+          },
+          "2010": {
+            "ic_mean": 0.025594657455925388,
+            "n_months": 12
+          },
+          "2011": {
+            "ic_mean": 0.020331330110645945,
+            "n_months": 12
+          },
+          "2012": {
+            "ic_mean": -0.005954161005022755,
+            "n_months": 12
+          },
+          "2013": {
+            "ic_mean": -0.014770417396650033,
+            "n_months": 12
+          },
+          "2014": {
+            "ic_mean": 0.025806480366076665,
+            "n_months": 12
+          },
+          "2015": {
+            "ic_mean": 0.03419666366958358,
+            "n_months": 12
+          },
+          "2016": {
+            "ic_mean": 0.04762726107940842,
+            "n_months": 12
+          },
+          "2017": {
+            "ic_mean": 0.004688705167861676,
+            "n_months": 12
+          },
+          "2018": {
+            "ic_mean": 0.017775047508435327,
+            "n_months": 12
+          },
+          "2019": {
+            "ic_mean": 0.05810819979740409,
+            "n_months": 12
+          },
+          "2020": {
+            "ic_mean": -0.018887751265526168,
+            "n_months": 12
+          },
+          "2021": {
+            "ic_mean": -0.04556530839270667,
+            "n_months": 12
+          },
+          "2022": {
+            "ic_mean": 0.004839703128604679,
+            "n_months": 12
+          },
+          "2023": {
+            "ic_mean": -0.002792450145803894,
+            "n_months": 12
+          },
+          "2024": {
+            "ic_mean": -0.03232022496132134,
+            "n_months": 12
+          },
+          "2025": {
+            "ic_mean": -0.06172599633214191,
+            "n_months": 12
+          },
+          "2026": {
+            "ic_mean": -0.019934133628820804,
+            "n_months": 8
+          }
+        },
+        "strategy_long_side": "top",
+        "strategy_description": "signal = -1m_return; long TOP decile = biggest 1-month losers"
+      }
+    }
+  }
+}

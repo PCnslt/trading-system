@@ -1,0 +1,228 @@
+{
+  "report": "research_codebase_defect_audit",
+  "generated_at_utc": "2026-09-08T00:00:00Z",
+  "scope": {
+    "repo": "/home/ubuntu/trading-system",
+    "directories_audited": ["research/", "data/", "bot/", "hardening/"],
+    "focus": ["look-ahead leakage", "survivorship bias", "data-quality defects",
+              "feature/target/label bugs", "cost-model errors", "multiple-testing violations"],
+    "method": "manual source audit of research/data/bot code; data-quality numbers for daily bars re-confirmed from research/atomics/data_audit.json (not re-derived)",
+    "note": "research-only: no files modified, no fixes applied"
+  },
+  "summary": {
+    "critical": 1,
+    "major": 7,
+    "minor": 10,
+    "conclusion": "The dominant defect is survivorship bias: every universe-based backtest uses today's listed/index constituents applied through up to 20 years of history. A second systematic issue is that the multiple-testing/FDR and placebo infrastructure exists (research/atomics/multiple_testing.py, core.py) but is NOT wired into any sweep; per-trade (unclustered) t-stats and best-of-N reporting remain the default. One concrete off-by-one bug (time-series value) and one broken placebo helper were found. Most findings are already self-disclosed in BACKTEST_CAVEATS.md / SELF_AUDIT.md / the trading-backtest-validation skill; the ones below are the exact code locations."
+  },
+  "findings": [
+    {
+      "id": "SURVIVORSHIP-1",
+      "severity": "CRITICAL",
+      "category": "survivorship_bias",
+      "file": "research/generate_universe_1500.py",
+      "line": "43-48, 54",
+      "issue": "Universe is built from Wikipedia S&P 500/400/600 constituents AS OF TODAY (current index membership), then filtered on the last 3 months of yfinance data. Delisted / index-removed / bankrupt names are absent, so the universe back-applied through ~20y of history contains only survivors.",
+      "impact": "Every backtest that reads research/universe_1500.json (stmom_backtest.py, indicator_sweep.py, and any sweep importing it) is an UPWARD-BIASED upper bound. Worst for buy-the-dip mean-reversion (RSI2/STOCH/Bollinger) where the names that fell to zero are exactly the losses now missing. INVALIDATES the magnitude of all universe-based PF / avg-bp / t-stat claims; the true edge is lower.",
+      "disclosed": false,
+      "also_in": ["research/generate_smallcap_universe.py:30 (load_symbols = current full listing)", "research/small_cap_universe_screen.py", "research/expand_universe_screen.py"]
+    },
+    {
+      "id": "SURVIVORSHIP-2",
+      "severity": "MAJOR",
+      "category": "survivorship_bias",
+      "file": "research/edge_sweep2.py",
+      "line": "172-223",
+      "issue": "load_equities() builds the cross-sectional universe from ibkr/equities/daily/*.parquet = today's listed snapshot (comment at line 176 admits it). The long-short cross-sectional momentum uses the current-listing set, so the short leg (recent losers) is missing delisted names.",
+      "impact": "Long-short spread is OVERSTATED (short leg biased).",
+      "disclosed": true,
+      "note": "This file DOES disclose it (line 528 note field); the defect is real but self-flagged. Files that do NOT disclose it while using the same universe: indicator_sweep.py, stmom_backtest.py."
+    },
+    {
+      "id": "LOOKAHEAD-1",
+      "severity": "MAJOR",
+      "category": "look_ahead_cost_model",
+      "file": "research/overnight_24h_features.py",
+      "line": "53-87, 90-106, 155-156",
+      "issue": "Corwin-Schultz (corwin_schultz_by_year) and Abdi-Ranaldo (abdi_ranaldo_by_year) spreads are computed as ONE aggregate per symbol-YEAR, using that year's ENTIRE high/low/close series (including days AFTER day t), then mapped back to every day t of the year via .map(cs_year). The per-trade cost on day t therefore uses future same-year price data.",
+      "impact": "The cs/ar cost-model net numbers (overnight_24h_edge.py COST['cs']/COST['ar']) are within-year look-ahead contaminated.",
+      "disclosed": true,
+      "note": "Does NOT invalidate the primary conclusion: overnight_24h_edge.py:18-30 explicitly labels cs/ar 'noise-inflated UPPER BOUND' and the decision relies on tick1 (100/close, uses only current close) and flat bp costs, which are look-ahead-free."
+    },
+    {
+      "id": "BUG-1",
+      "severity": "MAJOR",
+      "category": "off_by_one_label_alignment",
+      "file": "research/edge_sweep2.py",
+      "line": "658-663",
+      "issue": "Time-series VALUE backtest misaligns signal and forward return. sig[t] = spot<5y_mean (signal at month-end t); fwd = cdf.pct_change().shift(-1) so fwd[t] = close[t+1]/close[t]-1 (correct forward month); but pos = sig.shift(1) so r[t] = sig[t-1] * return[t+1]. The comment ('position set at month-end t, return realized over next month') requires r = sig * fwd (no shift). The extra .shift(1) lags the signal one month AND pairs it with a return window that starts one month later. Inconsistent under any convention.",
+      "impact": "The family_value TIME-SERIES result and its cost-stress table (lines 667-676) are computed with a one-month-misaligned signal. The cross-sectional value result (xsectional_futures) is unaffected.",
+      "disclosed": false
+    },
+    {
+      "id": "BUG-2",
+      "severity": "MAJOR",
+      "category": "placebo_engine_bug",
+      "file": "research/atomics/core.py",
+      "line": "127-130",
+      "issue": "shuffle_symbols() claims to 'permute predictions within each timestamp cross-section (swap across symbols)' but its body is identical to shuffle_timestamps() — a single rng.permutation(pred) over the whole array, which shuffles across time AND symbols together. A cross-sectional null must permute WITHIN each timestamp only.",
+      "impact": "Any downstream cross-sectional placebo using shuffle_symbols would produce an invalid null (destroys time structure too). Currently only referenced by research/atomics/test_platform.py (not wired into any backtest), so it does not invalidate an existing result today, but the API is silently broken.",
+      "disclosed": false
+    },
+    {
+      "id": "MULTIPLE-TESTING-1",
+      "severity": "MAJOR",
+      "category": "multiple_testing",
+      "file": "research/indicator_sweep.py",
+      "line": "199-222",
+      "issue": "8 strategies reported with individual PF/t and no Benjamini-Hochberg or any correction; the FDR machinery in research/atomics/multiple_testing.py is never called by any sweep (grep: only referenced from test_infra.py). Same best-of-N pattern in edge_sweep2.py (4 families x multiple configs) and overnight_24h_edge.py (survivors_pf13_oos picks the max-cost-wall variant, with section-5 'IS-SELECTED COMBOS' itself labeled overfit).",
+      "impact": "Best-of-N is reported as if a single discovery; false-positive rate inflated across the batch.",
+      "disclosed": false,
+      "note": "overnight_24h_edge.py does disclose section 5 as 'overfit risk -- reported for completeness', which is partial mitigation; indicator_sweep.py and edge_sweep2.py do not apply correction."
+    },
+    {
+      "id": "STATS-1",
+      "severity": "MAJOR",
+      "category": "t_stat_inflation",
+      "file": "research/indicator_sweep.py",
+      "line": "170",
+      "issue": "t = mean/(std/sqrt(n)) over PER-TRADE returns across hundreds of correlated same-day trades; each trade is treated as independent. Effective n << nominal n.",
+      "impact": "Reported t-stats (e.g. 't=7-9' style) are inflated upper bounds. Date-clustered t required (see stmom_backtest.py:38-44 for the correct pattern).",
+      "disclosed": false,
+      "also_in": ["research/overnight_24h_edge.py:103 (block t_stat, per-trade)", "research/feature_engine.py:84 (per-timestamp t over autocorrelated/overlapping IC)", "research/atomics/multihorizon_cross_section.py:125 (overlapping-horizon IC t)"]
+    },
+    {
+      "id": "DATA-WINDOW-1",
+      "severity": "MAJOR",
+      "category": "data_window",
+      "file": "research/validate_edges.py",
+      "line": "53",
+      "issue": "START = '2010-01-01' hardcoded. yfinance futures go back to ~2000, so the backtest (and its OOS) excludes the 2000-02 dotcom crash and the 2008 GFC.",
+      "impact": "OOS regime coverage is misleading; a sleeve can show a healthy OOS PF that would not survive a 2000/2008 drawdown. Reported numbers flattered.",
+      "disclosed": false
+    },
+    {
+      "id": "COST-1",
+      "severity": "MAJOR",
+      "category": "cost_model_underestimate",
+      "file": "research/atomics/core.py",
+      "line": "67-72",
+      "issue": "COST_SCENARIOS: base = spread 3 + slippage 2 = 5bp round-trip; conservative = 10bp RT; stress = 20bp RT. Measured reality (repo's own sampler): the open-sell leg alone is ~12bp, and sub-$50 round trips are ~14bp+; the skill's own guidance is 'headline >=10bp/SIDE, stress 15-20bp/SIDE'. So even 'stress' (20bp RT = 10bp/side) sits at the low end of the real cost.",
+      "impact": "Cost stress understates real execution cost; strategies can survive 'stress' in this engine while failing on measured cost.",
+      "disclosed": false,
+      "also_in": ["research/indicator_sweep.py:36 (COST_BP=5bp/side = 10bp RT, optimistic)"]
+    },
+    {
+      "id": "MINOR-1",
+      "severity": "MINOR",
+      "category": "mae_mfe_window",
+      "file": "research/validate_edges.py",
+      "line": "196-197, 238-239, 268-269, 298-299",
+      "issue": "MAE/MFE use l.iloc[entry_i:i+1].min()/h.iloc[entry_i:i+1].max(), including the ENTRY bar's full high/low. For a close-entry trade the entry bar's intraday path happened BEFORE the position existed.",
+      "impact": "MAE/MFE slightly overstated.",
+      "disclosed": false
+    },
+    {
+      "id": "MINOR-2",
+      "severity": "MINOR",
+      "category": "metric_mislabelled",
+      "file": "bot/backtest.py",
+      "line": "113",
+      "issue": "Dict key 'sharpe' is assigned np.mean([t['r'] ...]) = mean R-multiple, not a Sharpe ratio.",
+      "impact": "Misleading metric label in the config comparison printout.",
+      "disclosed": false
+    },
+    {
+      "id": "MINOR-3",
+      "severity": "MINOR",
+      "category": "drawdown_constant_divisor",
+      "file": "bot/backtest.py",
+      "line": "110-111",
+      "issue": "dd = ((cum - peak)/100_000).min() divides by constant initial equity, not running peak; and equity curve is not recorded (only final equity).",
+      "impact": "Percentage drawdown understated vs peak-relative; coarse metric.",
+      "disclosed": false
+    },
+    {
+      "id": "MINOR-4",
+      "severity": "MINOR",
+      "category": "within_bar_trail_ordering",
+      "file": "bot/backtest.py",
+      "line": "70, 77",
+      "issue": "Trailing stop: best = max(best, h) uses today's HIGH to ratchet the stop BEFORE checking whether today's LOW triggered it (l <= stop). Assumes low followed high within the bar.",
+      "impact": "Standard within-bar ambiguity; slightly favorable to the trailing-stop variant.",
+      "disclosed": false
+    },
+    {
+      "id": "MINOR-5",
+      "severity": "MINOR",
+      "category": "purge_ignored",
+      "file": "research/atomics/core.py",
+      "line": "57",
+      "issue": "walk_forward_splits() accepts purge_bars but ignores it in 'expanding' mode (only used in 'rolling' mode's train_start); embargo_bars is applied. Default purge=0 anyway.",
+      "impact": "Latent label-overlap risk if a caller sets purge_bars with expanding mode.",
+      "disclosed": false
+    },
+    {
+      "id": "MINOR-6",
+      "severity": "MINOR",
+      "category": "signal_window_mismatch",
+      "file": "research/stmom_backtest.py",
+      "line": "59, 70-74, 80-86",
+      "issue": "Signal window is hist.index[-25]..[-6] = 19 trading days (docstring says 'prior-month return skip most recent 5 days' ~21d). rebal uses .to_timestamp('M') = calendar month-end; when the last calendar day is a trading day, get_indexer(...,'ffill') + entry_i=m_pos+1 makes the signal EXCLUDE the true last trading day. Minor off-by-one.",
+      "impact": "Approximate, not exact, monthly momentum window.",
+      "disclosed": false
+    },
+    {
+      "id": "MINOR-7",
+      "severity": "MINOR",
+      "category": "dead_code",
+      "file": "research/edge_sweep2.py",
+      "line": "653-655",
+      "issue": "Dead loop 'for s in slip_series: pass' leftover before the time-series value block.",
+      "impact": "None (cosmetic).",
+      "disclosed": false
+    },
+    {
+      "id": "MINOR-8",
+      "severity": "MINOR",
+      "category": "cross_section_intersection",
+      "file": "research/feature_engine.py",
+      "line": "63",
+      "issue": "times = set.intersection over every symbol's index; a symbol with a missing bar at t is silently excluded from that timestamp's cross-section.",
+      "impact": "Selection bias toward symbols that trade every 5-min slot; negligible for 40 liquid names.",
+      "disclosed": false
+    },
+    {
+      "id": "MINOR-9",
+      "severity": "MINOR",
+      "category": "pooled_cross_section_eval",
+      "file": "research/ml_cross_section.py",
+      "line": "66-68, 84",
+      "issue": "top_decile_ret ranks predictions over the WHOLE test set (across all timestamps), not per-timestamp; top decile can be dominated by a single time regime.",
+      "impact": "Cross-sectional ranking metric mixed with time; weaker methodological signal.",
+      "disclosed": false
+    },
+    {
+      "id": "MINOR-10",
+      "severity": "MINOR",
+      "category": "data_quality_already_measured",
+      "file": "research/atomics/data_audit.json",
+      "line": "n/a (existing report)",
+      "issue": "Daily 'unreliable open field' (open==close) is 6.27% weighted / 3.20% median, concentrated in dead listings — NOT the previously-claimed 64-85%. 5-min data is clean (0 dup, 0 OHLC violations) except 30 flat placeholder bars (O=H=L=C, barCount=0) on 2026-02-25 10:55-11:15 for 6 symbols (feed/halt gap). 'Batched timestamps' not observed in the collectors reviewed (daily_collect.py / backfill_bars.py use session-date keys + full-timestamp intraday records).",
+      "impact": "Open field usable for liquid names; flat placeholder bars are a known feed-halt artifact, not real zero-volume trading.",
+      "disclosed": true
+    }
+  ],
+  "files_reviewed": [
+    "research/feature_engine.py", "research/overnight_24h_features.py", "research/overnight_24h_edge.py",
+    "research/atomics/core.py", "research/atomics/multihorizon_cross_section.py",
+    "research/atomics/sequence/build_dataset.py", "research/atomics/multiple_testing.py",
+    "research/atomics/data_audit.json", "research/generate_universe_1500.py",
+    "research/generate_smallcap_universe.py", "research/small_cap_universe_screen.py",
+    "research/edge_sweep2.py", "research/validate_edges.py", "research/indicator_sweep.py",
+    "research/stmom_backtest.py", "research/ml_cross_section.py", "research/signal_engine_sweep.py",
+    "research/phaseb_disp.py", "bot/backtest.py", "bot/backfill_bars.py",
+    "data/daily_collect.py", "bot/intraday_scan.py"
+  ],
+  "not_audited": "Full breadth of bot/live_*.py execution lanes and hardening/* were out of scope for the research-defect focus; crypto backtests not exhaustively line-reviewed."
+}

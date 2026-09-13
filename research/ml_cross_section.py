@@ -60,17 +60,40 @@ cut = dates[int(len(dates)*0.7)]
 tr = df[df.index < cut]; te = df[df.index >= cut]
 print(f"train rows {len(tr)} ({tr.index.min().date()}..{tr.index.max().date()}), test rows {len(te)} ({te.index.min().date()}..{te.index.max().date()})")
 
-def rank_ic(pred, y):
-    return spearmanr(pred, y).statistic
+def rank_ic(pred, y, ts=None):
+    """Per-timestamp cross-sectional rank IC (mean over timestamps). Pooling across
+    the whole test set would mix stocks from different times; the cross-sectional
+    signal lives WITHIN a timestamp."""
+    if ts is None:
+        return spearmanr(pred, y).statistic
+    g = pd.DataFrame({'p': pred, 'y': y, 't': ts}).dropna()
+    ics = g.groupby('t').apply(
+        lambda x: spearmanr(x['p'], x['y']).statistic if len(x) >= 10 else np.nan)
+    ics = ics.dropna()
+    return float(ics.mean()) if len(ics) else float('nan')
 
-def top_decile_ret(pred, y):
-    q = pd.Series(pred).rank(pct=True)
-    return y[q >= 0.9].mean() - y.mean()  # top decile minus cross-sectional mean
 
-# baselines on TEST
+def top_decile_ret(pred, y, ts=None):
+    """Per-timestamp top-decile excess (top-10% mean minus cross-sectional mean),
+    averaged over timestamps."""
+    if ts is None:
+        q = pd.Series(pred).rank(pct=True)
+        return y[q >= 0.9].mean() - y.mean()  # top decile minus cross-sectional mean
+    g = pd.DataFrame({'p': pred, 'y': y, 't': ts}).dropna()
+    def f(x):
+        if len(x) < 10:
+            return np.nan
+        th = x['p'].quantile(0.9)
+        return x.loc[x['p'] >= th, 'y'].mean() - x['y'].mean()
+    td = g.groupby('t').apply(f).dropna()
+    return float(td.mean()) if len(td) else float('nan')
+
+
+# baselines on TEST (per-timestamp cross-sectional, not pooled)
+te_ts = te.index.to_numpy()
 for name, sig in [('momentum (r30)', te['r30']), ('reversal (-r30)', -te['r30']),
                   ('r60', te['r60']), ('cs_rank_r30', te['cs_rank_r30'])]:
-    print(f"baseline {name:20s}: rank_IC={rank_ic(sig.values, te['target'].values):+.4f}, top-decile excess={top_decile_ret(sig.values, te['target'].values)*1e4:+.2f}bp")
+    print(f"baseline {name:20s}: rank_IC={rank_ic(sig.values, te['target'].values, te_ts):+.4f}, top-decile excess={top_decile_ret(sig.values, te['target'].values, te_ts)*1e4:+.2f}bp")
 
 # LightGBM
 Xtr, ytr = tr[FEAT_COLS].values, tr['target'].values
@@ -80,8 +103,8 @@ model = lgb.LGBMRegressor(n_estimators=200, learning_rate=0.05, num_leaves=31,
                           random_state=0)
 model.fit(Xtr, ytr)
 pred = model.predict(Xte)
-ic = rank_ic(pred, yte); tdr = top_decile_ret(pred, yte)
-hi = yte[pred >= np.quantile(pred, 0.8)].mean()
+ic = rank_ic(pred, yte, te_ts); tdr = top_decile_ret(pred, yte, te_ts)
+hi = yte[pred >= np.quantile(pred, 0.8)].mean()  # pooled high-conf mean ret (descriptive only)
 print(f"\nLightGBM: rank_IC={ic:+.4f}, top-decile excess={tdr*1e4:+.2f}bp, high-conf mean ret={hi*1e4:+.2f}bp")
 imp = pd.Series(model.feature_importances_, index=FEAT_COLS).sort_values(ascending=False)
 print("feature importance:", dict(imp.round(2).head(8)))

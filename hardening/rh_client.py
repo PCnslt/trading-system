@@ -238,21 +238,45 @@ class _McpTransport:
         self._id = 0
         self._opener = opener  # injectable urllib opener (tests)
 
+    # Transient errors worth retrying (gateway hiccups / rate limits / network).
+    # NOT auth (401/403) and NOT other 4xx — those fail fast.
+    _TRANSIENT_HTTP = (429, 502, 503, 504)
+
     def _open(self, payload: dict):
-        headers = {
-            "Authorization": f"Bearer {self.access_token}",
-            "Content-Type": "application/json",
-            "Accept": "application/json, text/event-stream",
-        }
-        if self.session_id:
-            headers["mcp-session-id"] = self.session_id
-        req = urllib.request.Request(self.url, data=json.dumps(payload).encode(),
-                                     headers=headers, method="POST")
-        opener = self._opener or urllib.request.build_opener()
-        with opener.open(req, timeout=30) as resp:
-            if resp.headers.get("mcp-session-id"):
-                self.session_id = resp.headers["mcp-session-id"]
-            return resp.read().decode()
+        last_exc = None
+        for attempt in range(3):
+            try:
+                headers = {
+                    "Authorization": f"Bearer {self.access_token}",
+                    "Content-Type": "application/json",
+                    "Accept": "application/json, text/event-stream",
+                }
+                if self.session_id:
+                    headers["mcp-session-id"] = self.session_id
+                req = urllib.request.Request(self.url, data=json.dumps(payload).encode(),
+                                             headers=headers, method="POST")
+                opener = self._opener or urllib.request.build_opener()
+                with opener.open(req, timeout=30) as resp:
+                    if resp.headers.get("mcp-session-id"):
+                        self.session_id = resp.headers["mcp-session-id"]
+                    return resp.read().decode()
+            except urllib.error.HTTPError as e:
+                if e.code in self._TRANSIENT_HTTP and attempt < 2:
+                    last_exc = e
+                    try:
+                        e.read()  # drain the body so the connection is released
+                    except Exception:
+                        pass
+                    time.sleep(1.0 * (2 ** attempt))
+                    continue
+                raise
+            except (urllib.error.URLError, OSError) as e:
+                if attempt < 2:
+                    last_exc = e
+                    time.sleep(1.0 * (2 ** attempt))
+                    continue
+                raise
+        raise RHError(f"MCP transport error after retries: {last_exc!r}")
 
     @staticmethod
     def _parse_sse(text: str) -> list[dict]:

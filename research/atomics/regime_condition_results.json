@@ -1,0 +1,104 @@
+{
+  "regimes": {
+    "market_realized_vol": {
+      "definition": "trailing 60-min realized vol of equal-weight index (std of 5-min returns)",
+      "median_threshold": 0.0005556981152190586,
+      "high": {
+        "mean_spread": 6.948005738786913e-05,
+        "n": 4991,
+        "std_spread": 0.0038813432169202975,
+        "t_stat": 1.2646545342587039,
+        "q1_mean": 2.535185516078601e-05,
+        "q5_mean": 9.483191254865512e-05
+      },
+      "low": {
+        "mean_spread": -6.198456842238371e-05,
+        "n": 4991,
+        "std_spread": 0.002505807928584413,
+        "t_stat": -1.7475499081969488,
+        "q1_mean": 1.5185342598581333e-05,
+        "q5_mean": -4.67992258238024e-05
+      }
+    },
+    "market_direction": {
+      "definition": "equal-weight mean past-30m return across symbols; terciles",
+      "thresholds": {
+        "down_below": -0.0004984309140940779,
+        "up_above": 0.0005650704003642537
+      },
+      "down": {
+        "mean_spread": -2.6868194757193812e-05,
+        "n": 3328,
+        "std_spread": 0.003832228650929217,
+        "t_stat": -0.4044629387246,
+        "q1_mean": 1.7839387546539737e-05,
+        "q5_mean": -9.02880721065406e-06
+      },
+      "flat": {
+        "mean_spread": -6.687660725929058e-05,
+        "n": 3327,
+        "std_spread": 0.0025714627795348946,
+        "t_stat": -1.5001006199625329,
+        "q1_mean": 6.31754421632267e-05,
+        "q5_mean": -3.7011650960638725e-06
+      },
+      "up": {
+        "mean_spread": 0.00010499723773079002,
+        "n": 3327,
+        "std_spread": 0.0032735665567951433,
+        "t_stat": 1.850048436838862,
+        "q1_mean": -2.0208302920029193e-05,
+        "q5_mean": 8.478893481076081e-05
+      }
+    },
+    "cross_sectional_dispersion": {
+      "definition": "std across symbols of past-30m return (cross-sectional dispersion of momentum signal)",
+      "median_threshold": 0.0031978555156038646,
+      "high": {
+        "mean_spread": 7.085111164535724e-05,
+        "n": 4991,
+        "std_spread": 0.004109711609971604,
+        "t_stat": 1.2179490088243712,
+        "q1_mean": 6.295593764752517e-06,
+        "q5_mean": 7.714670541010973e-05
+      },
+      "low": {
+        "mean_spread": -6.335562267987182e-05,
+        "n": 4991,
+        "std_spread": 0.0021104039192791843,
+        "t_stat": -2.120866654148387,
+        "q1_mean": 3.424160399461482e-05,
+        "q5_mean": -2.9114018685257005e-05
+      }
+    }
+  },
+  "unconditional": {
+    "mean_spread": 3.7477444827427106e-06,
+    "n": 9982,
+    "std_spread": 0.0032672926429451517,
+    "t_stat": 0.1146016106512254,
+    "q1_mean": 2.026859887968366e-05,
+    "q5_mean": 2.401634336242637e-05
+  },
+  "method": {
+    "signal": "past 30m return = close(t)/close(t-6)-1, within-day",
+    "forward": "next 30m return = close(t+6)/close(t)-1, within-day",
+    "cross_sectional_momentum": "rank stocks by signal into 5 quintiles at t; spread = mean(next-30m of Q5) - mean(next-30m of Q1)",
+    "regime_split": "computed on lagged (causal) market state at time t, before forward window",
+    "min_stocks_per_cross_section": 25,
+    "n_quintiles": 5,
+    "significance_note": "t_stat = mean/std_of_timepoint_spread (timepoints treated as iid; autocorrelation inflates |t|)"
+  },
+  "data": {
+    "bucket": "trading-datalake-920641308584",
+    "prefix": "ibkr/equities/5min/",
+    "n_symbols": 40,
+    "date_range": [
+      "2025-12-30 09:30:00-05:00",
+      "2026-09-01 13:10:00-04:00"
+    ],
+    "n_trading_days": 169,
+    "n_timepoints_analyzed": 9982,
+    "n_total_5min_bars": 13149
+  }
+}

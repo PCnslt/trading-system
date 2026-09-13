@@ -1,0 +1,362 @@
+{
+ "F": {
+  "polls": 3,
+  "mid": 13.93,
+  "spread_bp_median": 14.4,
+  "spread_bp_min": 14.4,
+  "spread_bp_max": 14.4,
+  "top_bid_qty": 120,
+  "top_ask_qty": 10,
+  "bid_notional_5lvl": 15064
+ },
+ "T": {
+  "polls": 3,
+  "mid": 25.56,
+  "spread_bp_median": 62.6,
+  "spread_bp_min": 62.6,
+  "spread_bp_max": 62.6,
+  "top_bid_qty": 1,
+  "top_ask_qty": 7,
+  "bid_notional_5lvl": 10254
+ },
+ "PFE": {
+  "polls": 3,
+  "mid": 27.875,
+  "spread_bp_median": 17.9,
+  "spread_bp_min": 17.9,
+  "spread_bp_max": 17.9,
+  "top_bid_qty": 5,
+  "top_ask_qty": 30,
+  "bid_notional_5lvl": 23942
+ },
+ "SOFI": {
+  "polls": 3,
+  "mid": 18.4033,
+  "spread_bp_median": 16.3,
+  "spread_bp_min": 10.9,
+  "spread_bp_max": 27.2,
+  "top_bid_qty": 35,
+  "top_ask_qty": 400,
+  "bid_notional_5lvl": 41606
+ },
+ "NOK": {
+  "polls": 3,
+  "mid": 10.285,
+  "spread_bp_median": 9.7,
+  "spread_bp_min": 9.7,
+  "spread_bp_max": 9.7,
+  "top_bid_qty": 9810,
+  "top_ask_qty": 20600,
+  "bid_notional_5lvl": 1011792
+ },
+ "KVUE": {
+  "polls": 3,
+  "mid": 19.36,
+  "spread_bp_median": 144.6,
+  "spread_bp_min": 144.6,
+  "spread_bp_max": 144.6,
+  "top_bid_qty": 100,
+  "top_ask_qty": 298,
+  "bid_notional_5lvl": 3988
+ },
+ "WBD": {
+  "polls": 3,
+  "mid": 28.76,
+  "spread_bp_median": 41.7,
+  "spread_bp_min": 41.7,
+  "spread_bp_max": 41.7,
+  "top_bid_qty": 59442,
+  "top_ask_qty": 220,
+  "bid_notional_5lvl": 1712394
+ },
+ "CMCSA": {
+  "polls": 3,
+  "mid": 26.9967,
+  "spread_bp_median": 66.7,
+  "spread_bp_min": 59.3,
+  "spread_bp_max": 66.7,
+  "top_bid_qty": 3,
+  "top_ask_qty": 338,
+  "bid_notional_5lvl": 188
+ },
+ "HBAN": {
+  "polls": 3,
+  "mid": 17.135,
+  "spread_bp_median": 75.9,
+  "spread_bp_min": 75.9,
+  "spread_bp_max": 75.9,
+  "top_bid_qty": 200,
+  "top_ask_qty": 314,
+  "bid_notional_5lvl": 24537
+ },
+ "KHC": {
+  "polls": 3,
+  "mid": 25.62,
+  "spread_bp_median": 23.4,
+  "spread_bp_min": 23.4,
+  "spread_bp_max": 46.8,
+  "top_bid_qty": 200,
+  "top_ask_qty": 276,
+  "bid_notional_5lvl": 7742
+ },
+ "BP": {
+  "polls": 3,
+  "mid": 43.355,
+  "spread_bp_median": 4.6,
+  "spread_bp_min": 4.6,
+  "spread_bp_max": 6.9,
+  "top_bid_qty": 500,
+  "top_ask_qty": 2000,
+  "bid_notional_5lvl": 320632
+ },
+ "VALE": {
+  "polls": 3,
+  "mid": 15.0267,
+  "spread_bp_median": 20.0,
+  "spread_bp_min": 13.3,
+  "spread_bp_max": 20.0,
+  "top_bid_qty": 1000,
+  "top_ask_qty": 600,
+  "bid_notional_5lvl": 47407
+ },
+ "AAL": {
+  "polls": 3,
+  "mid": 13.985,
+  "spread_bp_median": 7.2,
+  "spread_bp_min": 7.2,
+  "spread_bp_max": 7.2,
+  "top_bid_qty": 150,
+  "top_ask_qty": 542,
+  "bid_notional_5lvl": 13481
+ },
+ "CCL": {
+  "polls": 3,
+  "mid": 26.2417,
+  "spread_bp_median": 80.1,
+  "spread_bp_min": 41.9,
+  "spread_bp_max": 80.1,
+  "top_bid_qty": 1,
+  "top_ask_qty": 1001,
+  "bid_notional_5lvl": 156
+ },
+ "LUV": {
+  "polls": 3,
+  "mid": 41.5667,
+  "spread_bp_median": 28.9,
+  "spread_bp_min": 21.7,
+  "spread_bp_max": 31.3,
+  "top_bid_qty": 1,
+  "top_ask_qty": 1,
+  "bid_notional_5lvl": 62194
+ },
+ "TEVA": {
+  "polls": 3,
+  "mid": 37.2567,
+  "spread_bp_median": 53.7,
+  "spread_bp_min": 45.6,
+  "spread_bp_max": 56.4,
+  "top_bid_qty": 540,
+  "top_ask_qty": 1017,
+  "bid_notional_5lvl": 173039
+ },
+ "GRAB": {
+  "polls": 3,
+  "mid": 3.535,
+  "spread_bp_median": 28.3,
+  "spread_bp_min": 28.3,
+  "spread_bp_max": 28.3,
+  "top_bid_qty": 1796,
+  "top_ask_qty": 30,
+  "bid_notional_5lvl": 15211
+ },
+ "SIRI": {
+  "polls": 3,
+  "mid": 29.62,
+  "spread_bp_median": 884.5,
+  "spread_bp_min": 884.5,
+  "spread_bp_max": 884.5,
+  "top_bid_qty": 30,
+  "top_ask_qty": 110,
+  "bid_notional_5lvl": 4119
+ },
+ "RIVN": {
+  "polls": 3,
+  "mid": 16.79,
+  "spread_bp_median": 23.8,
+  "spread_bp_min": 23.8,
+  "spread_bp_max": 23.8,
+  "top_bid_qty": 166,
+  "top_ask_qty": 25,
+  "bid_notional_5lvl": 9821
+ },
+ "LCID": {
+  "polls": 3,
+  "mid": 5.15,
+  "spread_bp_median": 77.7,
+  "spread_bp_min": 77.7,
+  "spread_bp_max": 77.7,
+  "top_bid_qty": 55,
+  "top_ask_qty": 700,
+  "bid_notional_5lvl": 42185
+ },
+ "SNAP": {
+  "polls": 3,
+  "mid": 5.525,
+  "spread_bp_median": 18.1,
+  "spread_bp_min": 18.1,
+  "spread_bp_max": 18.1,
+  "top_bid_qty": 978,
+  "top_ask_qty": 980,
+  "bid_notional_5lvl": 23316
+ },
+ "MARA": {
+  "polls": 3,
+  "mid": 11.2483,
+  "spread_bp_median": 8.9,
+  "spread_bp_min": 8.9,
+  "spread_bp_max": 8.9,
+  "top_bid_qty": 611,
+  "top_ask_qty": 3643,
+  "bid_notional_5lvl": 51475
+ },
+ "RIOT": {
+  "polls": 3,
+  "mid": 20.1,
+  "spread_bp_median": 99.5,
+  "spread_bp_min": 99.5,
+  "spread_bp_max": 99.5,
+  "top_bid_qty": 4436,
+  "top_ask_qty": 200,
+  "bid_notional_5lvl": 89020
+ },
+ "PLUG": {
+  "polls": 3,
+  "mid": 2.215,
+  "spread_bp_median": 45.1,
+  "spread_bp_min": 45.1,
+  "spread_bp_max": 45.1,
+  "top_bid_qty": 9979,
+  "top_ask_qty": 4230,
+  "bid_notional_5lvl": 92160
+ },
+ "IONQ": {
+  "polls": 3,
+  "mid": 42.03,
+  "spread_bp_median": 95.0,
+  "spread_bp_min": 11.9,
+  "spread_bp_max": 116.5,
+  "top_bid_qty": 5,
+  "top_ask_qty": 5,
+  "bid_notional_5lvl": 1505
+ },
+ "OPEN": {
+  "polls": 3,
+  "mid": 3.465,
+  "spread_bp_median": 28.9,
+  "spread_bp_min": 28.9,
+  "spread_bp_max": 28.9,
+  "top_bid_qty": 2690,
+  "top_ask_qty": 465,
+  "bid_notional_5lvl": 35015
+ },
+ "HL": {
+  "polls": 3,
+  "mid": 20.0417,
+  "spread_bp_median": 49.9,
+  "spread_bp_min": 25.0,
+  "spread_bp_max": 49.9,
+  "top_bid_qty": 920,
+  "top_ask_qty": 660,
+  "bid_notional_5lvl": 18480
+ },
+ "CDE": {
+  "polls": 3,
+  "mid": 20.505,
+  "spread_bp_median": 73.2,
+  "spread_bp_min": 73.2,
+  "spread_bp_max": 73.2,
+  "top_bid_qty": 208,
+  "top_ask_qty": 430,
+  "bid_notional_5lvl": 26361
+ },
+ "WULF": {
+  "polls": 3,
+  "mid": 15.7533,
+  "spread_bp_median": 44.4,
+  "spread_bp_min": 38.1,
+  "spread_bp_max": 44.4,
+  "top_bid_qty": 1,
+  "top_ask_qty": 100,
+  "bid_notional_5lvl": 4771
+ },
+ "APLD": {
+  "polls": 3,
+  "mid": 27.5033,
+  "spread_bp_median": 50.9,
+  "spread_bp_min": 50.9,
+  "spread_bp_max": 65.5,
+  "top_bid_qty": 60,
+  "top_ask_qty": 121,
+  "bid_notional_5lvl": 23775
+ },
+ "RGTI": {
+  "polls": 3,
+  "mid": 16.7483,
+  "spread_bp_median": 11.9,
+  "spread_bp_min": 6.0,
+  "spread_bp_max": 12.0,
+  "top_bid_qty": 60,
+  "top_ask_qty": 71,
+  "bid_notional_5lvl": 11081
+ },
+ "QBTS": {
+  "polls": 3,
+  "mid": 19.0533,
+  "spread_bp_median": 47.2,
+  "spread_bp_min": 36.8,
+  "spread_bp_max": 52.5,
+  "top_bid_qty": 81,
+  "top_ask_qty": 110,
+  "bid_notional_5lvl": 2507
+ },
+ "SOUN": {
+  "polls": 3,
+  "mid": 7.045,
+  "spread_bp_median": 14.2,
+  "spread_bp_min": 14.2,
+  "spread_bp_max": 14.2,
+  "top_bid_qty": 350,
+  "top_ask_qty": 185,
+  "bid_notional_5lvl": 38768
+ },
+ "ACHR": {
+  "polls": 3,
+  "mid": 6.155,
+  "spread_bp_median": 16.2,
+  "spread_bp_min": 16.2,
+  "spread_bp_max": 16.2,
+  "top_bid_qty": 242,
+  "top_ask_qty": 205,
+  "bid_notional_5lvl": 9800
+ },
+ "JOBY": {
+  "polls": 3,
+  "mid": 7.2817,
+  "spread_bp_median": 27.5,
+  "spread_bp_min": 13.7,
+  "spread_bp_max": 27.5,
+  "top_bid_qty": 101,
+  "top_ask_qty": 24,
+  "bid_notional_5lvl": 13907
+ },
+ "CLSK": {
+  "polls": 3,
+  "mid": 12.02,
+  "spread_bp_median": 33.3,
+  "spread_bp_min": 33.3,
+  "spread_bp_max": 33.3,
+  "top_bid_qty": 1,
+  "top_ask_qty": 1,
+  "bid_notional_5lvl": 26348
+ }
+}

@@ -1,0 +1,242 @@
+{
+  "task": "extreme_move_prediction",
+  "description": "Logistic regression predicting P(|forward 30m return| > thr) from realized vol, relative volume, prior |return|, and range expansion. Chronological 70/30 split, causal features only.",
+  "data": {
+    "bucket": "trading-datalake-920641308584",
+    "prefix": "ibkr/equities/5min/",
+    "n_symbols": 40,
+    "n_bars_total": 519679,
+    "n_bars_used": 478067,
+    "forward_horizon_bars": 6,
+    "forward_horizon_minutes": 30,
+    "features": [
+      "rv_12",
+      "rv_24",
+      "rel_volume",
+      "prior_abs_ret_6",
+      "prior_abs_ret_1",
+      "range_expansion"
+    ],
+    "date_min": "2025-12-30 09:30:00-05:00",
+    "date_max": "2026-09-01 13:10:00-04:00",
+    "split": "chronological 70/30 (train strictly before test)",
+    "train_date_range": [
+      "2025-12-30 12:40:00-05:00",
+      "2026-06-22 13:35:00-04:00"
+    ],
+    "test_date_range": [
+      "2026-06-22 13:35:00-04:00",
+      "2026-09-01 12:40:00-04:00"
+    ],
+    "n_train": 334646,
+    "n_test": 143421
+  },
+  "targets": {
+    "abs_fwd_30m_gt_1pct": {
+      "n_train": 334646,
+      "n_test": 143421,
+      "base_rate": 0.04551634697847595,
+      "n_pos_test": 6528,
+      "roc_auc": 0.8663764160909702,
+      "precision_at_top_10pct": {
+        "frac": 0.1,
+        "n": 14342,
+        "precision": 0.2300237065960117,
+        "recall": 0.5053615196078431,
+        "lift_vs_base": 5.053650432553094
+      },
+      "precision_at_top_5pct": {
+        "frac": 0.05,
+        "n": 7171,
+        "precision": 0.2961929995816483,
+        "recall": 0.32536764705882354,
+        "lift_vs_base": 6.507398313878612
+      },
+      "precision_at_top_1pct": {
+        "frac": 0.01,
+        "n": 1434,
+        "precision": 0.4476987447698745,
+        "recall": 0.09834558823529412,
+        "lift_vs_base": 9.835999030888507
+      },
+      "decile_realized_abs_fwd_ret": {
+        "decile_1": {
+          "mean_pred_prob": 0.8824852532541033,
+          "mean_abs_fwd_ret": 0.00710091450391683,
+          "n": 14342
+        },
+        "decile_2": {
+          "mean_pred_prob": 0.5965039972090367,
+          "mean_abs_fwd_ret": 0.004731177354428088,
+          "n": 14342
+        },
+        "decile_3": {
+          "mean_pred_prob": 0.42318583231704876,
+          "mean_abs_fwd_ret": 0.003813559000602976,
+          "n": 14342
+        },
+        "decile_4": {
+          "mean_pred_prob": 0.32753096535376164,
+          "mean_abs_fwd_ret": 0.0032064906901034603,
+          "n": 14342
+        },
+        "decile_5": {
+          "mean_pred_prob": 0.26881997279489744,
+          "mean_abs_fwd_ret": 0.002805850024822358,
+          "n": 14342
+        },
+        "decile_6": {
+          "mean_pred_prob": 0.23002646475570354,
+          "mean_abs_fwd_ret": 0.0024347647028669685,
+          "n": 14342
+        },
+        "decile_7": {
+          "mean_pred_prob": 0.2022379847225825,
+          "mean_abs_fwd_ret": 0.002154578586475663,
+          "n": 14342
+        },
+        "decile_8": {
+          "mean_pred_prob": 0.18060497859447314,
+          "mean_abs_fwd_ret": 0.0019530050364208519,
+          "n": 14342
+        },
+        "decile_9": {
+          "mean_pred_prob": 0.16130707509027709,
+          "mean_abs_fwd_ret": 0.0017201167354555752,
+          "n": 14342
+        },
+        "decile_10": {
+          "mean_pred_prob": 0.13875912390748593,
+          "mean_abs_fwd_ret": 0.0014744561931666971,
+          "n": 14343
+        }
+      },
+      "top_decile_mean_abs_fwd_ret": 0.00710091450391683,
+      "bottom_decile_mean_abs_fwd_ret": 0.0014744561931666971,
+      "overall_mean_abs_fwd_ret": 0.003139479673402712,
+      "top_minus_bottom": 0.005626458310750133,
+      "top_vs_overall_ratio": 2.261812543038552,
+      "logistic_coefs": {
+        "rv_12": 0.5583305794478358,
+        "rv_24": 0.6040826843800825,
+        "rel_volume": 0.1238993374649887,
+        "prior_abs_ret_6": 0.19348170749050136,
+        "prior_abs_ret_1": 0.09710433223833917,
+        "range_expansion": 0.3391521328522379
+      },
+      "intercept": -0.6650312161131104,
+      "threshold": 0.01,
+      "univariate_roc_auc": {
+        "rv_12": 0.856600853896123,
+        "rv_24": 0.8351923197708585,
+        "rel_volume": 0.7514879646322454,
+        "prior_abs_ret_6": 0.7580350225542908,
+        "prior_abs_ret_1": 0.7412994956397891,
+        "range_expansion": 0.6607551701411136
+      }
+    },
+    "abs_fwd_30m_gt_2pct": {
+      "n_train": 334646,
+      "n_test": 143421,
+      "base_rate": 0.006512295967815034,
+      "n_pos_test": 934,
+      "roc_auc": 0.9289139552443335,
+      "precision_at_top_10pct": {
+        "frac": 0.1,
+        "n": 14342,
+        "precision": 0.05264258820248222,
+        "recall": 0.8083511777301927,
+        "lift_vs_base": 8.083568139816062
+      },
+      "precision_at_top_5pct": {
+        "frac": 0.05,
+        "n": 7171,
+        "precision": 0.08297308604099847,
+        "recall": 0.6370449678800857,
+        "lift_vs_base": 12.740988193882272
+      },
+      "precision_at_top_1pct": {
+        "frac": 0.01,
+        "n": 1434,
+        "precision": 0.18131101813110181,
+        "recall": 0.278372591006424,
+        "lift_vs_base": 27.84133568670316
+      },
+      "decile_realized_abs_fwd_ret": {
+        "decile_1": {
+          "mean_pred_prob": 0.8109688151495974,
+          "mean_abs_fwd_ret": 0.007139277091512518,
+          "n": 14342
+        },
+        "decile_2": {
+          "mean_pred_prob": 0.4134717108280817,
+          "mean_abs_fwd_ret": 0.004711076088115465,
+          "n": 14342
+        },
+        "decile_3": {
+          "mean_pred_prob": 0.2576221933342015,
+          "mean_abs_fwd_ret": 0.003750409070611083,
+          "n": 14342
+        },
+        "decile_4": {
+          "mean_pred_prob": 0.19099514421742345,
+          "mean_abs_fwd_ret": 0.003147847891244398,
+          "n": 14342
+        },
+        "decile_5": {
+          "mean_pred_prob": 0.15486431148072083,
+          "mean_abs_fwd_ret": 0.0027501946626969777,
+          "n": 14342
+        },
+        "decile_6": {
+          "mean_pred_prob": 0.13132123579269775,
+          "mean_abs_fwd_ret": 0.0024422091308976806,
+          "n": 14342
+        },
+        "decile_7": {
+          "mean_pred_prob": 0.1141356277625515,
+          "mean_abs_fwd_ret": 0.0021791691011079843,
+          "n": 14342
+        },
+        "decile_8": {
+          "mean_pred_prob": 0.10030957955502605,
+          "mean_abs_fwd_ret": 0.001959669196863624,
+          "n": 14342
+        },
+        "decile_9": {
+          "mean_pred_prob": 0.08799370763598732,
+          "mean_abs_fwd_ret": 0.00178314070305073,
+          "n": 14342
+        },
+        "decile_10": {
+          "mean_pred_prob": 0.07336999136523058,
+          "mean_abs_fwd_ret": 0.0015319158857657138,
+          "n": 14343
+        }
+      },
+      "top_decile_mean_abs_fwd_ret": 0.007139277091512518,
+      "bottom_decile_mean_abs_fwd_ret": 0.0015319158857657138,
+      "overall_mean_abs_fwd_ret": 0.003139479673402712,
+      "top_minus_bottom": 0.005607361205746805,
+      "top_vs_overall_ratio": 2.274031952490599,
+      "logistic_coefs": {
+        "rv_12": 0.8717251458599543,
+        "rv_24": 0.3889817398494504,
+        "rel_volume": -0.093364584125113,
+        "prior_abs_ret_6": 0.22314706525523725,
+        "prior_abs_ret_1": 0.12411561005117538,
+        "range_expansion": 0.5242945145416847
+      },
+      "intercept": -1.3448609529908442,
+      "threshold": 0.02,
+      "univariate_roc_auc": {
+        "rv_12": 0.9147557005425898,
+        "rv_24": 0.8930186034928704,
+        "rel_volume": 0.8087843063905347,
+        "prior_abs_ret_6": 0.8476437363555868,
+        "prior_abs_ret_1": 0.8177000789989046,
+        "range_expansion": 0.7724622017059477
+      }
+    }
+  }
+}

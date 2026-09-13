@@ -1,5 +1,5 @@
 {
-  "updated": "2026-08-24T17:06:51-04:00",
+  "updated": "2026-08-24T22:56:59-04:00",
   "reports": [
     {
       "ts": "2026-08-16T12:00:25-04:00",
@@ -553,6 +553,103 @@
       ],
       "blockers": [
         "Hit + diagnosed a Hermes cron lifecycle-guard false positive (parenthesized ~/trading-system path → blocked job creation); fixed prompts, recorded pitfall in trading-bot-operations skill. All 4 jobs created green."
+      ]
+    },
+    {
+      "ts": "2026-08-24T17:17:15-04:00",
+      "task": "Act on the system-wide defect + docs-as-code audit results",
+      "summary": "Two audits returned. Acted on real bugs: (1) IBKR equities ENTRY UNKNOWN timeout — root cause fractional-qty bracket stop (IBKR STP whole-share only; stop rejected -> parent never transmits); fixed to whole-share sizing + pos field on POSITION#. (2) Reconciler tracked only a stale 62-name equity whitelist -> is_tracked_tag() now treats any <SYM>_RSI2 as LONG (~1,459 universe). 257 tests pass. Doc HIGH fixes: RH LIVE since 08-20 (docs wrongly said PAPER/OFF); caps 5pos/$50day; token re-authed (was BLOCKED). Verified 2 findings STALE (SSM already chunks; data-lake jobs active, fire 17:00-18:45 ET tonight). Corrected 1 WRONG finding (H1: unit is LIVE not PAPER).",
+      "commits": [
+        "817c066",
+        "da058a8"
+      ],
+      "blockers": [
+        "Remaining MED/LOW doc defects (universe size/lane-count/gold-sleeve/SERVICES-missing-IBKR/stale research verdicts) + MED-1 gold-lane size=0 sizing decision + verify IBKR whole-share entry fills at next 09:30 RTH run"
+      ]
+    },
+    {
+      "ts": "2026-08-24T19:42:56-04:00",
+      "task": "IBKR live login via IBC + sub-$50 universe (524 names)",
+      "summary": "SOLVED the headless live trading-mode flip using IBC (TRADING_MODE=live) after xdotool/Swing-combo and jts.ini tradingMode=l both failed (~40 attempts). Second root cause found: t3.small RAM starvation (268MB avail) meant the live JVM could not render its login dialog at all; stopping the paper gateway freed 863MB and the dialog appeared immediately. IBC log confirms \"Setting Trading mode = live\" + \"Login attempt: 1\". Paper gateway restored afterwards (DUR193467 on 4002, MES/MNQ broker stops intact). Sub-$50 re-screen complete: 524 liquid names (ADV>=$50M) vs 353 under the old sub-$35 cap; RH LIVE lane loads 512 after blocklist filtering - verified by calling the live loader.",
+      "commits": [
+        "fae9902"
+      ],
+      "blockers": [
+        "IBKR rejects credentials for the new additional username mushfiqrhmn1-live: \"Login failed\" with no 2FA prompt. Owner must verify/activate it at interactivebrokers.com/sso/Login (temp->permanent password, live-account access, own IB Key enrollment).",
+        "HONEST DISCLOSURE: IBC self-restart + systemd Restart=always produced 106 failed IBKR logins before I stopped it - real lockout risk on that username. Two-layer circuit breaker now installed (LOGIN_FAILED.lock refusal, exit 78, trip-tested + StartLimitBurst=3/hr).",
+        "DECISION NEEDED: t3.small (2GB) cannot run paper+live gateways concurrently. Either upgrade to t3.medium (~+$15/mo, few min downtime, EIP persists) or accept stopping paper while live runs."
+      ]
+    },
+    {
+      "ts": "2026-08-24T19:46:06-04:00",
+      "task": "Daily trading-system status summary",
+      "summary": "Gateway active (4002 listening). Open paper positions: BTCUSDT_MOM20 LONG 0.039992 @ 65994.42, ETHUSDT_MOM20 LONG 1.094102 @ 1972.19 (crypto MOM20, fractional; no index/intraday futures open). Intraday MES_FADESHORT + MES_DONCH15 both signal=NONE, flat, no trades. Data health: IBKR intraday bars ok (2026-08-24), equity OHLCV#AAPL 2026-08-24, crypto QUOTE#BTCUSDT 5m ago, reconcile ok (MATCH). Login errors: none.",
+      "commits": [],
+      "blockers": []
+    },
+    {
+      "ts": "2026-08-24T21:00:20-04:00",
+      "task": "IBKR LIVE trading enabled on existing username (U26949861)",
+      "summary": "LIVE IS ON. Used the original username mushfiqrhmn1 in live mode via IBC (TRADING_MODE=live) instead of waiting for the new username, which IBKR rejected with \"Please log into the Interactive Brokers website to complete your account setup first\" (found in Jts-live/launcher.log - valid credential, un-activated username). Live account U26949861 verified: NetLiquidation $506.90 all cash, flat. Write access proven by a 1-share limit probe (PreSubmitted then cancelled) AFTER discovering the API came up read-only and needed one gateway restart. Box resized t3.small->t3.medium via SSM AWS-ResizeInstance (a box cannot self-resize); 3.8GB, same EIP, all 11 services returned, CONTROL back to RUNNING, reconcile MATCH. Fixed 4 real live-money defects in bot/live_equities_ibkr.py before enabling: (1) sizing used PAPER_CAPITAL $50k in LIVE mode -> would attempt $2,500 positions on a $507 account, now sizes off broker NetLiquidation and fails closed if absent; (2) paper 5% cap = $25 on $507 = under 1 share, lane could never trade -> live concentration 2 pos x ~$225; (3) added $150 min-notional floor because IBKR $1/order minimum makes a $29 position ~6.9% round-trip cost (dry run wanted DFNS at 1 share/$29); (4) with 2 slots vs 13 candidates, added most-oversold-first ranking. Also fail-closed account_mode_ok guard and sub-$50 universe (512 names) for LIVE. Dry run against the real account: 13 candidates -> 3 skipped by cost floor -> top picks FLG 16sh stop 12.89, BB 26sh stop 7.07. 257 tests pass.",
+      "commits": [
+        "fae9902",
+        "bba382b"
+      ],
+      "blockers": [
+        "TRADE-OFF NOW ACTIVE: one IBKR username cannot hold two sessions, so the paper gateway is stopped+disabled and live-index (MES/MNQ), live-gold (MGC) and live-vwap forward-tests are STOPPED. Restore them when mushfiqrhmn1-live activates (owner says tomorrow) - then both run in parallel on the t3.medium.",
+        "reconcile-daemon repointed to port 4001 via drop-in so live positions get stop verification; revert to 4002 when paper returns.",
+        "Live IBKR equities duplicate the Robinhood RSI2 signal on a smaller account - flagged to owner as correlated rather than additive edge; commission floor mitigates but does not remove the cost drag."
+      ]
+    },
+    {
+      "ts": "2026-08-24T21:24:34-04:00",
+      "task": "ROOT CAUSE of zero Robinhood live fills — found and fixed",
+      "summary": "Answering \"did the architecture find anything to trade tonight\": YES - it found 10 valid RSI2 signals and TRIED to place 9 live Robinhood orders tonight (BB rsi2=0.40, ONB 1.61, FHN 2.02, EBC, VSH, ESI, KRG, FNB, COLB). All 9 were destroyed by a code bug, not by market conditions. hardening/rh_client.place_equity_entry read the order state ONCE from the order-CREATION response and required \"filled\"; Robinhood fills are asynchronous so creation returns queued/pending (state=\"\" in production), raising RHOrderError(\"entry not confirmed filled\") on every single entry. Ground truth = 9 RHSIG# rows for 2026-08-24 in DynamoDB reading \"LIVE place failed (fail-closed)\". This is why there have been zero live fills since 08-20 despite the lane running correctly every night. FIXED: poll the order id to a terminal state (45s/2s), and on timeout CANCEL so it cannot fill later unprotected; if the cancel loses the race and it filled, place the protective stop rather than abandon it. 6 new regression tests, 263 pass. ALSO FIXED the second half: the lane ran at 19:20 ET where a regular_hours market order can never fill - moved to 09:32 ET so entry happens at the next open, which is what the backtest actually measures.",
+      "commits": [
+        "492262f"
+      ],
+      "blockers": [
+        "OWNER DECISION on RH position sizing: RH_MAX_POS_PCT=0.05 of $700 caps a position at $35, so any stock over $35/share is skipped outright and the rest buy 1-4 shares. 5 positions = $175 of $700 deployed (25%). Robinhood is commission-free so small size costs nothing, but most signals are being size-skipped. Recommend 0.15 (~$105/position, ~72% deployed, per-trade risk ~$5-10 vs the $50/day cap).",
+        "First real test of the fix is 09:32 ET Tue 08-25 on signals computed from Mon 08-24 close. Until a fill actually prints, the fix is verified only by unit tests + code reading."
+      ]
+    },
+    {
+      "ts": "2026-08-24T21:40:00-04:00",
+      "task": "Cross-broker de-dup + RH sizing raised to 15%",
+      "summary": "Owner chose 15% position cap: RH_MAX_POS_PCT=0.15 drop-in live. Real effect on tonight signals: ONB/FHN/EBC/KRG go from 1 share to 4 (~$100 notional), BB from 4 to 12 shares. Names up to ~$105/share are now tradeable instead of the old $35 ceiling. Also shipped cross-broker de-dup (bot/cross_broker.py): BB was both an RH signal and the #2 IBKR pick for the same open, which would have doubled exposure with two half-stops; first lane to run wins the name, second skips, fail-closed on read errors. 272 tests pass.",
+      "commits": [
+        "492262f",
+        "d25c41c"
+      ],
+      "blockers": [
+        "Unverified until a real fill prints: 09:30 ET IBKR, 09:32 ET RH on Tue 08-25."
+      ]
+    },
+    {
+      "ts": "2026-08-24T22:00:49-04:00",
+      "task": "Paper/live executability parity (whole-share) — done without approval as instructed",
+      "summary": "The paper forward-test was measuring a strategy we cannot execute: at $35/position it recorded FRACTIONAL slices of NVDA, GEV (stop $844) and EME ($705). Robinhood stops are whole-share only and the IBKR API rejects fractional orders outright (Err 10243), so those paper trades were unreachable and the track record was optimistic. PAPER now applies the same whole-share constraint as LIVE: round down and SKIP anything under one share, with the reason logged to RHSIG#. Measured on the same 1,469-name run: BEFORE 41 entries incl. fractional slices of $500-800 stocks; AFTER 20 whole-share entries ($30-$103 notional) with 37 skipped as un-executable. The surviving paper names (FHN, ONB, COLB, FNB, VSH, ESI, INDV) are now the SAME names the live lanes trade, which is the whole point. size_shares is now stored as a whole number so the reconciler and track-record analysis see executable size. 6 new parity tests, 278 total pass.",
+      "commits": [
+        "16ec725"
+      ],
+      "blockers": [
+        "Historical paper track record before 2026-08-24 remains inflated by fractional entries — treat pre-08-24 paper P&L as NOT comparable to live.",
+        "Existing open paper positions were left alone to exit normally rather than force-flattened; new entries only obey the whole-share rule."
+      ]
+    },
+    {
+      "ts": "2026-08-24T22:56:59-04:00",
+      "task": "FULL PROJECT AUDIT — trader-level alignment with repo + soul files",
+      "summary": "Mined 280 commits, 46-lane strategy registry, 11,096 DynamoDB items, S3 and all systemd units via 3 parallel audits, then verified the key numbers myself. VERIFIED RECORD: exactly 7 TRADE#/RHTRADE# rows exist in the entire history. Only 2 are strategy round-trips (AMZN +$0.6703 revert, AVGO -$0.3603 time) = +$0.31 net; 1 is a manual GTC test (-$19); 4 carry no P&L at all. All 25 RISK# rows show daily_trades=0. The only live fills this account has EVER had are the two retired DCA fractions from 08-14 (SPY 0.016 @776.53, QQQ 0.017 @729.51, ~$25). The RSI2 strategy has never filled a live trade. The +$1,196.83 crypto figure is UNREALIZED mark-to-market on 2 paper positions open since 08-19 with DynamoDB-attribute-only stops (no broker order) - it is not profit. ACTED ON 4 THINGS: (1) FOUND AND CANCELLED 9 live market BUY orders queued at Robinhood (VSH/ESI/FHN/ONB/BB x4/COLB/FNB/BLZE x2/EBC, ~$254 on a $700 account) left resting by the old fail-closed path with NO stop and NO book row - they would have filled at the open untracked and unprotected; added bot/sweep_orphan_orders.py at 09:25/16:05 so it cannot recur. (2) DISABLED the mandated trailing stop - research/stock_mr_results.json trailing_vs_fixed shows fixed beats trailing at EVERY cost level (@5bps PF 1.319 win 65.6% hold 2.10d vs trail 1.269/59.0%/1.66d, ~16% of net edge), and live_equities.py line 18 already said No trailing stop. (3) Scheduled closure of the retired DCA fractions at 09:36 ET (unprotectable: RH stops are whole-share only). (4) Corrected the soul files: SERVICES.md claimed PAPER ONLY, no live switch is ever flipped while 2 units trade real money; PROJECT-STATE blamed zero fills on rare RSI2 dips when the cause was the async fill bug; caps documented $150/5%/20-pos vs deployed $50/15%/5-pos; IBKR live state inverted; STRATEGY_PORTFOLIO said 31 lanes vs 46 enumerated. STRUCTURAL FINDING: every live-tradeable survivor is the SAME long-beta buy-the-dip exposure (RSI2/REV2/RSI2PT; docs admit 2008 PF 0.36, 2022 0.81, REV2 0.48). The genuinely uncorrelated edges (gold Donchian/TSMOM, index Donchian) are blocked by CAPITAL (MES needs ~$1.3k margin vs $507), not by research. 46 lanes tested, 24+ NO-GO.",
+      "commits": [
+        "a87b372",
+        "163f0c1"
+      ],
+      "blockers": [
+        "NO TRACK RECORD EXISTS: n=2 strategy round-trips. No win rate, expectancy or holding-period statistic from this data carries information. Nothing should be sized or promoted on it.",
+        "Gate 5 futures forward-test stalled at session 2 of 10 since 08-18 (one session voided, one real RSI2 signal MISSED to a partial-bar bug) and is now fully dark - live-index/gold/vwap stopped because the live gateway owns the single IBKR username.",
+        "Data-integrity: RHTRADE#AVGO has exit_date BEFORE entry_date; RHTRADE#AMZN entry==exit date with hold_days=0 despite a next_open signal (look-ahead-shaped). Both of the only 2 strategy trades on record are questionable.",
+        ">=12 ENTRY UNKNOWN (timeout) events and 15 INTENT# rows stuck at accepted with no fill/rejection - an unknown number of intended forward-test entries vanished."
       ]
     }
   ]

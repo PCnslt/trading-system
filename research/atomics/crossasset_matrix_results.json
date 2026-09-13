@@ -1,0 +1,502 @@
+{
+  "generated_at": "2026-09-08T22:50:21.661187+00:00",
+  "universe": [
+    "AAPL",
+    "ABT",
+    "ACN",
+    "ADBE",
+    "AMD",
+    "AMZN",
+    "AVGO",
+    "BA",
+    "COST",
+    "CRM",
+    "CSCO",
+    "DIS",
+    "GE",
+    "GOOGL",
+    "HD",
+    "INTC",
+    "JNJ",
+    "JPM",
+    "KO",
+    "LLY",
+    "MA",
+    "MCD",
+    "META",
+    "MSFT",
+    "MU",
+    "NFLX",
+    "NKE",
+    "NVDA",
+    "ORCL",
+    "PEP",
+    "PG",
+    "PLTR",
+    "QCOM",
+    "TMO",
+    "TSLA",
+    "TXN",
+    "UNH",
+    "V",
+    "WMT",
+    "XOM"
+  ],
+  "n_symbols": 40,
+  "data_range": [
+    "2025-12-30 09:30:00",
+    "2026-08-31 15:55:00"
+  ],
+  "n_rows": 13104,
+  "methodology": {
+    "matrix": "full NxN lagged cross-correlation of 5-min returns at lags 1..6; C_minus[l][i,j]=corr(r_i(t), r_j(t-l)) => j leads i; directed asymmetry A[i,j,l]=C_minus[l][i,j]-C_minus[l][j,i] (antisymmetric, removes common-factor autocorr bleed).",
+    "aggregation": "lag-0 vs lag-1..6 off-diag corr; asymmetry noise floor (std over all ordered edges); top-10 directed edges with permutation p; per-stock lead score (sum of directed asymmetry into followers).",
+    "prediction": "signals built from lag-1 returns of other stocks: own_lag (baseline), market_ew_exself, sector_ew_exself, top_leaders_ew (top-5 leaders by train-period asymmetry), full_matrix_weighted (S[i,j] weights), random_leaders_placebo.  Targets: same-session 5m and 30m forward returns.  Strictly causal (lag-1 only), chronological 70/30 OOS.",
+    "evaluation": "per-timestamp Spearman rank IC; top-decile excess (bp); Fama-MacBeth CS regression y~own_lag+signal (signal coeff = beyond-own-lag test); all t-stats Newey-West on per-timestamp series (date/overlap-clustered).",
+    "leader_selection": "top 5 leaders per follower by mean train-period asymmetry over lags 1..6; leaders fixed on train, scored on test.",
+    "caveat": "survivorship-biased (current 40-name liquid universe, ~8mo depth) => upper bound."
+  },
+  "lag_structure": {
+    "lag0_off_diag_corr_mean": 0.09243,
+    "lag0_off_diag_corr_median": 0.09345,
+    "lag0_off_diag_corr_std": 0.18581,
+    "asymmetry_noise_floor_std": 0.01674,
+    "multiple_testing": {
+      "n_directed_edges": 9360,
+      "frac_abs_gt_2sigma": 0.04979,
+      "gaussian_expected_2sigma": 0.0455,
+      "frac_abs_gt_3sigma": 0.00406,
+      "gaussian_expected_3sigma": 0.0027,
+      "observed_max_abs_asymmetry": 0.06714,
+      "expected_max_abs_asymmetry_noise": 0.07157,
+      "note": "frac of directed edges exceeding 2/3 sigma equals the Gaussian expectation, and the observed max |asymmetry| is BELOW the noise-expected maximum => the lead/lag edges are consistent with pure multiple-testing noise."
+    },
+    "per_lag": [
+      {
+        "lag_bars": 1,
+        "off_diag_corr_mean": 0.00128,
+        "off_diag_corr_median": 0.00101,
+        "off_diag_corr_std": 0.01426,
+        "own_autocorr_mean": -0.0024,
+        "asymmetry_mean": 0.0,
+        "asymmetry_std": 0.01871,
+        "asymmetry_max_abs": 0.06058,
+        "frac_asym_gt_2sigmacorr": null
+      },
+      {
+        "lag_bars": 2,
+        "off_diag_corr_mean": -0.00139,
+        "off_diag_corr_median": -0.00066,
+        "off_diag_corr_std": 0.01387,
+        "own_autocorr_mean": -0.00602,
+        "asymmetry_mean": -0.0,
+        "asymmetry_std": 0.01971,
+        "asymmetry_max_abs": 0.06714,
+        "frac_asym_gt_2sigmacorr": null
+      },
+      {
+        "lag_bars": 3,
+        "off_diag_corr_mean": 0.00049,
+        "off_diag_corr_median": 0.00035,
+        "off_diag_corr_std": 0.01167,
+        "own_autocorr_mean": 0.00188,
+        "asymmetry_mean": 0.0,
+        "asymmetry_std": 0.01707,
+        "asymmetry_max_abs": 0.05743,
+        "frac_asym_gt_2sigmacorr": null
+      },
+      {
+        "lag_bars": 4,
+        "off_diag_corr_mean": 4e-05,
+        "off_diag_corr_median": 0.00012,
+        "off_diag_corr_std": 0.01041,
+        "own_autocorr_mean": 0.00411,
+        "asymmetry_mean": -0.0,
+        "asymmetry_std": 0.01467,
+        "asymmetry_max_abs": 0.04546,
+        "frac_asym_gt_2sigmacorr": null
+      },
+      {
+        "lag_bars": 5,
+        "off_diag_corr_mean": -0.00203,
+        "off_diag_corr_median": -0.00217,
+        "off_diag_corr_std": 0.01019,
+        "own_autocorr_mean": -0.00446,
+        "asymmetry_mean": -0.0,
+        "asymmetry_std": 0.01502,
+        "asymmetry_max_abs": 0.06121,
+        "frac_asym_gt_2sigmacorr": null
+      },
+      {
+        "lag_bars": 6,
+        "off_diag_corr_mean": -0.00111,
+        "off_diag_corr_median": -0.00106,
+        "off_diag_corr_std": 0.00993,
+        "own_autocorr_mean": 0.00031,
+        "asymmetry_mean": -0.0,
+        "asymmetry_std": 0.01448,
+        "asymmetry_max_abs": 0.04559,
+        "frac_asym_gt_2sigmacorr": null
+      }
+    ],
+    "top_10_directed_edges": [
+      {
+        "lag_bars": 2,
+        "follower": "AVGO",
+        "leader": "V",
+        "asymmetry": 0.06714,
+        "asym_z": 4.01,
+        "perm_p": 0.0
+      },
+      {
+        "lag_bars": 2,
+        "follower": "V",
+        "leader": "AVGO",
+        "asymmetry": -0.06714,
+        "asym_z": -4.01,
+        "perm_p": 0.0
+      },
+      {
+        "lag_bars": 5,
+        "follower": "ACN",
+        "leader": "LLY",
+        "asymmetry": -0.06121,
+        "asym_z": -3.66,
+        "perm_p": 0.002
+      },
+      {
+        "lag_bars": 5,
+        "follower": "LLY",
+        "leader": "ACN",
+        "asymmetry": 0.06121,
+        "asym_z": 3.66,
+        "perm_p": 0.0
+      },
+      {
+        "lag_bars": 2,
+        "follower": "AMZN",
+        "leader": "META",
+        "asymmetry": -0.0608,
+        "asym_z": -3.63,
+        "perm_p": 0.002
+      },
+      {
+        "lag_bars": 2,
+        "follower": "META",
+        "leader": "AMZN",
+        "asymmetry": 0.0608,
+        "asym_z": 3.63,
+        "perm_p": 0.0
+      },
+      {
+        "lag_bars": 1,
+        "follower": "AAPL",
+        "leader": "CRM",
+        "asymmetry": 0.06058,
+        "asym_z": 3.62,
+        "perm_p": 0.004
+      },
+      {
+        "lag_bars": 1,
+        "follower": "CRM",
+        "leader": "AAPL",
+        "asymmetry": -0.06058,
+        "asym_z": -3.62,
+        "perm_p": 0.002
+      },
+      {
+        "lag_bars": 2,
+        "follower": "AVGO",
+        "leader": "INTC",
+        "asymmetry": -0.05993,
+        "asym_z": -3.58,
+        "perm_p": 0.0
+      },
+      {
+        "lag_bars": 2,
+        "follower": "INTC",
+        "leader": "AVGO",
+        "asymmetry": 0.05993,
+        "asym_z": 3.58,
+        "perm_p": 0.0
+      }
+    ],
+    "top_leaders": [
+      [
+        "CRM",
+        1.09992
+      ],
+      [
+        "MSFT",
+        1.03119
+      ],
+      [
+        "PLTR",
+        0.69817
+      ],
+      [
+        "ADBE",
+        0.5428
+      ],
+      [
+        "MA",
+        0.51741
+      ]
+    ],
+    "top_laggards": [
+      [
+        "KO",
+        -0.38484
+      ],
+      [
+        "LLY",
+        -0.54987
+      ],
+      [
+        "CSCO",
+        -0.5554
+      ],
+      [
+        "META",
+        -0.82859
+      ],
+      [
+        "WMT",
+        -0.9091
+      ]
+    ]
+  },
+  "split_threshold": "2026-06-18T13:20:00.000000",
+  "n_train_rows": 9172,
+  "n_test_rows": 3932,
+  "prediction_results": {
+    "5m": {
+      "own_lag": {
+        "rank_ic": {
+          "rank_ic_mean": 0.00847,
+          "rank_ic_median": 0.003,
+          "rank_ic_nw_t": 1.926,
+          "n_timestamps": 3880
+        },
+        "top_decile": {
+          "top_decile_excess_bp": 0.083,
+          "top_decile_excess_median_bp": 0.283,
+          "top_decile_excess_nw_t": 0.299
+        },
+        "fama_macbeth": {
+          "fm_signal_bp_per_std": 0.155,
+          "fm_signal_nw_t": 1.239
+        }
+      },
+      "market_ew_exself": {
+        "rank_ic": {
+          "rank_ic_mean": -0.00847,
+          "rank_ic_median": -0.003,
+          "rank_ic_nw_t": -1.926,
+          "n_timestamps": 3880
+        },
+        "top_decile": {
+          "top_decile_excess_bp": -0.233,
+          "top_decile_excess_median_bp": -0.148,
+          "top_decile_excess_nw_t": -0.821
+        },
+        "fama_macbeth": {
+          "fm_own_lag_bp_per_std": 0.078,
+          "fm_own_lag_nw_t": 1.239,
+          "fm_signal_bp_per_std": -0.078,
+          "fm_signal_nw_t": -1.239
+        }
+      },
+      "sector_ew_exself": {
+        "rank_ic": {
+          "rank_ic_mean": 0.00558,
+          "rank_ic_median": 0.00638,
+          "rank_ic_nw_t": 1.407,
+          "n_timestamps": 3880
+        },
+        "top_decile": {
+          "top_decile_excess_bp": 0.354,
+          "top_decile_excess_median_bp": 0.148,
+          "top_decile_excess_nw_t": 2.015
+        },
+        "fama_macbeth": {
+          "fm_own_lag_bp_per_std": 0.149,
+          "fm_own_lag_nw_t": 1.226,
+          "fm_signal_bp_per_std": 0.107,
+          "fm_signal_nw_t": 1.438
+        }
+      },
+      "top_leaders_ew": {
+        "rank_ic": {
+          "rank_ic_mean": -6e-05,
+          "rank_ic_median": 0.00084,
+          "rank_ic_nw_t": -0.02,
+          "n_timestamps": 3880
+        },
+        "top_decile": {
+          "top_decile_excess_bp": 0.114,
+          "top_decile_excess_median_bp": 0.141,
+          "top_decile_excess_nw_t": 0.662
+        },
+        "fama_macbeth": {
+          "fm_own_lag_bp_per_std": 0.142,
+          "fm_own_lag_nw_t": 1.137,
+          "fm_signal_bp_per_std": 0.062,
+          "fm_signal_nw_t": 1.004
+        }
+      },
+      "full_matrix_weighted": {
+        "rank_ic": {
+          "rank_ic_mean": -0.00076,
+          "rank_ic_median": 0.00507,
+          "rank_ic_nw_t": -0.217,
+          "n_timestamps": 3880
+        },
+        "top_decile": {
+          "top_decile_excess_bp": -0.05,
+          "top_decile_excess_median_bp": -0.028,
+          "top_decile_excess_nw_t": -0.283
+        },
+        "fama_macbeth": {
+          "fm_own_lag_bp_per_std": 0.155,
+          "fm_own_lag_nw_t": 1.242,
+          "fm_signal_bp_per_std": 0.071,
+          "fm_signal_nw_t": 1.027
+        }
+      },
+      "random_leaders_placebo": {
+        "rank_ic": {
+          "rank_ic_mean": -0.00233,
+          "rank_ic_median": -0.00019,
+          "rank_ic_nw_t": -0.923,
+          "n_timestamps": 3880
+        },
+        "top_decile": {
+          "top_decile_excess_bp": -0.047,
+          "top_decile_excess_median_bp": -0.183,
+          "top_decile_excess_nw_t": -0.301
+        },
+        "fama_macbeth": {
+          "fm_own_lag_bp_per_std": 0.156,
+          "fm_own_lag_nw_t": 1.241,
+          "fm_signal_bp_per_std": -0.046,
+          "fm_signal_nw_t": -0.878
+        }
+      }
+    },
+    "30m": {
+      "own_lag": {
+        "rank_ic": {
+          "rank_ic_mean": 0.00065,
+          "rank_ic_median": -0.00019,
+          "rank_ic_nw_t": 0.154,
+          "n_timestamps": 3625
+        },
+        "top_decile": {
+          "top_decile_excess_bp": 0.114,
+          "top_decile_excess_median_bp": -0.265,
+          "top_decile_excess_nw_t": 0.147
+        },
+        "fama_macbeth": {
+          "fm_signal_bp_per_std": 0.12,
+          "fm_signal_nw_t": 0.448
+        }
+      },
+      "market_ew_exself": {
+        "rank_ic": {
+          "rank_ic_mean": -0.00065,
+          "rank_ic_median": 0.00019,
+          "rank_ic_nw_t": -0.154,
+          "n_timestamps": 3625
+        },
+        "top_decile": {
+          "top_decile_excess_bp": -0.067,
+          "top_decile_excess_median_bp": 0.323,
+          "top_decile_excess_nw_t": -0.084
+        },
+        "fama_macbeth": {
+          "fm_own_lag_bp_per_std": 0.06,
+          "fm_own_lag_nw_t": 0.448,
+          "fm_signal_bp_per_std": -0.06,
+          "fm_signal_nw_t": -0.448
+        }
+      },
+      "sector_ew_exself": {
+        "rank_ic": {
+          "rank_ic_mean": -0.00535,
+          "rank_ic_median": -0.00931,
+          "rank_ic_nw_t": -1.461,
+          "n_timestamps": 3625
+        },
+        "top_decile": {
+          "top_decile_excess_bp": 0.331,
+          "top_decile_excess_median_bp": 0.08,
+          "top_decile_excess_nw_t": 0.728
+        },
+        "fama_macbeth": {
+          "fm_own_lag_bp_per_std": 0.143,
+          "fm_own_lag_nw_t": 0.532,
+          "fm_signal_bp_per_std": -0.163,
+          "fm_signal_nw_t": -1.027
+        }
+      },
+      "top_leaders_ew": {
+        "rank_ic": {
+          "rank_ic_mean": 0.0016,
+          "rank_ic_median": 0.00394,
+          "rank_ic_nw_t": 0.48,
+          "n_timestamps": 3625
+        },
+        "top_decile": {
+          "top_decile_excess_bp": -0.361,
+          "top_decile_excess_median_bp": -0.514,
+          "top_decile_excess_nw_t": -0.833
+        },
+        "fama_macbeth": {
+          "fm_own_lag_bp_per_std": 0.081,
+          "fm_own_lag_nw_t": 0.301,
+          "fm_signal_bp_per_std": 0.068,
+          "fm_signal_nw_t": 0.401
+        }
+      },
+      "full_matrix_weighted": {
+        "rank_ic": {
+          "rank_ic_mean": 0.00122,
+          "rank_ic_median": 0.00094,
+          "rank_ic_nw_t": 0.331,
+          "n_timestamps": 3625
+        },
+        "top_decile": {
+          "top_decile_excess_bp": -0.158,
+          "top_decile_excess_median_bp": -0.062,
+          "top_decile_excess_nw_t": -0.354
+        },
+        "fama_macbeth": {
+          "fm_own_lag_bp_per_std": 0.143,
+          "fm_own_lag_nw_t": 0.539,
+          "fm_signal_bp_per_std": 0.107,
+          "fm_signal_nw_t": 0.598
+        }
+      },
+      "random_leaders_placebo": {
+        "rank_ic": {
+          "rank_ic_mean": 0.00088,
+          "rank_ic_median": 0.00113,
+          "rank_ic_nw_t": 0.326,
+          "n_timestamps": 3625
+        },
+        "top_decile": {
+          "top_decile_excess_bp": 0.483,
+          "top_decile_excess_median_bp": 0.282,
+          "top_decile_excess_nw_t": 1.163
+        },
+        "fama_macbeth": {
+          "fm_own_lag_bp_per_std": 0.13,
+          "fm_own_lag_nw_t": 0.486,
+          "fm_signal_bp_per_std": -0.094,
+          "fm_signal_nw_t": -0.821
+        }
+      }
+    }
+  }
+}

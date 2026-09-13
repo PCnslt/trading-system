@@ -148,24 +148,43 @@ def ensure_fresh(creds):
     return creds, True, ""
 
 
+_TRANSIENT = (429, 502, 503, 504)
+
+
 def _mcp_post(body, token, session_id=None):
-    """One MCP JSON-RPC POST. Returns (status, session_id, raw_body)."""
-    headers = {
-        "Authorization": "Bearer " + token,
-        "Content-Type": "application/json",
-        "Accept": "application/json, text/event-stream",
-    }
-    if session_id:
-        headers["Mcp-Session-Id"] = session_id
-    req = urllib.request.Request(
-        MCP_URL, data=json.dumps(body).encode(), headers=headers, method="POST")
-    try:
-        with urllib.request.urlopen(req, timeout=30) as r:
-            return r.status, r.headers.get("Mcp-Session-Id"), r.read().decode()
-    except urllib.error.HTTPError as e:
-        return e.code, e.headers.get("Mcp-Session-Id"), e.read().decode()
-    except Exception as e:  # noqa: BLE001
-        return -1, None, repr(e)
+    """One MCP JSON-RPC POST, with retry on transient gateway errors.
+    Returns (status, session_id, raw_body)."""
+    last = None
+    for attempt in range(3):
+        headers = {
+            "Authorization": "Bearer " + token,
+            "Content-Type": "application/json",
+            "Accept": "application/json, text/event-stream",
+        }
+        if session_id:
+            headers["Mcp-Session-Id"] = session_id
+        req = urllib.request.Request(
+            MCP_URL, data=json.dumps(body).encode(), headers=headers, method="POST")
+        try:
+            with urllib.request.urlopen(req, timeout=30) as r:
+                return r.status, r.headers.get("Mcp-Session-Id"), r.read().decode()
+        except urllib.error.HTTPError as e:
+            if e.code in _TRANSIENT and attempt < 2:
+                last = (e.code, e.headers.get("Mcp-Session-Id"), "")
+                try:
+                    e.read()
+                except Exception:
+                    pass
+                time.sleep(1.0 * (2 ** attempt))
+                continue
+            return e.code, e.headers.get("Mcp-Session-Id"), e.read().decode()
+        except Exception as e:  # noqa: BLE001
+            if attempt < 2:
+                last = (-1, None, repr(e))
+                time.sleep(1.0 * (2 ** attempt))
+                continue
+            return -1, None, repr(e)
+    return last if last else (-1, None, "unreachable")
 
 
 def _parse_sse(raw):

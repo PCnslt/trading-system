@@ -36,3 +36,19 @@ ibgateway-creds.env
 research/rh_quote_snaps/
 research/rh_247_bars/
 research/overnight_bars/
+
+# Research data + ML caches + derived artifacts (live in S3 / regenerable)
+*.parquet
+*.npy
+*.npz
+research/atomics/sequence/
+research/atomics/data_audit.json
+research/.ohlc_cache/
+research/.overnight24_features/
+research/edgar_text_cache/
+
+# Resumable backfill checkpoints + runtime state (regenerable)
+data/*_manifest.json
+data/*.state
+paper/
+state/
