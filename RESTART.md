@@ -36,6 +36,14 @@ python3.11 -m venv venv
 # 3. AWS access (secrets + data lake live here)
 #    Option A: attach an IAM instance role (ssm:GetParameter, s3:*, dynamodb:*)
 #    Option B: export AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY / AWS_REGION=us-east-1
+#
+# To rebuild the AWS infra from scratch, the templates are committed:
+#   infra/cloudformation.yaml        -> EC2 + IAM role/instance-profile + security
+#                                       group + Elastic IP + S3 datalake bucket
+#   infra/cloudformation-stack.yaml  -> data-layer stack (S3 + DynamoDB, survives
+#                                       instance teardown)
+#   infra/setup-aws.sh               -> idempotent: creates DynamoDB table
+#                                       (trading-data) + S3 bucket
 
 # 4. verify secrets resolve (SSM-first, .env is only a fallback cache)
 ./venv/bin/python infra/ssm_secrets.py        # prints <SET>/<EMPTY> per param
